@@ -1,0 +1,3 @@
+import obstacleAvoidance
+
+obstacleAvoidance.avoidObstacle()
