@@ -13,7 +13,7 @@ VIBRATE_DURATION = 3
 leftPin = 11
 rightPin = 13
 
-global lastTurnedDirection = 0
+lastTurnedDirection = 0
 
 # set up GPIO using BCM numbering
 ##GPIO.setmode(GPIO.BCM)
@@ -36,16 +36,20 @@ def getSonarData(input) :
 
 def turnFromObstacle() :
     print "ENTER TURN FROM OBSTACLE"
+    global lastTurnedDirection
     lastTurnedDirection = getSideToTurn()
     if lastTurnedDirection == 1 :
-    ##    GPIO.output(leftPin, True)
-    ##    GPIO.output(rightPin, False)
+##        GPIO.output(leftPin, True)
+##        GPIO.output(rightPin, False)
          print "Turn right! Right vibrator activated"
-    else :
-    ##    GPIO.output(leftPin, False)
-    ##    GPIO.output(rightPin, True)
+    elif lastTurnedDirection == 2 :
+##        GPIO.output(leftPin, False)
+##        GPIO.output(rightPin, True)
         print "Turn left! Left vibrator activated"
-
+    else :
+##        GPIO.output(leftPin, False)
+##        GPIO.output(rightPin, False)
+        print "Both side blocked! Both vibration motors activated"
     
 # choose which direction to turn, default turn right
 # returns 1 for right, 2 for left, 0 if both sides blocked
