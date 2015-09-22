@@ -39,7 +39,7 @@ class Pedometer:
 
         # Check if time elapsed from last update exceed limit
         if self.prevTime == -1:
-            timeElapsed = 0
+            timeElapsed = timeInMillis
         else:
             timeElapsed = timeInMillis - self.prevTime
 
@@ -54,11 +54,16 @@ class Pedometer:
             accIntervalChange = (accR - self.accWindow[len(self.accWindow) - 1]) / numIntervals
 
             while numIntervals > 0:
-                self.accWindow.append(self.accWindow[len(self.accWindow) - 1] + accIntervalChange)
                 # If window has reached its limit size
-                if len(self.accWindow) > self.WINDOW_SIZE:
+                if len(self.accWindow) == self.WINDOW_SIZE:
+                    # Take note of last reading before clearing window
+                    lastReading = self.accWindow[self.WINDOW_SIZE-1]
                     # Update steps and clear window
                     self.updateSteps()
+                else:
+                    # Last reading is the last element in window
+                    lastReading = self.accWindow[len(self.accWindow) - 1]
+                self.accWindow.append(lastReading + accIntervalChange)
                 numIntervals -= 1
 
         self.prevTime = timeInMillis
@@ -87,6 +92,7 @@ class Pedometer:
 
         maxAcc = self.ACC_REST + self.ACC_THRESHOLD
 
+        # Record a detection on a falling edge from ACC_REST + ACC_THRESHOLD to normal
         for i in range(0, len(self.accWindow) - 1):
             if self.accWindow[i] > maxAcc > self.accWindow[i + 1]:
                 stepsTime.append(i)
@@ -94,7 +100,7 @@ class Pedometer:
         # For debug
         # print(stepsTime)
 
-        # If at least 1 exceed ACC_THRESHOLD
+        # If at least 1 detection
         if len(stepsTime) > 1:
             # If there is no previous detection
             if self.prevLastStepToEndTime == -1:
@@ -120,6 +126,7 @@ class Pedometer:
                     # Next detection too near
                     else:
                         k += 1
+
                 i = k   # Start comparing detections at k for curr window
 
             #  If first detection of curr window is too far to last detection of prev window
@@ -128,7 +135,7 @@ class Pedometer:
 
             j = 1
 
-            # If start comparing at the last detection in array, will not go into while loop
+            # If start comparing at the last detection, will not go into while loop
             if i + j >= len(stepsTime):
                 # Count last step to end time from this time stamp to end of accWindow
                 self.prevLastStepToEndTime = len(self.accWindow) - stepsTime[i] - 1
@@ -170,7 +177,7 @@ class Pedometer:
             else:
                 self.prevLastStepToEndTime = len(self.accWindow) - stepsTime[0] - 1
 
-        # If no none exceeds ACC_THRESHOLD
+        # If no detections
         else:
             # Add the whole accWindow side
             self.prevLastStepToEndTime += len(self.accWindow)
