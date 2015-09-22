@@ -1,72 +1,29 @@
-from jsonParsing import mapParser
+import obstacleAvoidance
 import distAngleCalc
 import math
 #import RPi.GPIO as GPIO
 
+# Pin 11 is for left, Pin 13 is for right
+leftPin = 11
+rightPin = 13
+
 # set up GPIO using BCM numbering
-#GPIO.setmode(GPIO.BCM)
+##GPIO.setmode(GPIO.BCM)
 
 # setup GPIO using Board numbering
-#GPIO.setmode(GPIO.BOARD)
+##GPIO.setmode(GPIO.BOARD)
 
 # GPIO Pins 11 and 13 set to pull up
-# Pin 11 is for left, Pin 13 is for right
-##GPIO.setup(11, GPIO.OUT)
-##GPIO.setup(13, GPIO.OUT)
-##
+##GPIO.setup(leftPin, GPIO.OUT)
+##GPIO.setup(righttPin, GPIO.OUT)
+
 ### initially turned off
-##GPIO.output(11, True)
-##GPIO.output(13, True)
-
-# calculates which direction (left or right to turn)
-def getTurnDirection(curXCoord, curYCoord, nexXCoord, nexYCoord, curAngle, northAt) :
-    directToHead = distAngleCalc.calcAngle(
-            curXCoord, curYCoord, nexXCoord, nexYCoord, northAt)
-    # convert back to 0 - 360 degrees domain
-    if directToHead < 0 :
-        directToHead += 360
-
-    if directToHead > curAngle :
-        if (directToHead - curAngle) < 180 :
-            return "right"
-            #GPIO.output(13, False)
-            #GPIO.output(11, True)
-        else :
-            #GPIO.output(11, False)
-            #GPIO.output(13, True)
-            return "left"
-    else :
-        if (curAngle - directToHead) < 180 :
-            #GPIO.output(11, False)
-            #GPIO.output(13, True)            
-            return "left"
-        else :
-            #GPIO.output(13, False)
-            #GPIO.output(11, True)
-            return "right"
-
-
-# calculates the x-coordinate the person is supposed to be at,
-# based on his current y-coordinate
-def getEqnXDeviation(prevX, prevY, nexX, nexY, curX, curY) :
-    slope = (nexY - prevY) / (nexX - prevX)
-    correctX = nexX - ((nexY - curY) / slope)
-    return math.fabs(curX - correctX)
-
-# calculates the y-coordinate the person is supposed to be
-# based on his current x-coordinate
-def getEqnYDeviation(prevX, prevY, nexX, nexY, curX, curY) :
-    slope = (nexY - prevY) / (nexX - prevX)
-    correctY = nexY - ((nexX - curX) / slope)
-    return math.fabs(curY - correctY)
-        
+##GPIO.output(leftPin, True)
+##GPIO.output(rightPin, True)
 
 # previous node's coordinates
 prevXCoord = 0
 prevYCoord = 0
-
-#prevXCoord = com1L2.getLocationXCoord(prev)
-#prevYCoord = com1L2.getLocationYCoord(prev)
 
 # next node's coordinates
 nexXCoord = 150
@@ -75,19 +32,62 @@ nexYCoord = 150
 # north
 northAt = 0
 
-#com1L2 = mapParser("com1L2")
-#nexXCoord = com1L2.getLocationXCoord(nex)
-#nexYCoord = com1L2.getLocationYCoord(nex)
-
 # current coordinates
 curXCoord = 0
 curYCoord = 0
 
 # deviation tolerance
 maxDeviation = 50
-
 # vicinity tolerance
 maxTolerance = 10
+# angle tolerance
+angleTolerance = 15
+
+
+# calculates which direction (left or right) to turn
+def getTurnDirection(curXCoord, curYCoord, nexXCoord, nexYCoord, curAngle, northAt) :
+    directionToHead = distAngleCalc.calcAngle(
+            curXCoord, curYCoord, nexXCoord, nexYCoord, northAt)
+    print ("direction to head: " + str(directionToHead) +
+           " current angle: " + str(curAngle))
+    # convert back to 0 - 360 degrees domain
+    if directionToHead < 0 :
+        directionToHead += 360
+    
+    if math.fabs(directionToHead - curAngle) < angleTolerance :
+        return "straight"
+        print "MOVE " + str(math.fabs(directionToHead - curAngle))
+    elif directionToHead > curAngle :
+        if (directionToHead - curAngle) < 180 :
+            return "right"
+        else :
+            return "left"
+    elif directionToHead < curAngle :
+        if (curAngle - directionToHead) < 180 :
+            return "left"
+        else :
+            return "right"
+
+
+# calculates the deviation from x-coordinate the person
+# is supposed to be, based on his current y-coordinate
+def getEqnXDeviation(prevX, prevY, nexX, nexY, curX, curY) :
+    if (nexY - prevY) == 0 or (nexX - prevX) == 0 :
+        return math.fabs(nexX - curX)
+    else :
+        slope = (nexY - prevY) / (nexX - prevX)
+        correctX = nexX - ((nexY - curY) / slope)
+        return math.fabs(curX - correctX)
+
+# calculates the y-coordinate the person is supposed to be
+# based on his current x-coordinate
+def getEqnYDeviation(prevX, prevY, nexX, nexY, curX, curY) :
+    if (nexY - prevY) == 0 or (nexX - prevX) == 0 :
+        return math.fabs(nexY - curY)
+    else :
+        slope = (nexY - prevY) / (nexX - prevX)
+        correctY = nexY - ((nexX - curX) / slope)
+        return math.fabs(curY - correctY)
 
 
 pathXDisp = math.fabs(nexXCoord - prevXCoord)  
@@ -100,9 +100,10 @@ curYDisp = pathYDisp
 turn = None
 
 # loop until the destination is reached
-while (curXDisp > maxTolerance and curYDisp > maxTolerance) :
-    curXCoord = float(raw_input("Enter x coordinate: "))
-    curYCoord = float(raw_input("Enter y coordinate: "))
+# angle input from -180 to 180
+while ((curXDisp > maxTolerance) or (curYDisp > maxTolerance)) :
+    curXCoord = float(raw_input("Enter current x coordinate: "))
+    curYCoord = float(raw_input("Enter current y coordinate: "))
     curAngle = float(raw_input("Enter angle direction: "))
 
     curXDisp = math.fabs(nexXCoord - curXCoord)  
@@ -118,9 +119,9 @@ while (curXDisp > maxTolerance and curYDisp > maxTolerance) :
     xStray = getEqnXDeviation(prevXCoord, prevYCoord,
                                      nexXCoord, nexYCoord, curXCoord, curYCoord)
 
-    yStray = getEqnXDeviation(prevXCoord, prevYCoord,
+    yStray = getEqnYDeviation(prevXCoord, prevYCoord,
                                      nexXCoord, nexYCoord, curXCoord, curYCoord)
-
+    print "X stray = " + str(xStray) + " Y stray = " + str(yStray)
     if pathXDisp > pathYDisp :
         if yStray > maxDeviation :
             print "strayed in y-direction by: " + str(yStray)
@@ -135,25 +136,26 @@ while (curXDisp > maxTolerance and curYDisp > maxTolerance) :
         xTravelled = math.fabs(curXCoord - prevXCoord)
         yTravelled = math.fabs(curYCoord - prevYCoord)
         if xTravelled > yTravelled and yStray > maxDeviation :            
-            print "strayed in y-direction by: " + str(yStray)
+            print "strayed by: " + str(yStray)
             turn = getTurnDirection(
                 curXCoord, curYCoord, nexXCoord, nexYCoord, curAngle, northAt)
-        elif yTravelled < xTravelled and xStray > maxDeviation :
-            print "strayed in x-direction by: " + str(xStray)            
+        elif yTravelled > xTravelled and xStray > maxDeviation :
+            print "strayed by: " + str(xStray)
             turn = getTurnDirection(
                 curXCoord, curYCoord, nexXCoord, nexYCoord, curAngle, northAt)
-
-    if not turn :
-        print "Keep going in your current direction!"
-##        GPIO.output(11, True)
-##        GPIO.output(13, True)
-    elif turn == "right" :
-        print "Move to the right!"
-##        GPIO.output(13, False)
-##        GPIO.output(11, True)
+    
+    if turn == "right" :
+        print "Move towards the right!"
+##        GPIO.output(rightPin, False)
+##        GPIO.output(leftPin, True)
     elif turn == "left" :
-        print "Move to the left!"
-##        GPIO.output(11, False)
-##        GPIO.output(13, True)
-        
+        print "Move towards the left!"
+##        GPIO.output(leftPin, False)
+##        GPIO.output(rightPin, True)
+    else :
+        print "Keep going in your current direction!"
+##        GPIO.output(leftPin, True)
+##        GPIO.output(rightPin, True)
+
+print "X disp = " + str(curXDisp) + " Y disp = " + str(curYDisp)
 
