@@ -14,23 +14,22 @@ freertos2560.c
 #include "i2c.h"
 
 char report[16];
-SemaphoreHandle_t xUpdated;
+//SemaphoreHandle_t xUpdated;
 int16_t ax, ay, az, mx, my, mz;
-uint16_t dist;
-uint32_t dists;
-int updatedCount;
+uint16_t irDist, usDist;
 
 //extern uint32_t countPulseASM(volatile uint8_t *port, uint8_t bit, uint8_t stateMask, unsigned long maxloops) __asm__("countPulseASM");
 
 void twi_init();
-void usart_print(char a);
+void usart_send(char a);
+char usart_recv();
 void usart_init(unsigned long baud);
 
 void analog_init();
-uint16_t analog_read(int pin);
+int16_t analog_read(int pin);
 void delayus(uint16_t delta);
 
-uint32_t measure_pulse_us(volatile uint8_t *port, uint8_t pin, uint8_t state);
+int16_t measure_pulse_us(volatile uint8_t *port, uint8_t pin, uint8_t state);
 
 int freeRam () {
 	extern int __heap_start, *__brkval;
@@ -43,48 +42,46 @@ void usart_process(void *p)
 {
 	#define print_number(x) itoa(x, report, 10); \
 							for (i = 0; report[i] != 0; ++i) \
-								usart_print(report[i]);
+								usart_send(report[i]);
 	#define print_unumber(x)	utoa(x, report, 10); \
 								for (i = 0; report[i] != 0; ++i) \
-									usart_print(report[i]);
+									usart_send(report[i]);
 	
 	int i;
 	char data;
 	while(1)
 	{
-		/*while ( !(UCSR0A & (1<<RXC0)) );
-		data = UDR0;
-		usart_print(data);*/
-		if( xSemaphoreTake( xUpdated, 10 ) == pdTRUE )
+		/*data = usart_recv();
+		usart_send(data);*/
+		//if( xSemaphoreTake( xUpdated, 10 ) == pdTRUE )
 		{
-			usart_print('a');
-			usart_print(':');
-			usart_print(' ');
+			usart_send('a');
+			usart_send(':');
+			usart_send(' ');
 			print_number(ax);
-			usart_print(' ');
+			usart_send(' ');
 			print_number(ay);
-			usart_print(' ');
+			usart_send(' ');
 			print_number(az);
-			usart_print(' ');
-			usart_print('m');
-			usart_print(':');
-			usart_print(' ');
+			usart_send(' ');
+			usart_send('m');
+			usart_send(':');
+			usart_send(' ');
 			print_number(mx);
-			usart_print(' ');
+			usart_send(' ');
 			print_number(my);
-			usart_print(' ');
+			usart_send(' ');
 			print_number(mz);
-			usart_print(' ');
-			usart_print('d');
-			usart_print(':');
-			usart_print(' ');
-			print_unumber(dist);
-			usart_print(' ');
-			print_unumber(dists);
-			usart_print('\r');
-			usart_print('\n');
-			
-			updatedCount--;
+			usart_send(' ');
+			usart_send('d');
+			usart_send(':');
+			usart_send(' ');
+			print_unumber(irDist);
+			usart_send(' ');
+			print_unumber(usDist);
+			usart_send('\r');
+			usart_send('\n');
+			vTaskDelay(100);
 		}
 	}
 }
@@ -93,7 +90,6 @@ void twowire_process(void *p)
 {
 	twi_init();
 	lsm303_init();
-	updatedCount = 0;
 	while(1)
 	{
 		lsm303_read_acc(&ax, &ay, &az);
@@ -107,11 +103,8 @@ void distir_process(void *p)
 	analog_init();
 	while(1)
 	{
-		dist = analog_read(0);
-		//updatedCount++;
-		xSemaphoreGive( xUpdated );
+		irDist = analog_read(0);
 		vTaskDelay(100);
-		//vTaskDelay(10);
 	}
 }
 
@@ -130,14 +123,8 @@ void distultrasound_process(void *p)
 		PORTA |= (1<<PA1);
 		delayus(10);
 		PORTA &= ~(1<<PA1);
-		dists = measure_pulse_us((volatile uint8_t *)&PINA, PA0, 1);
-		updatedCount++;
-		print_unumber(dists);
-		usart_print('\r');
-		usart_print('\n');
-		xSemaphoreGive( xUpdated );
+		usDist = measure_pulse_us((volatile uint8_t *)&PINA, PA0, 1);
 		vTaskDelay(100);
-		//vTaskDelay(10);
 	}
 }
 
@@ -152,17 +139,18 @@ void vApplicationIdleHook()
 int main(void)
 {
 	usart_init(115200);
-	usart_print('s');
-	usart_print('\r');
-	usart_print('\n');
-	xUpdated = xSemaphoreCreateBinary();
+	usart_send('s');
+	usart_send('\r');
+	usart_send('\n');
+	//xUpdated = xSemaphoreCreateBinary();
+	//xSemaphoreGive( xUpdated );
 	
 	TaskHandle_t t1, t2, t3, t4;
 	//	Create tasks 
 	xTaskCreate(usart_process, "usart", STACK_DEPTH, NULL, 1, &t1);
 	xTaskCreate(twowire_process, "twowire", STACK_DEPTH, NULL, 2, &t2);
-	xTaskCreate(distir_process, "distir", STACK_DEPTH, NULL, 3, &t3);
-	xTaskCreate(distultrasound_process, "dists", STACK_DEPTH, NULL, 4, &t4);
+	xTaskCreate(distir_process, "distir", STACK_DEPTH, NULL, 2, &t3);
+	xTaskCreate(distultrasound_process, "dists", STACK_DEPTH, NULL, 2, &t4);
 	
 	vTaskStartScheduler();
 }
@@ -187,10 +175,16 @@ void usart_init(unsigned long baud)
 	UCSR0C = (3<<UCSZ00);//(1<<USBS0)| 2 stopbit
 }
 
-void usart_print(char a)
+void usart_send(char a)
 {
 	while ( !( UCSR0A & (1<<UDRE0)) );
 	UDR0 = a;
+}
+
+char usart_recv()
+{
+	while ( !(UCSR0A & (1<<RXC0)) );
+	return UDR0;
 }
 
 void analog_init()
@@ -199,9 +193,9 @@ void analog_init()
 	
 }
 
-uint16_t analog_read(int pin)
+int16_t analog_read(int pin)
 {
-	int8_t h, l;
+	uint8_t h, l;
 	ADCSRB = (ADCSRB & ~(1 << MUX5)) | (((pin >> 3) & 0x01) << MUX5);
 	ADMUX = (0x01 << 6) | (pin & 0x07);	
 	ADCSRA |= (1<<ADSC);
@@ -219,7 +213,7 @@ uint16_t analog_read(int pin)
 uint32_t loops, initial, final;
 uint8_t mask;
 
-uint32_t measure_pulse_us(volatile uint8_t *port, uint8_t pin, uint8_t state)
+int16_t measure_pulse_us(volatile uint8_t *port, uint8_t pin, uint8_t state)
 {
 	/*uint8_t stateMask = (state ? 1<<pin : 0);
 
