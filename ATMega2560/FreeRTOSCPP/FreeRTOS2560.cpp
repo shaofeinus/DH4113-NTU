@@ -13,10 +13,10 @@ freertos2560.c
 #include "AltIMUv4.h"
 #include "i2c.h"
 
-char report[16];
-//SemaphoreHandle_t xUpdated;
-int16_t ax, ay, az, mx, my, mz;
-uint16_t irDist, usDist;
+SemaphoreHandle_t a_updated, m_updated, ir_updated, us_updated;
+int16_t a_x, a_y, a_z, m_x, m_y, m_z;
+uint16_t ir_dist, us_dist;
+uint16_t a_last_update, m_last_update, ir_last_update, us_last_update;
 
 //extern uint32_t countPulseASM(volatile uint8_t *port, uint8_t bit, uint8_t stateMask, unsigned long maxloops) __asm__("countPulseASM");
 
@@ -31,58 +31,116 @@ void delayus(uint16_t delta);
 
 int16_t measure_pulse_us(volatile uint8_t *port, uint8_t pin, uint8_t state);
 
-int freeRam () {
+enum deviceId
+{
+	ACCEL		= 0x10,	// 1
+	COMPASS		= 0x20,	// 2
+	
+	IR			= 0x80,	// 8
+	US			= 0x90	// 9
+};
+
+int freeRam() 
+{
 	extern int __heap_start, *__brkval;
 	int v;
 	return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 }
 
+inline void send_data(char id, uint16_t time, char *data, int size)
+{
+	int i;
+	usart_send(id|((time>>8)&0x0F));
+	usart_send(time&0xFF);
+	for (i = 0; i < size; ++i)
+	{
+		usart_send(data[i]);
+	}
+}
+
 //Tasks flash LEDs at Pins 12 and 13 at 1Hz and 2Hz respectively.
 void usart_process(void *p)
 {
-	#define print_number(x) itoa(x, report, 10); \
+	/*#define print_number(x) itoa(x, report, 10); \
 							for (i = 0; report[i] != 0; ++i) \
 								usart_send(report[i]);
 	#define print_unumber(x)	utoa(x, report, 10); \
 								for (i = 0; report[i] != 0; ++i) \
 									usart_send(report[i]);
 	
-	int i;
-	char data;
+	char report[16];
+	int i;*/
+	char data[6];
 	while(1)
 	{
+		if (xSemaphoreTake(a_updated, 0) == pdTRUE)
+		{
+			data[0] = a_x>>8;
+			data[1] = a_x;
+			data[2] = a_y>>8;
+			data[3] = a_y;
+			data[4] = a_z>>8;
+			data[5] = a_z;
+			send_data(ACCEL, a_last_update, data, 6);
+		}
+		
+		if (xSemaphoreTake(m_updated, 0) == pdTRUE)
+		{
+			data[0] = m_x>>8;
+			data[1] = m_x;
+			data[2] = m_y>>8;
+			data[3] = m_y;
+			data[4] = m_z>>8;
+			data[5] = m_z;
+			send_data(COMPASS, m_last_update, data, 6);
+		}
+		
+		if (xSemaphoreTake(ir_updated, 0) == pdTRUE)
+		{
+			data[0] = ir_dist>>8;
+			data[1] = ir_dist;
+			send_data(IR, ir_last_update, data, 2);
+		}
+		
+		if (xSemaphoreTake(us_updated, 0) == pdTRUE)
+		{
+			data[0] = us_dist>>8;
+			data[1] = us_dist;
+			send_data(US, us_last_update, data, 2);
+		}
+		
 		/*data = usart_recv();
 		usart_send(data);*/
-		//if( xSemaphoreTake( xUpdated, 10 ) == pdTRUE )
+		/*if( xSemaphoreTake( xUpdated, 10 ) == pdTRUE )
 		{
 			usart_send('a');
 			usart_send(':');
 			usart_send(' ');
-			print_number(ax);
+			print_number(a_x);
 			usart_send(' ');
-			print_number(ay);
+			print_number(a_y);
 			usart_send(' ');
-			print_number(az);
+			print_number(a_z);
 			usart_send(' ');
 			usart_send('m');
 			usart_send(':');
 			usart_send(' ');
-			print_number(mx);
+			print_number(m_x);
 			usart_send(' ');
-			print_number(my);
+			print_number(m_y);
 			usart_send(' ');
-			print_number(mz);
+			print_number(m_z);
 			usart_send(' ');
 			usart_send('d');
 			usart_send(':');
 			usart_send(' ');
-			print_unumber(irDist);
+			print_unumber(ir_dist);
 			usart_send(' ');
-			print_unumber(usDist);
+			print_unumber(us_dist);
 			usart_send('\r');
 			usart_send('\n');
-			vTaskDelay(100);
-		}
+			vTaskDelay(1000);
+		}*/
 	}
 }
 
@@ -92,8 +150,12 @@ void twowire_process(void *p)
 	lsm303_init();
 	while(1)
 	{
-		lsm303_read_acc(&ax, &ay, &az);
-		lsm303_read_mag(&mx, &my, &mz);
+		lsm303_read_acc(&a_x, &a_y, &a_z);
+		a_last_update = xTaskGetTickCount();
+		xSemaphoreGive( a_updated );
+		lsm303_read_mag(&m_x, &m_y, &m_z);
+		m_last_update = xTaskGetTickCount();
+		xSemaphoreGive( m_updated );
 		vTaskDelay(10);
 	}
 }
@@ -103,19 +165,19 @@ void distir_process(void *p)
 	analog_init();
 	while(1)
 	{
-		irDist = analog_read(0);
+		ir_dist = analog_read(0);
+		ir_last_update = xTaskGetTickCount();
+		xSemaphoreGive( ir_updated );
 		vTaskDelay(100);
 	}
 }
 
 void distultrasound_process(void *p)
 {
-	int i;
 	// PA 0 ** 22 ** D22 ECHO input 0
 	// PA 1 ** 23 ** D23 TRIG output 1
 	DDRA &= ~(1<<PA0);
 	DDRA |= (1<<PA1);
-	uint32_t current;
 	while(1)
 	{
 		PORTA &= ~(1<<PA1);
@@ -123,8 +185,10 @@ void distultrasound_process(void *p)
 		PORTA |= (1<<PA1);
 		delayus(10);
 		PORTA &= ~(1<<PA1);
-		usDist = measure_pulse_us((volatile uint8_t *)&PINA, PA0, 1);
-		vTaskDelay(100);
+		us_dist = measure_pulse_us((volatile uint8_t *)&PINA, PA0, 1);
+		us_last_update = xTaskGetTickCount();
+		xSemaphoreGive( us_updated );
+		vTaskDelay(100-(us_dist>>10));
 	}
 }
 
@@ -142,8 +206,10 @@ int main(void)
 	usart_send('s');
 	usart_send('\r');
 	usart_send('\n');
-	//xUpdated = xSemaphoreCreateBinary();
-	//xSemaphoreGive( xUpdated );
+	a_updated = xSemaphoreCreateBinary();
+	m_updated = xSemaphoreCreateBinary();
+	ir_updated = xSemaphoreCreateBinary();
+	us_updated = xSemaphoreCreateBinary();
 	
 	TaskHandle_t t1, t2, t3, t4;
 	//	Create tasks 
