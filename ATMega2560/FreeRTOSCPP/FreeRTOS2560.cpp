@@ -150,7 +150,7 @@ int main(void)
 	xTaskCreate(usart_process, "usart", STACK_DEPTH, NULL, 1, &t1);
 	xTaskCreate(twowire_process, "twowire", STACK_DEPTH, NULL, 2, &t2);
 	xTaskCreate(distir_process, "distir", STACK_DEPTH, NULL, 2, &t3);
-	xTaskCreate(distultrasound_process, "dists", STACK_DEPTH, NULL, 2, &t4);
+	xTaskCreate(distultrasound_process, "distus", STACK_DEPTH, NULL, 2, &t4);
 	
 	vTaskStartScheduler();
 }
@@ -233,9 +233,11 @@ int16_t measure_pulse_us(volatile uint8_t *port, uint8_t pin, uint8_t state)
 	state <<= pin;
 	while (((*port)&mask) == state);
 	while (((*port)&mask) != state);
-	initial = xTaskGetTickCount()*1000+TCNT0*4;
+	initial = xTaskGetTickCount()*1000+(TCNT1>>1);
+	//initial = xTaskGetTickCount()*1000+(TCNT0*4);
 	while (((*port)&mask) == state);
-	final = xTaskGetTickCount()*1000+TCNT0*4;
+	final = xTaskGetTickCount()*1000+(TCNT1>>1);
+	//final = xTaskGetTickCount()*1000+(TCNT0*4);
 	return final - initial;
 }
 
