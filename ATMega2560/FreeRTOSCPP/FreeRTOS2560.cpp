@@ -21,9 +21,14 @@ uint16_t a_last_update, m_last_update, ir_last_update, us_last_update;
 //extern uint32_t countPulseASM(volatile uint8_t *port, uint8_t bit, uint8_t stateMask, unsigned long maxloops) __asm__("countPulseASM");
 
 void twi_init();
+
 void usart_send(char a);
 char usart_recv();
 void usart_init(unsigned long baud);
+
+void debug_send(char a);
+char debug_recv();
+void debug_init(unsigned long baud);
 
 void analog_init();
 int16_t analog_read(int pin);
@@ -231,32 +236,31 @@ void usart_init(unsigned long baud)
 	//unsigned int ubrr = (F_CPU/4/baud-1)/2;
 	unsigned int ubrr = F_CPU/8/baud - 1;
 	
-	UCSR0A = 1<<U2X0;
+	UCSR3A = 1<<U2X3;
 	/* Set baud rate */
-	UBRR0H = (unsigned char)(ubrr>>8);
-	UBRR0L = (unsigned char)ubrr;
+	UBRR3H = (unsigned char)(ubrr>>8);
+	UBRR3L = (unsigned char)ubrr;
 	/* Enable receiver and transmitter */
-	UCSR0B = (1<<RXEN0)|(1<<TXEN0);
+	UCSR3B = (1<<RXEN3)|(1<<TXEN3);
 	/* Set frame format: 8data, 1stop bit */
-	UCSR0C = (3<<UCSZ00);//(1<<USBS0)| 2 stopbit
+	UCSR3C = (3<<UCSZ30);//(1<<USBS3)| 2 stopbit
 }
 
 void usart_send(char a)
 {
-	while ( !( UCSR0A & (1<<UDRE0)) );
-	UDR0 = a;
+	while ( !( UCSR3A & (1<<UDRE3)) );
+	UDR3 = a;
 }
 
 char usart_recv()
 {
-	while ( !(UCSR0A & (1<<RXC0)) );
-	return UDR0;
+	while ( !(UCSR3A & (1<<RXC3)) );
+	return UDR3;
 }
 
 void analog_init()
 {
 	ADCSRA = (1<<ADEN);
-	
 }
 
 int16_t analog_read(int pin)
@@ -328,6 +332,33 @@ void delayus(unsigned int us)
 	//uint32_t final;
 	//final = xTaskGetTickCount()*1000+TCNT0*4+delta;
 	//while ((xTaskGetTickCount()*1000+TCNT0*4) < final);
+}
+
+void debug_init(unsigned long baud)
+{
+	//unsigned int ubrr = (F_CPU/4/baud-1)/2;
+	unsigned int ubrr = F_CPU/8/baud - 1;
+	
+	UCSR0A = 1<<U2X0;
+	/* Set baud rate */
+	UBRR0H = (unsigned char)(ubrr>>8);
+	UBRR0L = (unsigned char)ubrr;
+	/* Enable receiver and transmitter */
+	UCSR0B = (1<<RXEN0)|(1<<TXEN0);
+	/* Set frame format: 8data, 1stop bit */
+	UCSR0C = (3<<UCSZ00);//(1<<USBS0)| 2 stopbit
+}
+
+void debug_send(char a)
+{
+	while ( !( UCSR0A & (1<<UDRE0)) );
+	UDR0 = a;
+}
+
+char debug_recv()
+{
+	while ( !(UCSR0A & (1<<RXC0)) );
+	return UDR0;
 }
 
 /*
