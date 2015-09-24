@@ -15,8 +15,8 @@ class navigation (object) :
         self.northAt = int(northAt)
         self.curXCoord = 0
         self.curYCoord = 0
-        self.leftPin = 11
-        self.rightPin = 13
+        self.leftPin = 9
+        self.rightPin = 10
 
         # deviation tolerance
         self.maxDeviation = 50

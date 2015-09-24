@@ -9,9 +9,9 @@ SIDE_WALL_DISTANCE = 100
 SIDE_OBSTACLE_DISTANCE = 70
 VIBRATE_DURATION = 3
 
-# Pin 11 is for left, Pin 13 is for right
-leftPin = 11
-rightPin = 13
+# Pin 9 is for left, Pin 10 is for right
+leftPin = 9
+rightPin = 10
 
 lastTurnedDirection = 0
 
@@ -21,7 +21,7 @@ lastTurnedDirection = 0
 # setup GPIO using Board numbering
 ##GPIO.setmode(GPIO.BOARD)
 
-# GPIO Pins 11 and 13 set to pull up
+# GPIO Pins set to pull up
 ##GPIO.setup(leftPin, GPIO.OUT)
 ##GPIO.setup(righttPin, GPIO.OUT)
 
