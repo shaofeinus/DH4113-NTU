@@ -5,16 +5,17 @@ from jsonParsing import mapParser
 #USAGE:
 #1) Create an instance of pathFinder object
 #2) Call setMap(mapNo) to set the map
-#       0: COM1L2
-#       1: COM2L2
-#       2: COM3L3
+#       com1L2
+#       com2L2
+#       com3L3
 #3) Call getPath(). Function returns path in a node sequence stored in list
+#       path starts from index 0
 #4) PROFIT $$$
 
 class pathFinder (object) :
     def __init__(self):
         self.currMap = None
-        self.mapNo = None
+##        self.mapNo = None
         self.redNodes = []
         self.nodes = []
         self.tree = []
@@ -98,15 +99,22 @@ class pathFinder (object) :
             path.reverse()
         return path
     
-    def setMap(self, mapNo):
-        self.mapNo = mapNo
-        
-        if self.mapNo == 0:
+    def setMap(self, mapName):
+##        self.mapNo = mapNo        
+##        if self.mapNo == 0:
+##            self.currMap = mapParser("com1L2")
+##        elif self.mapNo == 1:
+##            self.currMap = mapParser("com2L2")
+##        elif self.mapNo == 2:
+##            self.currMap = mapParser("com2L3")
+
+        if mapName == "com1L2" :
             self.currMap = mapParser("com1L2")
-        elif self.mapNo == 1:
+        elif mapName == "com2L2" :
             self.currMap = mapParser("com2L2")
-        elif self.mapNo == 2:
+        elif mapName == "com2L3" :
             self.currMap = mapParser("com2L3")
+
             
         self.NUM_NODES = self.currMap.numElements
     

@@ -5,7 +5,7 @@ def distance(x1, y1, x2, y2) :
         return math.sqrt((int(x2)-int(x1))**2 + (int(y2)-int(y1))**2)
 
 # returns the angle from point 1 to point 2,
-# with respect to magnetic north
+# with respect to magnetic north (range 0 to 360)
 # angle returned in range -180 to 180
 def calcAngle(x1, y1, x2, y2, northAt) :
         angle = 0
