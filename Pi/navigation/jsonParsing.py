@@ -38,7 +38,7 @@ class mapParser (object) :
                        "com2L3" : "http://showmyway.comp.nus.edu.sg/getMapInfo.php?Building=COM2&Level=3"}
                 return map[identifier]
 
-        def loadMap(self,mapName) :
+        def loadMap(self, mapName) :
             jsonMap = urllib2.urlopen(self.mapUrl(mapName))
             self.buildingMap = json.load(jsonMap)
             self.northAt = int(self.buildingMap['info']['northAt'])
