@@ -66,7 +66,7 @@ class LocationUpdateThread(threading.Thread):
             accY = values[2]
             accZ = values[3]
 
-            locationTracker.pedometer.updateWindow(int(accX), int(accY), int(accZ), int(timeInMillis))
+            locationTracker.updatePedoData(float(accX), float(accY), float(accZ), int(timeInMillis))
 
             line = f.readline()
 
@@ -79,7 +79,7 @@ class LocationUpdateThread(threading.Thread):
         magY = random.randint(-1000, 1000)
 
         lock.acquire()
-        locationTracker.compass.updateReading(magX, magY)
+        locationTracker.updateCompassData(magX, magY)
         lock.release()
 
         return
@@ -96,6 +96,7 @@ class LocationUpdateThread(threading.Thread):
             time.sleep(0.5)
 
 dataQueue = queue.Queue(1)
+
 locationTracker = locationTracker.LocationTracker(pedometer.Pedometer(), compass.Compass(), 0, 0)
 
 lock = threading.Lock()

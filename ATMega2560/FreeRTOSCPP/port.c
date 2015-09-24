@@ -446,12 +446,26 @@ static void prvSetupTimerInterrupt( void )
 	//ucLowByte = TIMSK;
 	//ucLowByte |= portCOMPARE_MATCH_A_INTERRUPT_ENABLE;
 	//TIMSK = ucLowByte;
-	TCCR0A=0b00000010;
+	
+	
+	//TIMER1
+	//WGM1 0b0100 bit 1:0 of A and 4:3 of B
+	//Clock Select 010 clk/8 bit 2:0 of B
+	//OCR1A = 2000 for 1ms
+	//TIMSK1 enable OCIE1A bit 1
+	TCCR1A = 0;
+	TCCR1B = 0b00001010;
+	TCNT1 = 0;
+	OCR1A = 2000;
+	TIMSK1 |= 0b10;
+	
+	//TIMER0
+	/*TCCR0A=0b00000010;
 	TCNT0=0;
-	//OCR0A=configTICK_RATE_HZ*configCPU_CLOCK_HZ/64000000;
-	OCR0A=250;
+	OCR0A=250;//configTICK_RATE_HZ * configCPU_CLOCK_HZ / 64000000;
+	//OCR0A=configTICK_RATE_HZ * configCPU_CLOCK_HZ / 64000000;
 	TIMSK0|=0b10;
-	TCCR0B=0b00000011;
+	TCCR0B=0b00000011;*/
 }
 /*-----------------------------------------------------------*/
 
@@ -462,7 +476,8 @@ static void prvSetupTimerInterrupt( void )
 	 * the context is saved at the start of vPortYieldFromTick().  The tick
 	 * count is incremented after the context is saved.
 	 */
-	ISR(TIMER0_COMPA_vect, ISR_NAKED)
+	//ISR(TIMER0_COMPA_vect, ISR_NAKED)
+	ISR(TIMER1_COMPA_vect, ISR_NAKED)
 	{
 		vPortYieldFromTick();
 		asm volatile ( "reti" );
@@ -474,7 +489,8 @@ static void prvSetupTimerInterrupt( void )
 	 * tick count.  We don't need to switch context, this can only be done by
 	 * manual calls to taskYIELD();
 	 */
-	ISR(TIMER0_COMPA_vect)
+	//ISR(TIMER0_COMPA_vect)
+	ISR(TIMER1_COMPA_vect)
 	{
 		xTaskIncrementTick();
 	}
