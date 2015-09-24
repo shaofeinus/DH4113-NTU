@@ -93,7 +93,7 @@ class commu(object):
 
             self.data[dev_id].put(timeStamp)
 
-            data_print = []
+##            data_print = []
 
             for x in range(self.num_bytes[dev_id]):
                 while self.in_queue.empty():
@@ -106,9 +106,9 @@ class commu(object):
 
                 dataTemp = dataTemp | data_in
                 self.data[dev_id].put(dataTemp)
-                data_print.append(dataTemp)
+##                data_print.append(dataTemp)
                     
-                self.print_all(dev_id, timeStamp, data_print)
+##                self.print_all(dev_id, timeStamp, data_print)
 
     def run_threads(self):    
         self.read_data_thread = Thread(target=receive_data)
