@@ -78,7 +78,7 @@ def process_data():
         while in_queue.empty():
         serialPort.read(data_in)
         
-        timeStamp = timeStamp | buffer[x + 1]
+        timeStamp = timeStamp | data_in
 
         data[dev_id].put(timeStamp)
 
