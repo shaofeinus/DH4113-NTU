@@ -35,7 +35,7 @@ class Pedometer:
             self.updateSteps()
 
         # Get resultant acceleration
-        accR = math.sqrt(accX * accX + accY * accY + accZ * accZ)
+        accR = float(math.sqrt(accX * accX + accY * accY + accZ * accZ))
 
         # Check if time elapsed from last update exceed limit
         if self.prevTime == -1:

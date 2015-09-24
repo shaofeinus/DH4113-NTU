@@ -1,4 +1,5 @@
 from __future__ import division
+from collections import deque
 import math
 
 
@@ -12,11 +13,28 @@ __author__ = 'Shao Fei'
 # Compass reading is in radians
 class Compass:
 
+    WINDOW_SIZE = 10
+
     def __init__(self):
-        self.currHeading = 0.0
+        self.currHeading = 0
+        self.xWindow = deque(maxlen=self.WINDOW_SIZE)
+        self.yWindow = deque(maxlen=self.WINDOW_SIZE)
+
+    def queueReadings(self, xReading, yReading):
+        if len(self.xWindow) == self.WINDOW_SIZE:
+            self.xWindow.popleft()
+            self.yWindow.popleft()
+        self.xWindow.append(xReading)
+        self.yWindow.append(yReading)
 
     # Public
-    def updateReading(self, magX, magY):
+    def updateReading(self, xReading, yReading):
+
+        self.queueReadings(xReading, yReading)
+
+        magX = sum(self.xWindow)/len(self.xWindow)
+        magY = sum(self.yWindow)/len(self.yWindow)
+
         # North is 90 deg to the left
         if magY == 0 and magX < 0:
             heading = 3.0 / 2.0 * math.pi
@@ -49,7 +67,9 @@ class Compass:
     # Public
     # Reading is in radians
     def getHeadingInDeg(self):
-        if(self.currHeading < math.pi):
-            return self.currHeading / (2 * math.pi) * 360
+        heading = self.currHeading
+        if heading < math.pi:
+            return heading / (2 * math.pi) * 360
         else:
-            return -1 * (2 * math.pi - self.currHeading) / (2 * math.pi) * 360
+            return -1 * (2 * math.pi - heading) / (2 * math.pi) * 360
+

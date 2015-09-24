@@ -1,6 +1,4 @@
 import math
-import pedometer
-import compass
 
 __author__ = 'Shao Fei'
 
@@ -41,6 +39,14 @@ class LocationTracker:
         return
 
     # Public
+    def updatePedoData(self, accX, accY, accZ, timeInMillis):
+        self.pedometer.updateWindow(accX, accY, accZ, timeInMillis)
+
+    # Public
+    def updateCompassData(self, xReading, yReading):
+        self.compass.updateReading(xReading, yReading)
+
+    # Public
     def updateLocation(self):
         currSteps = self.pedometer.getStepCount()
         self.totalSteps += currSteps
@@ -48,7 +54,7 @@ class LocationTracker:
         distance = currSteps * self.STEP_DISTANCE
         self.totalDistance += distance
 
-        heading = self.compass.currHeading
+        heading = self.compass.getHeading()
 
         xDistance = distance * math.sin(heading)
         yDistance = distance * math.cos(heading)
