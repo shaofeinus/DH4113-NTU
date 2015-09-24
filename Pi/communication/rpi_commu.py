@@ -1,31 +1,26 @@
 from serial import Serial
-import time
-from threading import Thread
-from Queue import Queue
+import threading
+import Queue
+
+serialPort = Serial(port="/dev/ttyAMA0", baudrate=115200, timeout=2)
+
+if not serialPort.isOpen():
+    serialPort.open()
+
+serialPort.flushInput()
+serialPort.flushOutput()
 
 #CONSTANTS
 MAX_ATTEMPTS = 3;
 handshake1 = 0x10101010
 handshake2 = 0x01010101
-handshake3 = 0x11110000 
+handshake3 = 0x11110000
 num_id = 16
-num_bytes = [2, 6, 6, 2, 2, 2, 2, 2, 2]
+num_bytes = [1, 3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
 #GLOBALS
-serialPort = None
 data = [Queue.Queue() for x in range(num_id)]
 in_queue = Queue.Queue()
-read_data_thread = None
-process_data_thread = None
-
-def init_serial():
-    Serial(port="/dev/ttyAMA0", baudrate=9600, timeout = 0.5)
-
-    if (serialPort.isOpen() == False):
-        serialPort.open()
-
-    serialPort.flushInput()
-    serialPort.flushOutput()
 
 def handshake():
     serialPort.write(handshake1);
@@ -33,7 +28,7 @@ def handshake():
     num_tries = MAX_ATTEMPTS;
 
     receive_handshake = receive_data()
-    while(True):
+    while True :
         if receive_handshake == handshake2:
             serialPort.write(handshake3)
             break
@@ -42,75 +37,75 @@ def handshake():
                 print ("mega_conf_notreceived")
                 connect_failed = True
                 break
-            
+
             receive_handshake = receive_data()
             num_tries = num_tries - 1
-            sleep(0.02)
+            #sleep(0.02)
 
     return connect_failed
 
-def printAll(dev_id, timeStamp, data):
+def printAll(dev_id, timeStamp, data_print):
     print ("id: "),
     print (dev_id),
     print (", timeStamp: "),
     print (timeStamp),
     print (", data: "),
-    print (data)
-        
+    print (data_print)
+
 def receive_data():
-    data_in = None
     while True:
         if serialPort.inWaiting() > 0:
-            serialPort.read(data_in)
-            in_queue.put(data_in)
-            
+            serialPort.readinto(data_input)
+            in_queue.put(int(ord(data_input[0])))
+
+def my_to_signed(num):
+    if num >> 15 == 1:
+        num = num ^ 0xFFFF
+        num = num + 1
+        return -num
+    return num
+
 def process_data():
-    data_in = None
-    dev_id = None
-    timeStamp = None
-    data_temp = None
-    
     while True:
         while in_queue.empty():
-        dev_id = data_in >> 4
-        timeStamp = (data_in & 0xF) << 8)
-        
-        while in_queue.empty():
-        serialPort.read(data_in)
-        
-        timeStamp = timeStamp | data_in
+            continue
 
+        data_in = in_queue.get()
+        dev_id = (data_in >> 4)
+        timeStamp = ((data_in & 0xF) << 8)
+        while in_queue.empty():
+            continue
+        data_in = in_queue.get()
+        timeStamp = timeStamp | data_in
         data[dev_id].put(timeStamp)
 
         data_print = []
-
         for x in range(num_bytes[dev_id]):
             while in_queue.empty():
-            serialPort.read(data_in)
-            
+                continue
+            data_in = in_queue.get()
             dataTemp = data_in << 8
-            
+
             while in_queue.empty():
-            serialPort.read(data_in)
-
+                continue
+            data_in = in_queue.get()
             dataTemp = dataTemp | data_in
-            data[dev_id].put(dataTemp)
-            data_print.append(dataTemp)
-                
-            print_all(dev_id, timeStamp, data_print)
+            if dev_id == 1 or dev_id == 2:
+                data[dev_id].put(my_to_signed(dataTemp))
+                data_print.append(my_to_signed(dataTemp))
 
-def run_threads():    
-    read_data_thread = Thread(target=receive_data)
-    process_data_thread = threading.Thread(target=process_data)
+            else:
+                data[dev_id].put(dataTemp)
+                data_print.append(dataTemp)
 
-    read_data_thread.start()
-    process_data_thread.start()
+        printAll(dev_id, timeStamp, data_print)
 
-        
-##if handshake() == True:
-##    print ("handshake successful");
-##    load_data_loop();
-##    threading.Thread(target=load_data_loop)
-##    threading.Thread(target=process_buffer)
-##else:
-##    print ("handshake unsuccessful");
+
+n = 10
+data_input = [0]
+
+read_data_thread = threading.Thread(target=receive_data)
+process_data_thread = threading.Thread(target=process_data)
+
+read_data_thread.start()
+process_data_thread.start()
