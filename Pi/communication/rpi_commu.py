@@ -11,7 +11,7 @@ serialPort.flushInput()
 serialPort.flushOutput()
 
 #CONSTANTS
-MAX_ATTEMPTS = 3;
+MAX_ATTEMPTS = 3
 handshake1 = 0x10101010
 handshake2 = 0x01010101
 handshake3 = 0x11110000
@@ -90,6 +90,14 @@ def process_data():
                 continue
             data_in = in_queue.get()
             dataTemp = dataTemp | data_in
+
+            if dev_id == 4:
+                while in_queue.empty():
+                    continue
+                data_in = in_queue.get()
+                dataTemp = dataTemp << 8
+                dataTemp = dataTemp | data_in
+
             if dev_id == 1 or dev_id == 2:
                 data[dev_id].put(my_to_signed(dataTemp))
                 data_print.append(my_to_signed(dataTemp))
