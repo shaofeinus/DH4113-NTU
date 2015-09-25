@@ -13,10 +13,12 @@ freertos2560.c
 #include "AltIMUv4.h"
 #include "i2c.h"
 
-SemaphoreHandle_t a_updated, m_updated, ir_updated, us_updated;
+SemaphoreHandle_t a_updated, m_updated, ba_updated, ir_updated, us_updated;
+int32_t ba_p;
 int16_t a_x, a_y, a_z, m_x, m_y, m_z;
-uint16_t ir_dist, us_dist;
-uint16_t a_last_update, m_last_update, ir_last_update, us_last_update;
+uint16_t ir_dist;
+int32_t us_dist;
+uint16_t a_last_update, m_last_update, ba_last_update, ir_last_update, us_last_update;
 
 //extern uint32_t countPulseASM(volatile uint8_t *port, uint8_t bit, uint8_t stateMask, unsigned long maxloops) __asm__("countPulseASM");
 
@@ -34,12 +36,15 @@ void analog_init();
 int16_t analog_read(int pin);
 void delayus(uint16_t delta);
 
-int16_t measure_pulse_us(volatile uint8_t *port, uint8_t pin, uint8_t state);
+int32_t measure_pulse_us(volatile uint8_t *port, uint8_t pin, uint8_t state, uint32_t timeout);
+//unsigned long measure_pulse_us2(volatile uint8_t *port, uint8_t pin, uint8_t state, unsigned long timeout);
+//unsigned long measure_pulse_us3(volatile uint8_t *port, uint8_t pin, uint8_t state, unsigned long timeout);
 
 enum deviceId
 {
 	ACCEL		= 0x10,	// 1
 	COMPASS		= 0x20,	// 2
+	BAROMETER	= 0x40,	// 4
 	
 	IR			= 0x80,	// 8
 	US			= 0x90	// 9
@@ -63,18 +68,21 @@ inline void send_data(char id, uint16_t time, char *data, int size)
 	}
 }
 
+char report[16];
+
 //Tasks flash LEDs at Pins 12 and 13 at 1Hz and 2Hz respectively.
 void usart_process(void *p)
 {
-	/*#define print_number(x) itoa(x, report, 10); \
+	#define print_number(x) itoa(x, report, 10); \
 							for (i = 0; report[i] != 0; ++i) \
-								usart_send(report[i]);
+								debug_send(report[i]);
 	#define print_unumber(x)	utoa(x, report, 10); \
 								for (i = 0; report[i] != 0; ++i) \
-									usart_send(report[i]);
+									debug_send(report[i]);
 	
-	char report[16];
-	int i;*/
+	//#define print_number(x) for ()
+	
+	//int i;
 	char data[6];
 	while(1)
 	{
@@ -87,6 +95,7 @@ void usart_process(void *p)
 			data[4] = a_z>>8;
 			data[5] = a_z;
 			send_data(ACCEL, a_last_update, data, 6);
+			//debug_send('a');
 		}
 		
 		if (xSemaphoreTake(m_updated, 0) == pdTRUE)
@@ -98,6 +107,16 @@ void usart_process(void *p)
 			data[4] = m_z>>8;
 			data[5] = m_z;
 			send_data(COMPASS, m_last_update, data, 6);
+			//debug_send('m');
+		}
+		
+		if (xSemaphoreTake(ba_updated, 0) == pdTRUE)
+		{
+			data[0] = ba_p>>16;
+			data[1] = ba_p>>8;
+			data[2] = ba_p;
+			send_data(BAROMETER, ba_last_update, data, 3);
+			//debug_send('b');
 		}
 		
 		if (xSemaphoreTake(ir_updated, 0) == pdTRUE)
@@ -105,6 +124,7 @@ void usart_process(void *p)
 			data[0] = ir_dist>>8;
 			data[1] = ir_dist;
 			send_data(IR, ir_last_update, data, 2);
+			//debug_send('i');
 		}
 		
 		if (xSemaphoreTake(us_updated, 0) == pdTRUE)
@@ -112,40 +132,64 @@ void usart_process(void *p)
 			data[0] = us_dist>>8;
 			data[1] = us_dist;
 			send_data(US, us_last_update, data, 2);
+			//debug_send('u');
 		}
+		//vTaskDelay(1);
 		
 		/*data = usart_recv();
 		usart_send(data);*/
-		/*if( xSemaphoreTake( xUpdated, 10 ) == pdTRUE )
-		{
-			usart_send('a');
-			usart_send(':');
-			usart_send(' ');
+		//if( xSemaphoreTake( xUpdated, 10 ) == pdTRUE )
+		//{
+			/*xSemaphoreTake(a_updated, 0);
+			
+			xSemaphoreTake(m_updated, 0);
+			
+			xSemaphoreTake(ba_updated, 0);
+			
+			xSemaphoreTake(ir_updated, 0);
+			
+			xSemaphoreTake(us_updated, 0);*/
+			
+			/*data[0] = m_x>>8;
+			data[1] = m_x;
+			data[2] = m_y>>8;
+			data[3] = m_y;
+			data[4] = m_z>>8;
+			data[5] = m_z;
+			send_data(COMPASS, m_last_update, data, 6);
+			debug_send('a');
+			debug_send(':');
+			debug_send(' ');
 			print_number(a_x);
-			usart_send(' ');
+			debug_send(' ');
 			print_number(a_y);
-			usart_send(' ');
+			debug_send(' ');
 			print_number(a_z);
-			usart_send(' ');
-			usart_send('m');
-			usart_send(':');
-			usart_send(' ');
+			debug_send(' ');
+			debug_send('m');
+			debug_send(':');
+			debug_send(' ');
 			print_number(m_x);
-			usart_send(' ');
+			debug_send(' ');
 			print_number(m_y);
-			usart_send(' ');
+			debug_send(' ');
 			print_number(m_z);
-			usart_send(' ');
-			usart_send('d');
-			usart_send(':');
-			usart_send(' ');
-			print_unumber(ir_dist);
-			usart_send(' ');
-			print_unumber(us_dist);
-			usart_send('\r');
-			usart_send('\n');
-			vTaskDelay(1000);
-		}*/
+			debug_send(' ');
+			debug_send('p');
+			debug_send(':');
+			debug_send(' ');
+			print_number(ba_p);
+			debug_send(' ');
+			debug_send('d');
+			debug_send(':');
+			debug_send(' ');
+			//print_unumber(ir_dist);
+			debug_send(' ');
+			//print_unumber(us_dist);
+			debug_send('\r');
+			debug_send('\n');
+			vTaskDelay(100);*/
+		//}
 	}
 }
 
@@ -153,14 +197,19 @@ void twowire_process(void *p)
 {
 	twi_init();
 	lsm303_init();
+	lps25h_init();
 	while(1)
 	{
 		lsm303_read_acc(&a_x, &a_y, &a_z);
 		a_last_update = xTaskGetTickCount();
-		xSemaphoreGive( a_updated );
+		xSemaphoreGive(a_updated);
 		lsm303_read_mag(&m_x, &m_y, &m_z);
 		m_last_update = xTaskGetTickCount();
-		xSemaphoreGive( m_updated );
+		xSemaphoreGive(m_updated);
+		//vTaskDelay(5);
+		ba_p = lps25h_read();
+		ba_last_update = xTaskGetTickCount();
+		xSemaphoreGive(ba_updated);
 		vTaskDelay(10);
 	}
 }
@@ -172,17 +221,21 @@ void distir_process(void *p)
 	{
 		ir_dist = analog_read(0);
 		ir_last_update = xTaskGetTickCount();
-		xSemaphoreGive( ir_updated );
+		xSemaphoreGive(ir_updated);
 		vTaskDelay(100);
 	}
 }
 
 void distultrasound_process(void *p)
 {
+	#define US0_TIMEOUT 20000
+	#define US0_TIMEOUT_DELAY US0_TIMEOUT/10000*12
 	// PA 0 ** 22 ** D22 ECHO input 0
 	// PA 1 ** 23 ** D23 TRIG output 1
 	DDRA &= ~(1<<PA0);
 	DDRA |= (1<<PA1);
+	
+	DDRB |= (1<<PB7);
 	while(1)
 	{
 		PORTA &= ~(1<<PA1);
@@ -190,10 +243,15 @@ void distultrasound_process(void *p)
 		PORTA |= (1<<PA1);
 		delayus(10);
 		PORTA &= ~(1<<PA1);
-		us_dist = measure_pulse_us((volatile uint8_t *)&PINA, PA0, 1);
+		us_dist = measure_pulse_us((volatile uint8_t *)&PINA, PA0, 1, US0_TIMEOUT);
 		us_last_update = xTaskGetTickCount();
-		xSemaphoreGive( us_updated );
-		vTaskDelay(100-(us_dist>>10));
+		xSemaphoreGive(us_updated);
+		if ((us_dist>>10) > 50)
+			vTaskDelay(50);
+		else if (us_dist == 0)
+			vTaskDelay(100-US0_TIMEOUT_DELAY);
+		else
+			vTaskDelay(100-(us_dist>>10));
 	}
 }
 
@@ -207,12 +265,14 @@ void vApplicationIdleHook()
 
 int main(void)
 {
+	debug_init(115200);
 	usart_init(115200);
 	usart_send('s');
 	usart_send('\r');
 	usart_send('\n');
 	a_updated = xSemaphoreCreateBinary();
 	m_updated = xSemaphoreCreateBinary();
+	ba_updated = xSemaphoreCreateBinary();
 	ir_updated = xSemaphoreCreateBinary();
 	us_updated = xSemaphoreCreateBinary();
 	
@@ -248,6 +308,7 @@ void usart_init(unsigned long baud)
 
 void usart_send(char a)
 {
+	debug_send(a);
 	while ( !( UCSR3A & (1<<UDRE3)) );
 	UDR3 = a;
 }
@@ -280,36 +341,103 @@ int16_t analog_read(int pin)
 	return (h << 8) | l;
 }
 
-uint32_t loops, initial, final;
-uint8_t mask;
+#define clockCyclesPerMicrosecond() ( F_CPU / 1000000L )
+#define clockCyclesToMicroseconds(a) ( (a) / clockCyclesPerMicrosecond() )
+#define microsecondsToClockCycles(a) ( (a) * clockCyclesPerMicrosecond() )
 
-int16_t measure_pulse_us(volatile uint8_t *port, uint8_t pin, uint8_t state)
+uint32_t initial, ending;
+uint8_t mask;
+int32_t measure_pulse_us(volatile uint8_t *port, uint8_t pin, uint8_t state, uint32_t time_left)
 {
-	/*uint8_t stateMask = (state ? 1<<pin : 0);
+	mask = (1<<pin);
+	state <<= pin;
+	while (((*port)&mask) == state && time_left)
+		time_left--;
+	while (((*port)&mask) != state && time_left)
+		time_left--;
+	initial = (uint32_t)xTaskGetTickCount()*1000+(TCNT1>>1);
+	//initial = (uint32_t)xTaskGetTickCount()*1000+(TCNT0*4);
+	while (((*port)&mask) == state && time_left)
+		time_left--;
+	ending = (uint32_t)xTaskGetTickCount()*1000+(TCNT1>>1);
+	//ending = (uint32_t)xTaskGetTickCount()*1000+(TCNT0*4);
+	if (time_left) 
+	{
+		if (ending < initial)
+			ending += 0x3E80000;
+		return ending - initial;
+	}
+	return 0;
+}
+
+/*unsigned long measure_pulse_us2(volatile uint8_t *port, uint8_t pin, uint8_t state, unsigned long timeout)
+{
+	uint8_t stateMask = (state ? 1<<pin : 0);
 
 	// convert the timeout from microseconds to a number of times through
 	// the initial loop; it takes approximately 16 clock cycles per iteration
-	#define clockCyclesPerMicrosecond() ( F_CPU / 1000000L )
-	#define clockCyclesToMicroseconds(a) ( (a) / clockCyclesPerMicrosecond() )
-	#define microsecondsToClockCycles(a) ( (a) * clockCyclesPerMicrosecond() )
-	unsigned long maxloops = microsecondsToClockCycles(0x7FFF)/16;
+	unsigned long maxloops = microsecondsToClockCycles(timeout)/16;
 
 	unsigned long width = countPulseASM(port, 1<<pin, stateMask, maxloops);
 
 	// prevent clockCyclesToMicroseconds to return bogus values if countPulseASM timed out
 	if (width)
-		return clockCyclesToMicroseconds(width * 16 + 16);*/
-	mask = (1<<pin);
-	state <<= pin;
-	while (((*port)&mask) == state);
-	while (((*port)&mask) != state);
-	initial = xTaskGetTickCount()*1000+(TCNT1>>1);
-	//initial = xTaskGetTickCount()*1000+(TCNT0*4);
-	while (((*port)&mask) == state);
-	final = xTaskGetTickCount()*1000+(TCNT1>>1);
-	//final = xTaskGetTickCount()*1000+(TCNT0*4);
-	return final - initial;
+		return clockCyclesToMicroseconds(width * 16 + 16);
+	return timeout;
 }
+
+unsigned long measure_pulse_us3(volatile uint8_t *port, uint8_t pin, uint8_t state, unsigned long timeout)
+{
+	// cache the port and bit of the pin in order to speed up the
+	// pulse width measuring loop and achieve finer resolution.  calling
+	// digitalRead() instead yields much coarser resolution.
+	unsigned long width = 0; // keep initialization out of time critical area
+	
+	// convert the timeout from microseconds to a number of times through
+	// the initial loop; it takes 16 clock cycles per iteration.
+	unsigned long numloops = 0;
+	unsigned long maxloops = 0x0000FFFF;
+	
+	// wait for any previous pulse to end
+	while (((*port)&mask) == state)
+		if (numloops++ == maxloops)
+			return 1;
+	
+	// wait for the pulse to start
+	while (((*port)&mask) != state)
+		if (numloops++ == maxloops)
+			return 2;
+	
+	// wait for the pulse to stop
+	while (((*port)&mask) == state) {
+			if (numloops++ == maxloops)
+				return 3;
+			width++;
+	}
+
+	// convert the reading to microseconds. There will be some error introduced by
+	// the interrupt handlers.
+
+	// Conversion constants are compiler-dependent, different compiler versions
+	// have different levels of optimization.
+	#if __GNUC__==4 && __GNUC_MINOR__==3 && __GNUC_PATCHLEVEL__==2
+	// avr-gcc 4.3.2
+	return clockCyclesToMicroseconds(width * 21 + 16);
+	#elif __GNUC__==4 && __GNUC_MINOR__==8 && __GNUC_PATCHLEVEL__==1
+	// avr-gcc 4.8.1
+	return clockCyclesToMicroseconds(width * 24 + 16);
+	#elif __GNUC__<=4 && __GNUC_MINOR__<=3
+	// avr-gcc <=4.3.x
+	#warning "pulseIn() results may not be accurate"
+	return clockCyclesToMicroseconds(width * 21 + 16);
+	#else
+	// avr-gcc >4.3.x
+	#warning "pulseIn() results may not be accurate"
+	return clockCyclesToMicroseconds(width * 24 + 16);
+	#endif
+
+}*/
+
 
 void delayus(unsigned int us)
 {
