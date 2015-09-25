@@ -12,3 +12,4 @@ for i in range(com2L2.numElements):
 
 for i in range(com2L3.numElements):
     print com2L3.getLocationName(i)
+

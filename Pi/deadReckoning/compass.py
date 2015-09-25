@@ -2,7 +2,6 @@ from __future__ import division
 from collections import deque
 import math
 
-
 __author__ = 'Shao Fei'
 
 
@@ -44,15 +43,19 @@ class Compass:
         else:
             theta = math.atan(magX/magY)
             # If deviation in 1st quadrant
+            # theta > 0
             if magX > 0 and magY > 0:
                 heading = theta
             # If deviation in 2nd quadrant
+            # theta < 0
             elif magX > 0 and magY < 0:
                 heading = math.pi + theta
             # If deviation in 3rd quadrant
+            # theta > 0
             elif magX < 0 and magY < 0:
                 heading = math.pi + theta
             # If deviation in 4th quadrant
+            # theta < 0
             else:
                 heading = 2 * math.pi + theta
 
@@ -61,7 +64,7 @@ class Compass:
 
     # Public
     # Reading is in radians
-    def getHeading(self):
+    def getHeadingInRad(self):
         return self.currHeading
 
     # Public

@@ -1,4 +1,4 @@
-import compass
+import FindMyWay.Pi.deadReckoning.compass
 import random
 
 __author__ = 'Shao Fei'
@@ -7,7 +7,7 @@ FILE_DIR = 'testdata/comp_testdata.csv'
 
 
 def main():
-    comp = compass.Compass()
+    comp = FindMyWay.Pi.deadReckoning.compass.Compass()
     inputData(comp)
     return
 
@@ -23,7 +23,7 @@ def inputData(comp, shouldPrint):
         comp.updateReading(magX, magY)
         line = f.readline()
         if shouldPrint:
-            print("Degrees from N:", comp.getHeading())
+            print("Degrees from N:", comp.getHeadingInRad())
 
     f.close()
     return

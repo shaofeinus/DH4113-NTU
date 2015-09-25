@@ -29,6 +29,10 @@ class LocationTracker:
         return self.totalDistance
 
     # Public
+    def getHeadingInRad(self):
+        return self.compass.getHeadingInRad()
+
+    # Public
     def getHeadingInDeg(self):
         return self.compass.getHeadingInDeg()
 
@@ -54,7 +58,7 @@ class LocationTracker:
         distance = currSteps * self.STEP_DISTANCE
         self.totalDistance += distance
 
-        heading = self.compass.getHeading()
+        heading = self.compass.getHeadingInRad()
 
         xDistance = distance * math.sin(heading)
         yDistance = distance * math.cos(heading)

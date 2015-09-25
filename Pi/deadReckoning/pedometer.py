@@ -7,8 +7,8 @@ class Pedometer:
     # TODO: to be calibrated
     WINDOW_SIZE = 500                                       # window time = WINDOW_SIZE * WINDOW_INTERVAL_TIME
     WINDOW_INTERVAL_TIME = 10                               # in ms
-    ACC_REST = 1.0                                          # in Gs
-    ACC_THRESHOLD = 2.5                                     # in Gs
+    ACC_REST = 160                                          # in Gs
+    ACC_THRESHOLD = 20                                      # in Gs
     STEP_INTERVAL_TIME_LB = 100 / WINDOW_INTERVAL_TIME      # in ms
     STEP_INTERVAL_TIME_UB = 1000 / WINDOW_INTERVAL_TIME     # in ms
 
@@ -18,6 +18,7 @@ class Pedometer:
         self.stepCount = 0
         self.isPrevWindowEvenSteps = False
         self.prevLastStepToEndTime = -1
+        self.lastWindowReading = self.ACC_REST
 
     # Public #
     # To be called when reading corresponds to user at rest
@@ -30,6 +31,10 @@ class Pedometer:
     # To be called at < 100Hz
     def updateWindow(self, accX, accY, accZ, timeInMillis):
 
+        accX /= 10
+        accY /= 10
+        accZ /= 10
+
         # Update steps if window is full
         if len(self.accWindow) == self.WINDOW_SIZE:
             self.updateSteps()
@@ -37,35 +42,57 @@ class Pedometer:
         # Get resultant acceleration
         accR = float(math.sqrt(accX * accX + accY * accY + accZ * accZ))
 
+        # print(timeInMillis, accR)
+
         # Check if time elapsed from last update exceed limit
         if self.prevTime == -1:
-            timeElapsed = timeInMillis
+            timeElapsed = 0
         else:
             timeElapsed = timeInMillis - self.prevTime
 
+        # Time elapsed is negative, timestamp has overrun
+        if timeElapsed < 0:
+            timeElapsed = (4095 - self.prevTime) + timeInMillis
+
+        # Time elapsed from last reading is within limit
         if timeElapsed <= self.WINDOW_INTERVAL_TIME:
             self.accWindow.append(accR)
 
         # If time elapsed exceed limit
         else:
             # Get number of intervals to cover up extra time
-            numIntervals = math.ceil(timeElapsed / self.WINDOW_INTERVAL_TIME)
-            # Get the change in acc of each interval
-            accIntervalChange = (accR - self.accWindow[len(self.accWindow) - 1]) / numIntervals
+            # Use ceil as number of intervals at >= 1
+            numIntervals = int(math.ceil(timeElapsed / self.WINDOW_INTERVAL_TIME))
+
+            # Get the change in acc of each interval by looking for previous reading
+
+            # If accWindow is empty look for last reading in prev window
+            if len(self.accWindow) == 0:
+                accIntervalChange = (accR - self.lastWindowReading) / numIntervals
+
+            # If accWindow is not empty, look for last reading in current window
+            else:
+                accIntervalChange = (accR - self.accWindow[len(self.accWindow) - 1]) / numIntervals
 
             while numIntervals > 0:
                 # If window has reached its limit size
                 if len(self.accWindow) == self.WINDOW_SIZE:
-                    # Take note of last reading before clearing window
-                    lastReading = self.accWindow[self.WINDOW_SIZE-1]
                     # Update steps and clear window
                     self.updateSteps()
+                    self.accWindow.append(self.lastWindowReading + accIntervalChange)
+
+                # If window is empty
+                elif len(self.accWindow) == 0:
+                    self.accWindow.append(self.lastWindowReading + accIntervalChange)
+
                 else:
                     # Last reading is the last element in window
                     lastReading = self.accWindow[len(self.accWindow) - 1]
-                self.accWindow.append(lastReading + accIntervalChange)
+                    self.accWindow.append(lastReading + accIntervalChange)
+
                 numIntervals -= 1
 
+        # print(self.accWindow[len(self.accWindow)-1])
         self.prevTime = timeInMillis
         return
 
@@ -82,6 +109,7 @@ class Pedometer:
             # Count steps based on steps window
             self.stepCount += self.getStepsInWindow()
             # Clear the window after update to avoid double counting in the next update
+            self.lastWindowReading = self.accWindow[len(self.accWindow)-1]
             del self.accWindow[:]
         return
 
@@ -136,9 +164,9 @@ class Pedometer:
             j = 1
 
             # If start comparing at the last detection, will not go into while loop
-            if i + j >= len(stepsTime):
+            if i + j == len(stepsTime):
                 # Count last step to end time from this time stamp to end of accWindow
-                self.prevLastStepToEndTime = len(self.accWindow) - stepsTime[i] - 1
+                self.prevLastStepToEndTime = len(self.accWindow) - stepsTime[i]
 
             while i + j < len(stepsTime):
                 # If time interval between two detection is between range
@@ -154,28 +182,28 @@ class Pedometer:
                     i += j  # Skip to the later detection and continue comparing afresh
                     j = 1
                 # If detection being compared is the last one, record how many indexes is it to the end of window
-                if i == len(stepsTime) - 1 or i + j > len(stepsTime) - 1:
-                    self.prevLastStepToEndTime = len(self.accWindow) - stepsTime[i] - 1
+                if i == len(stepsTime) - 1 or i + j == len(stepsTime) - 1:
+                    self.prevLastStepToEndTime = len(self.accWindow) - stepsTime[i]
 
         # If only 1 detection
         elif len(stepsTime) == 1:
             # If there is no previous detection
             if self.prevLastStepToEndTime == -1:
-                self.prevLastStepToEndTime = len(self.accWindow) - stepsTime[0] - 1
+                self.prevLastStepToEndTime = len(self.accWindow) - stepsTime[0]
 
             # If detection is in range
             elif self.STEP_INTERVAL_TIME_LB <= self.prevLastStepToEndTime + stepsTime[0] <= self.STEP_INTERVAL_TIME_UB:
                 steps += 1      # Count steps
-                self.prevLastStepToEndTime = len(self.accWindow) - stepsTime[0] - 1
+                self.prevLastStepToEndTime = len(self.accWindow) - stepsTime[0]
 
             # If detection is too near the previous detection
             elif self.prevLastStepToEndTime + stepsTime[0] < self.STEP_INTERVAL_TIME_LB:
-                # Add the whole accWindow side
+                # Bypass this detection and add the whole accWindow size
                 self.prevLastStepToEndTime += len(self.accWindow)
 
             # If detection is too far from the previous detection
             else:
-                self.prevLastStepToEndTime = len(self.accWindow) - stepsTime[0] - 1
+                self.prevLastStepToEndTime = len(self.accWindow) - stepsTime[0]
 
         # If no detections
         else:

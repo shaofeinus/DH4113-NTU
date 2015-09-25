@@ -1,8 +1,8 @@
 import threading
-import queue
-import pedometer
-import compass
-import locationTracker
+import Queue
+import FindMyWay.Pi.deadReckoning.pedometer
+import FindMyWay.Pi.deadReckoning.compass
+import FindMyWay.Pi.deadReckoning.locationTracker
 import random
 import time
 
@@ -33,9 +33,9 @@ class LocationDisplayThread(threading.Thread):
     def run(self):
         while 1:
             lock.acquire()
-            print("Total Steps:", locationTracker.getTotalSteps())
-            print("Deviation from N:", locationTracker.getHeadingInDeg())
-            print(locationTracker.getLocation())
+            print("Total Steps:", FindMyWay.Pi.deadReckoning.locationTracker.getTotalSteps())
+            print("Deviation from N:", FindMyWay.Pi.deadReckoning.locationTracker.getHeadingInDeg())
+            print(FindMyWay.Pi.deadReckoning.locationTracker.getLocation())
             lock.release()
             time.sleep(1)
 
@@ -66,7 +66,7 @@ class LocationUpdateThread(threading.Thread):
             accY = values[2]
             accZ = values[3]
 
-            locationTracker.updatePedoData(float(accX), float(accY), float(accZ), int(timeInMillis))
+            FindMyWay.Pi.deadReckoning.locationTracker.updatePedoData(float(accX), float(accY), float(accZ), int(timeInMillis))
 
             line = f.readline()
 
@@ -79,7 +79,7 @@ class LocationUpdateThread(threading.Thread):
         magY = random.randint(-1000, 1000)
 
         lock.acquire()
-        locationTracker.updateCompassData(magX, magY)
+        FindMyWay.Pi.deadReckoning.locationTracker.updateCompassData(magX, magY)
         lock.release()
 
         return
@@ -90,14 +90,14 @@ class LocationUpdateThread(threading.Thread):
             self.updateCompassData()
 
             lock.acquire()
-            locationTracker.updateLocation()
+            FindMyWay.Pi.deadReckoning.locationTracker.updateLocation()
             lock.release()
 
             time.sleep(0.5)
 
 dataQueue = queue.Queue(1)
 
-locationTracker = locationTracker.LocationTracker(pedometer.Pedometer(), compass.Compass(), 0, 0)
+locationTracker = FindMyWay.Pi.deadReckoning.locationTracker.LocationTracker(FindMyWay.Pi.deadReckoning.pedometer.Pedometer(), FindMyWay.Pi.deadReckoning.compass.Compass(), 0, 0)
 
 lock = threading.Lock()
 

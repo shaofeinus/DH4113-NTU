@@ -45,12 +45,14 @@ def handshake():
     return connect_failed
 
 def printAll(dev_id, timeStamp, data_print):
-    print ("id: "),
-    print (dev_id),
-    print (", timeStamp: "),
-    print (timeStamp),
-    print (", data: "),
-    print (data_print)
+
+    if dev_id == 1:
+        print ("id: "),
+        print (dev_id),
+        print (", timeStamp: "),
+        print (timeStamp),
+        print (", data: "),
+        print (data_print)
 
 def receive_data():
     while True:

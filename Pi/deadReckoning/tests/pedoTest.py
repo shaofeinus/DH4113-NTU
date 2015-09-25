@@ -1,13 +1,12 @@
-import pedometer
+import FindMyWay.Pi.deadReckoning.pedometer
 
 __author__ = 'Shao Fei'
 
 FILE_DIR = 'testdata/pedo_testdata.csv'
 
 def main():
-    indvSteps = 0
     totalSteps = 0
-    pedo = pedometer.Pedometer()
+    pedo = FindMyWay.Pi.deadReckoning.pedometer.Pedometer()
 
     inputData(pedo)
     indvSteps = pedo.getStepCount()

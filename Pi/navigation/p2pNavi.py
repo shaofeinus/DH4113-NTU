@@ -28,12 +28,9 @@ class navigation (object) :
 ##        # set up GPIO using BCM numbering
 ##        GPIO.setmode(GPIO.BCM)
 ##
-##        # setup GPIO using Board numbering
-##        GPIO.setmode(GPIO.BOARD)
-##
-##        # GPIO Pins 11 and 13 set to pull up
+##        # GPIO Pins 9 and 10 set to pull up
 ##        GPIO.setup(leftPin, GPIO.OUT)
-##        GPIO.setup(righttPin, GPIO.OUT)
+##        GPIO.setup(rightPin, GPIO.OUT)
 ##
 ##        # initially turned off
 ##        GPIO.output(leftPin, True)
