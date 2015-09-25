@@ -11,7 +11,7 @@ serialPort.flushInput()
 serialPort.flushOutput()
 
 #CONSTANTS
-MAX_ATTEMPTS = 3;
+MAX_ATTEMPTS = 3
 handshake1 = 0x10101010
 handshake2 = 0x01010101
 handshake3 = 0x11110000
@@ -45,12 +45,14 @@ def handshake():
     return connect_failed
 
 def printAll(dev_id, timeStamp, data_print):
-    print ("id: "),
-    print (dev_id),
-    print (", timeStamp: "),
-    print (timeStamp),
-    print (", data: "),
-    print (data_print)
+
+    if dev_id == 1:
+        print ("id: "),
+        print (dev_id),
+        print (", timeStamp: "),
+        print (timeStamp),
+        print (", data: "),
+        print (data_print)
 
 def receive_data():
     while True:

@@ -30,7 +30,7 @@ class LocationTracker:
 
     # Public
     def getHeadingInDeg(self):
-        return self.compass.getHeadingInDeg()
+        return self.compass.getHeading()
 
     # Public
     def setLocation(self, x, y):

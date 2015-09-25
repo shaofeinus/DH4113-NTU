@@ -1,3 +1,4 @@
 .idea/
 Pi/deadReckoning/__pycache__/
 Pi/deadReckoning/__init__.py
+*.pyc

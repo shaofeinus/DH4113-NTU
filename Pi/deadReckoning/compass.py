@@ -2,7 +2,6 @@ from __future__ import division
 from collections import deque
 import math
 
-
 __author__ = 'Shao Fei'
 
 
