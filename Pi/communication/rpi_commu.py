@@ -103,7 +103,6 @@ def process_data():
             if dev_id == 1 or dev_id == 2:
                 data[dev_id].put(my_to_signed(dataTemp))
                 data_print.append(my_to_signed(dataTemp))
-
             else:
                 data[dev_id].put(dataTemp)
                 data_print.append(dataTemp)

@@ -77,8 +77,17 @@ class DataFeeder:
 
             dataTemp = dataTemp | data_in
 
-            if dev_id == 1 or dev_id == 2:
+            if dev_id == 4: #adds third byte for barometer reading
+                while self.in_queue.empty():
+                    continue
 
+                inQueueLock.acquire()
+                data_in = self.in_queue.get()
+                inQueueLock.release()
+
+                dataTemp = (dataTemp << 8) | data_in
+
+            if dev_id == 1 or dev_id == 2:
                 dataLock.acquire()
                 data[dev_id].put(self.my_to_signed(dataTemp))
                 dataLock.release()
