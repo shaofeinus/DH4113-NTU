@@ -18,9 +18,6 @@ lastTurnedDirection = 0
 # set up GPIO using BCM numbering
 ##GPIO.setmode(GPIO.BCM)
 
-# setup GPIO using Board numbering
-##GPIO.setmode(GPIO.BOARD)
-
 # GPIO Pins set to pull up
 ##GPIO.setup(leftPin, GPIO.OUT)
 ##GPIO.setup(righttPin, GPIO.OUT)

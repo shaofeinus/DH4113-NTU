@@ -65,7 +65,7 @@ class mapParser (object) :
                                             x2, y2, x1, y1, self.northAt)
         # returns the location of North
         def getNorthAt(self) :
-                return self.northAt
+                return int(self.northAt)
 
         # returns the name of the location at the index
         def getLocationName(self, index) : 
@@ -73,11 +73,11 @@ class mapParser (object) :
 
         # returns the x-coordinate of the location at the index
         def getLocationXCoord(self, index) :
-               return self.buildingMap['map'][index]['x']
+               return int(self.buildingMap['map'][index]['x'])
 
         # returns the y-coordinate of the location at the index
         def getLocationYCoord(self, index) :
-               return self.buildingMap['map'][index]['y']
+               return int(self.buildingMap['map'][index]['y'])
 
         # returns the angle between 2 points wrt North
         def getAngle(self, point1, point2) :
