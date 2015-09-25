@@ -1,17 +1,18 @@
-import pedometer
-import compass
-import locationTracker
+import time
+
+import FindMyWay.Pi.deadReckoning.pedometer
+import FindMyWay.Pi.deadReckoning.compass
+import FindMyWay.Pi.deadReckoning.locationTracker
 import pedoTest
 import compassTest
-import time
 
 __author__ = 'Shao Fei'
 
 def main():
 
-    pedo = pedometer.Pedometer()
-    comp = compass.Compass()
-    locT = locationTracker.LocationTracker(pedo, comp, 0, 0)
+    pedo = FindMyWay.Pi.deadReckoning.pedometer.Pedometer()
+    comp = FindMyWay.Pi.deadReckoning.compass.Compass()
+    locT = FindMyWay.Pi.deadReckoning.locationTracker.LocationTracker(pedo, comp, 0, 0)
 
     while 1:
         pedoTest.inputData(pedo)

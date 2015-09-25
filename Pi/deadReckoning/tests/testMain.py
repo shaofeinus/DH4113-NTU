@@ -1,6 +1,4 @@
-import locationTrackerTest
-import compassTest
-import pedoTest
+import pedoTest, compassTest, locationTrackerTest
 
 __author__ = 'Shao Fei'
 
