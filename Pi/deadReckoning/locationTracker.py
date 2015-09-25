@@ -33,6 +33,10 @@ class LocationTracker:
         return self.compass.getHeadingInRad()
 
     # Public
+    def getHeadingInDeg(self):
+        return self.compass.getHeadingInDeg()
+
+    # Public
     def setLocation(self, x, y):
         self.currX = x
         self.currY = y
