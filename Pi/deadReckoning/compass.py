@@ -64,7 +64,7 @@ class Compass:
 
     # Public
     # Reading is in radians
-    def getHeading(self):
+    def getHeadingInRad(self):
         return self.currHeading
 
     # Public

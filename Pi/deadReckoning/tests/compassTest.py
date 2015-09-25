@@ -23,7 +23,7 @@ def inputData(comp, shouldPrint):
         comp.updateReading(magX, magY)
         line = f.readline()
         if shouldPrint:
-            print("Degrees from N:", comp.getHeading())
+            print("Degrees from N:", comp.getHeadingInRad())
 
     f.close()
     return
