@@ -44,7 +44,7 @@ class LocationDisplayThread(threading.Thread):
             locationTrackerLock.acquire()
             locationTracker.updateLocation()
             print("Total Steps:", locationTracker.getTotalSteps())
-            print("Deviation from N:", locationTracker.getHeadingInDeg())
+            print("Deviation from N:", locationTracker.getHeadingInRad())
             print(locationTracker.getLocation())
             locationTrackerLock.release()
             time.sleep(1)

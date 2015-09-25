@@ -29,7 +29,7 @@ class LocationTracker:
         return self.totalDistance
 
     # Public
-    def getHeadingInDeg(self):
+    def getHeadingInRad(self):
         return self.compass.getHeadingInRad()
 
     # Public
