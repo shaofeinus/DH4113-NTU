@@ -1,29 +1,32 @@
-import obstacleAvoidance
 import distAngleCalc
 import math
 #import RPi.GPIO as GPIO
 
 # API:
-# startNavi()
+# updateCurCoord(x, y)
+# updateHeading(heading)
+# navigate()
+# TODO: Change the maxTolerance, maxDeviation, angleTolerance values
 
 class navigation (object) :
     def __init__(self, prevXCoord, prevYCoord, nexXCoord, nexYCoord, northAt) :
-        self.prevXCoord = int(prevXCoord)
-        self.prevYCoord = int(prevYCoord)
-        self.nexXCoord = int(nexXCoord)
-        self.nexYCoord = int(nexYCoord)
-        self.northAt = int(northAt)
-        self.curXCoord = 0
-        self.curYCoord = 0
+        self.prevXCoord = int(prevXCoord)   # cm
+        self.prevYCoord = int(prevYCoord)   # cm
+        self.nexXCoord = int(nexXCoord)     # cm
+        self.nexYCoord = int(nexYCoord)     # cm
+        self.northAt = int(northAt)         # 0 to 360 degrees
+        self.curXCoord = 0                  # cm
+        self.curYCoord = 0                  # cm
+        self.curAngle = 0                   # -180 to 180 degrees
         self.leftPin = 9
         self.rightPin = 10
 
         # deviation tolerance
-        self.maxDeviation = 50
+        self.maxDeviation = 50              # cm
         # vicinity tolerance
-        self.maxTolerance = 10
+        self.maxTolerance = 10              # cm
         # angle tolerance
-        self.angleTolerance = 15
+        self.angleTolerance = 15            # degrees
         
 ##        # set up GPIO using BCM numbering
 ##        GPIO.setmode(GPIO.BCM)
@@ -36,109 +39,99 @@ class navigation (object) :
 ##        GPIO.output(leftPin, True)
 ##        GPIO.output(rightPin, True)
 
+    def updateCurCoord(self, x, y) :
+        self.curXCoord = x
+        self.curYCoord = y
 
-    # calculates which direction (left or right) to turn
-    def getTurnDirection(self, curXCoord, curYCoord, curAngle) :
-        directionToHead = distAngleCalc.calcAngle(
-                curXCoord, curYCoord, self.nexXCoord, self.nexYCoord, self.northAt)
-        print ("direction to head: " + str(directionToHead) +
-               " current angle: " + str(curAngle))
-        # convert back to 0 - 360 degrees domain
-        if directionToHead < 0 :
-            directionToHead += 360
-        
-        if math.fabs(directionToHead - curAngle) < self.angleTolerance :
-            return "straight"
-            print "MOVE " + str(math.fabs(directionToHead - curAngle))
-        elif directionToHead > curAngle :
-            if (directionToHead - curAngle) < 180 :
-                return "right"
-            else :
-                return "left"
-        elif directionToHead < curAngle :
-            if (curAngle - directionToHead) < 180 :
-                return "left"
-            else :
-                return "right"
+    def updateHeading(self, heading) :
+        self.curAngle = heading
+
+    # calculates the angle to turn (-180 to 180)
+    def getTurnAngle(self) :
+        dirToHead = distAngleCalc.calcAngle(
+            self.curXCoord, self.curYCoord, self.nexXCoord, self.nexYCoord, self.northAt)
+        turnAngle = dirToHead - self.curAngle 
+        if turnAngle > 180 :
+            turnAngle -= 360
+        elif turnAngle <= -180 :
+            turnAngle += 360
+        return turnAngle
 
 
     # calculates the deviation from x-coordinate the person
     # is supposed to be, based on his current y-coordinate
-    def getEqnXDeviation(self, curX, curY) :
+    def getEqnXDeviation(self) :
         if ((self.nexYCoord - self.prevYCoord) == 0 or
             (self.nexXCoord - self.prevXCoord) == 0):
-            return math.fabs(self.nexXCoord - curX)
+            return math.fabs(self.nexXCoord - self.curXCoord)
         else :
             slope = (float(self.nexYCoord - self.prevYCoord)/(self.nexXCoord - self.prevXCoord))
-            correctX = self.nexXCoord - ((self.nexYCoord - curY) / slope)
-            return math.fabs(curX - correctX)
+            correctX = self.nexXCoord - ((self.nexYCoord - self.curYCoord) / slope)
+            return math.fabs(self.curXCoord - correctX)
+
 
     # calculates the y-coordinate the person is supposed to be
     # based on his current x-coordinate
-    def getEqnYDeviation(self, curX, curY) :
+    def getEqnYDeviation(self) :
         if ((self.nexYCoord - self.prevYCoord) == 0 or
             (self.nexXCoord - self.prevXCoord) == 0) :
-            return math.fabs(self.nexYCoord - curY)
+            return math.fabs(self.nexYCoord - self.curYCoord)
         else :
             slope = (float(self.nexYCoord - self.prevYCoord) / (self.nexXCoord - self.prevXCoord))
-            correctY = self.nexYCoord - ((self.nexXCoord - curX) * slope)
-            print "corY: " + str(correctY)
-            return math.fabs(curY - correctY)
+            correctY = self.nexYCoord - ((self.nexXCoord - self.curXCoord) * slope)
+            return math.fabs(self.curYCoord - correctY)
 
-    # navigation algorithm
-    def startNavi(self) :
+
+    # returns the angle to turn, after taking tolerances into account 
+    def getApproxTurnAngle(self) :
+        approxTurnAngle = 0      
         pathXDisp = math.fabs(self.nexXCoord - self.prevXCoord)  
         pathYDisp = math.fabs(self.nexYCoord - self.prevYCoord)
 
-        curXDisp = pathXDisp
-        curYDisp = pathYDisp
+        # horizontal and vertical displacements from correct path
+        xStray = self.getEqnXDeviation()
+        yStray = self.getEqnYDeviation()
 
-        # direction to move
-        turn = None
+        # check if the path to be traversed is more horizontal or vertical
+        # if horizontal, check the y displacement
+        # if vertical, check the x displacement
+        # if neither, check the current x and y displacement and use the larger            
+        if pathXDisp > pathYDisp :
+            if yStray > self.maxDeviation :
+                print "strayed in y-direction by: " + str(yStray)
+                approxTurnAngle = self.getTurnAngle()     
+        elif pathXDisp < pathYDisp :
+            if xStray > self.maxDeviation :
+                print "strayed in x-direction by: " + str(xStray)
+                approxTurnAngle = self.getTurnAngle()
+        else :
+            xTravelled = math.fabs(curXCoord - self.prevXCoord)
+            yTravelled = math.fabs(curYCoord - self.prevYCoord)
+            if xTravelled > yTravelled and yStray > self.maxDeviation :            
+                print "strayed by: " + str(yStray)
+                approxTurnAngle = self.getTurnAngle()
+            elif yTravelled > xTravelled and xStray > self.maxDeviation :
+                print "strayed by: " + str(xStray)
+                approxTurnAngle = self.getTurnAngle()
 
-        # loop until the destination is reached
-        # angle input from -180 to 180
-        while ((curXDisp > self.maxTolerance) or (curYDisp > self.maxTolerance)) :
-            curXCoord = float(raw_input("Enter current x coordinate: "))
-            curYCoord = float(raw_input("Enter current y coordinate: "))
-            curAngle = float(raw_input("Enter angle direction: "))
+        return approxTurnAngle
 
-            curXDisp = math.fabs(self.nexXCoord - curXCoord)  
-            curYDisp = math.fabs(self.nexYCoord - curYCoord)
 
-            turn = None
-            # check if the path to be traversed is more horizontal or vertical
-            # if horizontal, check the y displacement
-            # if vertical, check the x displacement
-            # if neither, check the current x and y displacement and use the larger
+    # navigation algorithm:
+    # If the destination node has been reached, return 1
+    # else return 0.  Guides the user which way to turn
+    # using the vibration motors
+    def navigate(self) :
+        curXDisp = math.fabs(self.nexXCoord - self.curXCoord)  
+        curYDisp = math.fabs(self.nexYCoord - self.curYCoord)
 
-            # horizontal and vertical displacements from correct path
-            xStray = self.getEqnXDeviation(curXCoord, curYCoord)
-            yStray = self.getEqnYDeviation(curXCoord, curYCoord)
-            
-            print "X stray = " + str(xStray) + " Y stray = " + str(yStray)
-            if pathXDisp > pathYDisp :
-                if yStray > self.maxDeviation :
-                    print "strayed in y-direction by: " + str(yStray)
-                    turn = self.getTurnDirection(curXCoord, curYCoord, curAngle)     
-            elif pathXDisp < pathYDisp :
-                if xStray > self.maxDeviation :
-                    print "strayed in x-direction by: " + str(xStray)
-                    turn = self.getTurnDirection(curXCoord, curYCoord, curAngle)
-            else :
-                xTravelled = math.fabs(curXCoord - self.prevXCoord)
-                yTravelled = math.fabs(curYCoord - self.prevYCoord)
-                if xTravelled > yTravelled and yStray > self.maxDeviation :            
-                    print "strayed by: " + str(yStray)
-                    turn = self.getTurnDirection(curXCoord, curYCoord, curAngle)
-                elif yTravelled > xTravelled and xStray > self.maxDeviation :
-                    print "strayed by: " + str(xStray)
-                    turn = self.getTurnDirection(curXCoord, curYCoord, curAngle)            
-            if turn == "right" :
+        if ((curXDisp > self.maxTolerance) or (curYDisp > self.maxTolerance)) :
+            turnAngle = self.getApproxTurnAngle()            
+            if turnAngle > 0 :
                 print "Move towards the right!"
         ##        GPIO.output(rightPin, False)
         ##        GPIO.output(leftPin, True)
-            elif turn == "left" :
+            elif turnAngle < 0 :
                 print "Move towards the left!"
         ##        GPIO.output(leftPin, False)
         ##        GPIO.output(rightPin, True)
@@ -147,5 +140,6 @@ class navigation (object) :
         ##        GPIO.output(leftPin, True)
         ##        GPIO.output(rightPin, True)
 
-        obstacleAvoidance.avoidObstacle()
-        print "Your destination has been reached!"
+            return 0
+        else :
+            return 1
