@@ -56,10 +56,12 @@ while True:
     print num
     if num == 11:
         print "del"
-        if len(out_str)>0:
-            out_str = out_str[:len(out_str)-1]
+        if num == prev_num:
+            if len(out_str)>0:
+                out_str = out_str[:len(out_str)-1]
         num_count = 0
         prev_num = 11
+
     elif num == 9:
         print "next"
         out_str += key_map[prev_num][num_count]
