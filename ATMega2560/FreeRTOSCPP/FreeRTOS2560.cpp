@@ -17,13 +17,15 @@ freertos2560.c
 #include "i2c.h"
 #include "PulseWidth.h"
 
+#define COUNT_IR 2
+#define COUNT_US 3
 
-SemaphoreHandle_t a_updated, m_updated, ba_updated, ir_updated, us_updated;
+SemaphoreHandle_t a_updated, m_updated, ba_updated, ir_updated, us1_updated, us2_updated, us3_updated;
 int32_t ba_p;
 int16_t a_x, a_y, a_z, m_x, m_y, m_z;
-uint16_t ir_dist;
-int32_t us_dist;
-uint32_t a_last_update, m_last_update, ba_last_update, ir_last_update, us_last_update;
+uint16_t ir1_dist, ir2_dist;
+int32_t us1_dist, us2_dist, us3_dist;
+uint32_t a_last_update, m_last_update, ba_last_update, ir1_last_update, ir2_last_update, us1_last_update, us2_last_update, us3_last_update;
 uint32_t ticks;
 
 //extern uint32_t countPulseASM(volatile uint8_t *port, uint8_t bit, uint8_t stateMask, unsigned long maxloops) __asm__("countPulseASM");
@@ -133,17 +135,36 @@ void usart_process(void *p)
 		
 		if (xSemaphoreTake(ir_updated, 0) == pdTRUE)
 		{
-			data[0] = ir_dist>>8;
-			data[1] = ir_dist;
-			send_data(IR1, ir_last_update, data, 2);
+			data[0] = ir1_dist>>8;
+			data[1] = ir1_dist;
+			send_data(IR1, ir1_last_update, data, 2);
+			data[0] = ir2_dist>>8;
+			data[1] = ir2_dist;
+			send_data(IR2, ir2_last_update, data, 2);
 			//debug_send('i');
 		}
 		
-		if (xSemaphoreTake(us_updated, 0) == pdTRUE)
+		if (xSemaphoreTake(us1_updated, 0) == pdTRUE)
 		{
-			data[0] = us_dist>>8;
-			data[1] = us_dist;
-			send_data(US1, us_last_update, data, 2);
+			data[0] = us1_dist>>8;
+			data[1] = us1_dist;
+			send_data(US1, us1_last_update, data, 2);
+			//debug_send('u');
+		}
+		
+		if (xSemaphoreTake(us2_updated, 0) == pdTRUE)
+		{
+			data[0] = us2_dist>>8;
+			data[1] = us2_dist;
+			send_data(US2, us2_last_update, data, 2);
+			//debug_send('u');
+		}
+		
+		if (xSemaphoreTake(us3_updated, 0) == pdTRUE)
+		{
+			data[0] = us3_dist>>8;
+			data[1] = us3_dist;
+			send_data(US3, us3_last_update, data, 2);
 			//debug_send('u');
 		}
 		
@@ -212,10 +233,10 @@ void twowire_process(void *p)
 	lsm303_init();
 	lps25h_init();
 	//start watchdog
-	wdt_enable(WDTO_60MS);
+	//wdt_enable(WDTO_60MS);
 	while(1)
 	{
-		wdt_reset();
+		//wdt_reset();
 		lsm303_read_acc(&a_x, &a_y, &a_z);
 		a_last_update = ticks;
 		xSemaphoreGive(a_updated);
@@ -238,10 +259,13 @@ void distir_process(void *p)
 	analog_init();
 	while(1)
 	{
-		ir_dist = analog_read(0);
-		ir_last_update = ticks;
+		ir1_dist = analog_read(0);
+		ir1_last_update = ticks;
+		vTaskDelay(50);
+		ir2_dist = analog_read(1);
+		ir2_last_update = ticks;
 		xSemaphoreGive(ir_updated);
-		vTaskDelay(100);
+		vTaskDelay(50);
 	}
 }
 
@@ -249,61 +273,101 @@ void distultrasound_process(void *p)
 {
 	#define US0_TIMEOUT 20000
 	#define US0_TIMEOUT_DELAY US0_TIMEOUT/10000*12
-	// PA 0 ** 22 ** D22 ECHO input 0
-	// PA 1 ** 23 ** D23 TRIG output 1
-	//pin 2		PE 4	INT4
-	//pin 3		PE 5	INT5
-	//pin 18	PD 3	INT3
-	//pin 19	PD 2	INT2
+	// PA 1 ** 23 ** D23
+	// PA 3 ** 25 ** D25
+	// PA 5 ** 27 ** D27
+	// PA 7 ** 29 ** D29
+	// pin 2	PE 4	INT4
+	// pin 3	PE 5	INT5
+	// pin 18	PD 3	INT3
+	// pin 19	PD 2	INT2
 	SemaphoreHandle_t result_updated = xSemaphoreCreateBinary();
-	//TickType_t last_wake = xTaskGetTickCount();
 	
 	DDRD &= ~(1<<PD2);
 	DDRD &= ~(1<<PD3);
 	DDRE &= ~(1<<PE4);
 	DDRE &= ~(1<<PE5);
 	
-	//DDRA &= ~(1<<PA0);
 	DDRA |= (1<<PA1);
+	DDRA |= (1<<PA3);
+	DDRA |= (1<<PA5);
+	DDRA |= (1<<PA7);
 	pulse_init();
 	while(1)
 	{
-		//vTaskSuspendAll();
-		PORTA &= ~(1<<PA1);
+		// pin 29 trig pin 19 echo
+		PORTA &= ~(1<<PA7);
 		delayus(2);
-		PORTA |= (1<<PA1);
+		PORTA |= (1<<PA7);
 		delayus(10);
-		PORTA &= ~(1<<PA1);
-		//us_dist = measure_pulse_us((volatile uint8_t *)&PINE, PE5, 1, US0_TIMEOUT);
-		/*if (us_dist != 0)
-			us_dist = (US0_TIMEOUT - us_dist)*12/10;*/
-		//us_last_update = xTaskGetTickCount();
-		//xSemaphoreGive(us_updated);
-		//xTaskResumeAll();
-		/*if ((us_dist>>10) > 50)
-			vTaskDelay(50);
-		else if (us_dist == 0)
-			vTaskDelay(100-US0_TIMEOUT_DELAY);
-		else
-			vTaskDelay(100-(us_dist>>10));*/
+		PORTA &= ~(1<<PA7);
 		xSemaphoreTake(result_updated, 0);
-		pulse_read(19, result_updated, &us_dist);
+		pulse_read(19, result_updated, &us1_dist);
 		if (xSemaphoreTake(result_updated, 20) == pdFALSE)
 		{
 			pulse_stop(19);
-			us_dist = 0;
+			us1_dist = 0;
 		}
-		us_last_update = ticks;
-		xSemaphoreGive(us_updated);
-		if (us_dist == 0)
-			vTaskDelay(80);
+		us1_last_update = ticks;
+		xSemaphoreGive(us1_updated);
+		if (us1_dist == 0)
+		{
+			vTaskDelay(13);
+		}
 		else
-			vTaskDelay(100-(us_dist>>10));
-		//vTaskDelayUntil(&last_wake, (TickType_t)100);
+		{
+			vTaskDelay(33-(us1_dist>>10));
+		}
+			
+		// pin 27 trig pin 18 echo
+		PORTA &= ~(1<<PA5);
+		delayus(2);
+		PORTA |= (1<<PA5);
+		delayus(10);
+		PORTA &= ~(1<<PA5);
+		xSemaphoreTake(result_updated, 0);
+		pulse_read(18, result_updated, &us2_dist);
+		if (xSemaphoreTake(result_updated, 20) == pdFALSE)
+		{
+			pulse_stop(18);
+			us2_dist = 0;
+		}
+		us2_last_update = ticks;
+		xSemaphoreGive(us2_updated);
+		if (us2_dist == 0)
+		{
+			vTaskDelay(13);	
+		}
+		else
+		{
+			vTaskDelay(33-(us2_dist>>10));
+		}
+		
+		// pin 25 trig pin 3 echo
+		PORTA &= ~(1<<PA3);
+		delayus(2);
+		PORTA |= (1<<PA3);
+		delayus(10);
+		PORTA &= ~(1<<PA3);
+		xSemaphoreTake(result_updated, 0);
+		pulse_read(2, result_updated, &us3_dist);
+		if (xSemaphoreTake(result_updated, 20) == pdFALSE)
+		{
+			pulse_stop(2);
+			us3_dist = 0;
+		}
+		us3_last_update = ticks;
+		xSemaphoreGive(us3_updated);
+		if (us3_dist == 0)
+		{
+			vTaskDelay(13);
+		}
+		else
+		{
+			vTaskDelay(33-(us3_dist>>10));
+		}
 	}
 }
-
-#define STACK_DEPTH 64
 
 extern "C" void vApplicationTickHook()
 {
@@ -332,8 +396,11 @@ void get_mcusr(void)
 	wdt_disable();
 }
 
+#define STACK_DEPTH 80 // tested 68 minimum
+
 int main()
 {
+	TaskHandle_t t1, t2, t3, t4;
 	ticks = 0;
 	
 	debug_init(115200);
@@ -342,13 +409,15 @@ int main()
 	debug_send(mcusr_mirror);
 	debug_send('\r');
 	debug_send('\n');
+	
 	a_updated = xSemaphoreCreateBinary();
 	m_updated = xSemaphoreCreateBinary();
 	ba_updated = xSemaphoreCreateBinary();
 	ir_updated = xSemaphoreCreateBinary();
-	us_updated = xSemaphoreCreateBinary();
+	us1_updated = xSemaphoreCreateBinary();	
+	us2_updated = xSemaphoreCreateBinary();	
+	us3_updated = xSemaphoreCreateBinary();	
 	
-	TaskHandle_t t1, t2, t3, t4;
 	//	Create tasks 
 	xTaskCreate(usart_process, "usart", STACK_DEPTH, NULL, 1, &t1);
 	xTaskCreate(twowire_process, "twowire", STACK_DEPTH, NULL, 3, &t2);
@@ -393,7 +462,13 @@ char usart_recv()
 
 void analog_init()
 {
-	ADCSRA = (1<<ADEN);
+	// ADC clock set to 1MHz
+	ADCSRA |= (1<<ADPS2);
+	ADCSRA &= ~(1<<ADPS1);
+	ADCSRA &= ~(1<<ADPS0);
+	ADCSRA |= (1<<ADEN);
+	// first conversion takes the longest
+	ADCSRA |= (1<<ADSC);
 }
 
 int16_t analog_read(int pin)
@@ -401,12 +476,13 @@ int16_t analog_read(int pin)
 	uint8_t h, l;
 	ADCSRB = (ADCSRB & ~(1 << MUX5)) | (((pin >> 3) & 0x01) << MUX5);
 	ADMUX = (0x01 << 6) | (pin & 0x07);	
+	
 	ADCSRA |= (1<<ADSC);
 
 	// ADSC is cleared when the conversion finishes
 	while (ADCSRA&(1<<ADSC));
 
-	l  = ADCL;
+	l = ADCL;
 	h = ADCH;
 
 	// combine the two bytes

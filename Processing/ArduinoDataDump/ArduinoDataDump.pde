@@ -201,7 +201,7 @@ void serialEvent(Serial thisPort) {
           device = (val[0]>>4)-6;
           ++ir_packets[device];
           last = ir_time[device];
-          time = ((val[device]&0x0F)<<8)|val[1];
+          time = ((val[0]&0x0F)<<8)|val[1];
           if (time < last)
             last = ((time|0x1000)-last);
           else
