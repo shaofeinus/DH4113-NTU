@@ -32,7 +32,7 @@ def getTurnDirection(curX, curY, nexX, nexY, curAngle, northAt) :
     return turnAngle
             
 
-building = raw_input("Enter building name (com1L2/com2L2/com2L3): ")
+building = int(raw_input("Enter building name (0-com1L2/1-com2L2/2-com2L3): "))
 startIndex = int(raw_input("Enter starting node: "))
 endIndex = int(raw_input("Enter ending node: "))
 
@@ -40,11 +40,11 @@ findPath = pathFinder()
 findPath.setMap(building)
 pathList = findPath.getPath(startIndex, endIndex)
 
-if building == "com1L2" :
+if building == 0 :
     comMap = mapParser("com1L2")
-elif building == "com2L2" :
+elif building == 1 :
     comMap = mapParser("com2L2")
-elif building == "com2L3" :
+elif building == 2 :
     comMap = mapParser("com2L3")
 
 numNodes = len(pathList)
@@ -79,15 +79,4 @@ while x != xDest or y != yDest :
     y = int(raw_input("Enter y: "))
     heading = int(raw_input("Enter heading: "))
 
-
-
-##for i in range(numNodes - 1) :
-##    northAt = com1L2.getNorthAt()
-##    prevX = com1L2.getLocationXCoord(i-1)
-##    prevY = com1L2.getLocationYCoord(i-1)
-##    nexX = com1L2.getLocationXCoord(i)
-##    nexY = com1L2.getLocationYCoord(i)
-##    
-##    path = navigation(prevX, prevY, nexX, nexY, northAt)
-##    path.startNavi()
     

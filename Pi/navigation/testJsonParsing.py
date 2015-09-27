@@ -13,3 +13,6 @@ for i in range(com2L2.numElements):
 for i in range(com2L3.numElements):
     print com2L3.getLocationName(i)
 
+    
+
+print "first location: " + str(com1L2.getLocationYCoord(0))

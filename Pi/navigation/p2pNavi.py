@@ -3,41 +3,33 @@ import math
 #import RPi.GPIO as GPIO
 
 # API:
+# setNorthAt(northAt)
+# setPrevCoordinates(x, y)
+# setNexCoordinates(x, y)
 # updateCurCoord(x, y)
 # updateHeading(heading)
 # navigate()
 # TODO: Change the maxTolerance, maxDeviation, angleTolerance values
 
 class navigation (object) :
-    def __init__(self, prevXCoord, prevYCoord, nexXCoord, nexYCoord, northAt) :
-        self.prevXCoord = int(prevXCoord)   # cm
-        self.prevYCoord = int(prevYCoord)   # cm
-        self.nexXCoord = int(nexXCoord)     # cm
-        self.nexYCoord = int(nexYCoord)     # cm
-        self.northAt = int(northAt)         # 0 to 360 degrees
-        self.curXCoord = 0                  # cm
-        self.curYCoord = 0                  # cm
-        self.curAngle = 0                   # -180 to 180 degrees
+    def __init__(self) :
+        self.prevXCoord = 0         # cm
+        self.prevYCoord = 0         # cm
+        self.nexXCoord = 0          # cm
+        self.nexYCoord = 0          # cm
+        self.northAt = 0            # 0 to 360 degrees
+        self.curXCoord = 0          # cm
+        self.curYCoord = 0          # cm
+        self.curAngle = 0           # -180 to 180 degrees
         self.leftPin = 9
         self.rightPin = 10
 
         # deviation tolerance
-        self.maxDeviation = 50              # cm
+        self.maxDeviation = 50       # cm
         # vicinity tolerance
-        self.maxTolerance = 10              # cm
+        self.maxTolerance = 10       # cm
         # angle tolerance
-        self.angleTolerance = 15            # degrees
-        
-##        # set up GPIO using BCM numbering
-##        GPIO.setmode(GPIO.BCM)
-##
-##        # GPIO Pins 9 and 10 set to pull up
-##        GPIO.setup(leftPin, GPIO.OUT)
-##        GPIO.setup(rightPin, GPIO.OUT)
-##
-##        # initially turned off
-##        GPIO.output(leftPin, True)
-##        GPIO.output(rightPin, True)
+        self.angleTolerance = 15     # degrees
 
     def updateCurCoord(self, x, y) :
         self.curXCoord = x
@@ -45,6 +37,17 @@ class navigation (object) :
 
     def updateHeading(self, heading) :
         self.curAngle = heading
+
+    def setNorthAt(self, northAt) :
+        self.northAt = northAt
+    
+    def setPrevCoordinates(self, prevXCoord, prevYCoord) :
+        self.prevXCoord = prevXCoord
+        self.prevYCoord = prevYCoord
+
+    def setNexCoordinates(self, nexXCoord, nexYCoord) :
+        self.nexXCoord = nexXCoord
+        self.nexYCoord = nexYCoord
 
     # calculates the angle to turn (-180 to 180)
     def getTurnAngle(self) :

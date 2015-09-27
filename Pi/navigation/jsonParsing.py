@@ -19,6 +19,7 @@ import distAngleCalc
 # getDistance(point1, point2)
 # printMatrix()
 # printJSONNodeData()
+# index is in the range {0 to n-1}
 
 class mapParser (object) :
         def __init__(self, mapName) :

@@ -5,9 +5,9 @@ from jsonParsing import mapParser
 #USAGE:
 #1) Create an instance of pathFinder object
 #2) Call setMap(mapNo) to set the map
-#       com1L2
-#       com2L2
-#       com3L3
+#       0 : com1L2
+#       1 : com2L2
+#       2 : com3L3
 #3) Call getPath(). Function returns path in a node sequence stored in list
 #       path starts from index 0
 #4) PROFIT $$$
@@ -99,21 +99,21 @@ class pathFinder (object) :
             path.reverse()
         return path
     
-    def setMap(self, mapName):
-##        self.mapNo = mapNo        
-##        if self.mapNo == 0:
-##            self.currMap = mapParser("com1L2")
-##        elif self.mapNo == 1:
-##            self.currMap = mapParser("com2L2")
-##        elif self.mapNo == 2:
-##            self.currMap = mapParser("com2L3")
-
-        if mapName == "com1L2" :
+    def setMap(self, mapNo):
+        self.mapNo = mapNo        
+        if self.mapNo == 0:
             self.currMap = mapParser("com1L2")
-        elif mapName == "com2L2" :
+        elif self.mapNo == 1:
             self.currMap = mapParser("com2L2")
-        elif mapName == "com2L3" :
+        elif self.mapNo == 2:
             self.currMap = mapParser("com2L3")
+
+##        if mapName == "com1L2" :
+##            self.currMap = mapParser("com1L2")
+##        elif mapName == "com2L2" :
+##            self.currMap = mapParser("com2L2")
+##        elif mapName == "com2L3" :
+##            self.currMap = mapParser("com2L3")
 
             
         self.NUM_NODES = self.currMap.numElements

@@ -7,6 +7,7 @@ import time
 class obstacleAvoidance (object) :
     def __init__(self) :       
         self.FRONT_OBSTACLE_DISTANCE = 60
+        self.BOTTOM_OBSTACLE_DISTANCE = 60
         self.SIDE_WALL_DISTANCE = 100
         self.SIDE_OBSTACLE_DISTANCE = 70
         self.VIBRATE_DURATION = 3
@@ -103,7 +104,9 @@ class obstacleAvoidance (object) :
         if alreadyDetected == 0 :
             if ((self.sonarTL < self.FRONT_OBSTACLE_DISTANCE) or
                 (self.sonarTR < self.FRONT_OBSTACLE_DISTANCE) or
-                (self.sonarC < self.FRONT_OBSTACLE_DISTANCE)) :
+                (self.sonarC < self.FRONT_OBSTACLE_DISTANCE) or
+                (self.irL < self.BOTTOM_OBSTACLE_DISTANCE) or
+                (self.irR < self.BOTTOM_OBSTACLE_DISTANCE)) :
                 return 1
             else :
                 return 0
@@ -116,7 +119,9 @@ class obstacleAvoidance (object) :
         print "ENTER FRONT AVOID OBSTACLE"
         if ((self.sonarTL < self.FRONT_OBSTACLE_DISTANCE) or
             (self.sonarTR < self.FRONT_OBSTACLE_DISTANCE) or
-            (self.sonarC < self.FRONT_OBSTACLE_DISTANCE)) :
+            (self.sonarC < self.FRONT_OBSTACLE_DISTANCE) or
+            (self.irL < self.BOTTOM_OBSTACLE_DISTANCE) or
+            (self.irR < self.BOTTOM_OBSTACLE_DISTANCE)) :
             return 1
         else :
             return 0
