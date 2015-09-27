@@ -23,9 +23,9 @@ class fullNavi(object) :
         self.mapNumber = 0
         self.startLocation = 0
         self.endLocation = 0
-        self.curX = 0
-        self.curY = 0
-        self.heading = 0
+        self.curX = 0               # cm
+        self.curY = 0               # cm
+        self.heading = 0            # -180 to 180 degrees
         
         self.pathList = []
         self.pathListIndex = 0

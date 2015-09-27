@@ -21,6 +21,14 @@ class LocationTracker:
         return {'x': self.currX, 'y': self.currY}
 
     # Public
+    def getXCoord(self):
+        return self.currX
+    
+    # Public
+    def getYCoord(self):
+        return self.currY
+
+    # Public
     def getTotalSteps(self):
         return self.totalSteps
 

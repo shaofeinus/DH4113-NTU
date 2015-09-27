@@ -49,13 +49,13 @@ class obstacleAvoidance (object) :
         self.sonarLS = left
         self.sonarRS = right
 
-    def updateIR(self, left, right) :
+    def updateIRData(self, left, right) :
         self.irL = left
         self.irR = right        
 
     # indicates which side to turn via motors
     def turnFromObstacle(self) :
-        print "ENTER TURN FROM OBSTACLE"
+##        print "ENTER TURN FROM OBSTACLE"
         self.lastTurnedDirection = self.getSideToTurn()
         if self.lastTurnedDirection == 1 :
     ##        GPIO.output(leftPin, True)
@@ -100,7 +100,7 @@ class obstacleAvoidance (object) :
     # if an obstacle is detected, vibrates both motors
     # and returns 1, else returns 0
     def isNewObstacleDetected(self, alreadyDetected) :
-        print "ENTER NEW AVOID OBSTACLE"
+##        print "ENTER NEW AVOID OBSTACLE"
         if alreadyDetected == 0 :
             if ((self.sonarTL < self.FRONT_OBSTACLE_DISTANCE) or
                 (self.sonarTR < self.FRONT_OBSTACLE_DISTANCE) or
@@ -116,7 +116,7 @@ class obstacleAvoidance (object) :
     # returns 1 if an obstacle is detected in front
     # else return 0
     def isFrontObstacleDetected(self) :
-        print "ENTER FRONT AVOID OBSTACLE"
+##        print "ENTER FRONT AVOID OBSTACLE"
         if ((self.sonarTL < self.FRONT_OBSTACLE_DISTANCE) or
             (self.sonarTR < self.FRONT_OBSTACLE_DISTANCE) or
             (self.sonarC < self.FRONT_OBSTACLE_DISTANCE) or
@@ -131,11 +131,11 @@ class obstacleAvoidance (object) :
     # until the obstacle is completely cleared
     # returns 1 if obstacle is cleared, 0 otherwise
     def checkObstacleCleared(self) :
-        print "ENTER CHECK OBSTACLE CLEARED"
+##        print "ENTER CHECK OBSTACLE CLEARED"
         if(self.lastTurnedDirection == 1) :
-            sideSonar = self.sonarTL
+            sideSonar = self.sonarLS
         else :
-            sideSonar = self.sonarTR
+            sideSonar = self.sonarRS
 
         if(sideSonar < self.SIDE_OBSTACLE_DISTANCE) :
             return 0
