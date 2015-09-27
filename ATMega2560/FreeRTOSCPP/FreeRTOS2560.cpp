@@ -52,8 +52,15 @@ enum deviceId
 	COMPASS		= 0x20,	// 2
 	BAROMETER	= 0x40,	// 4
 	
-	IR			= 0x80,	// 8
-	US			= 0x90,	// 9
+	IR1			= 0x60,	// 6
+	IR2			= 0x70,	// 7
+	IR3			= 0x80,	// 8
+	IR4			= 0x90,	// 9
+	
+	US1			= 0xB0,	// 11
+	US2			= 0xC0,	// 12
+	US3			= 0xD0,	// 13
+	US4			= 0xE0,	// 14
 };
 
 int freeRam() 
@@ -128,7 +135,7 @@ void usart_process(void *p)
 		{
 			data[0] = ir_dist>>8;
 			data[1] = ir_dist;
-			send_data(IR, ir_last_update, data, 2);
+			send_data(IR1, ir_last_update, data, 2);
 			//debug_send('i');
 		}
 		
@@ -136,7 +143,7 @@ void usart_process(void *p)
 		{
 			data[0] = us_dist>>8;
 			data[1] = us_dist;
-			send_data(US, us_last_update, data, 2);
+			send_data(US1, us_last_update, data, 2);
 			//debug_send('u');
 		}
 		
@@ -331,7 +338,7 @@ int main()
 	
 	debug_init(115200);
 	usart_init(115200);
-	debug_send('s');
+	debug_send('S');
 	debug_send(mcusr_mirror);
 	debug_send('\r');
 	debug_send('\n');
