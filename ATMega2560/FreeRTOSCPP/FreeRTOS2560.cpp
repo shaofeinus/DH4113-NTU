@@ -4,21 +4,27 @@ freertos2560.c
 *
 */
 #include <avr/io.h>
+#include <avr/wdt.h>
+
 #include <FreeRTOS.h>
 #include <task.h>
 #include <semphr.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "AltIMUv4.h"
 #include "i2c.h"
+#include "PulseWidth.h"
+
 
 SemaphoreHandle_t a_updated, m_updated, ba_updated, ir_updated, us_updated;
 int32_t ba_p;
 int16_t a_x, a_y, a_z, m_x, m_y, m_z;
 uint16_t ir_dist;
 int32_t us_dist;
-uint16_t a_last_update, m_last_update, ba_last_update, ir_last_update, us_last_update;
+uint32_t a_last_update, m_last_update, ba_last_update, ir_last_update, us_last_update;
+uint32_t ticks;
 
 //extern uint32_t countPulseASM(volatile uint8_t *port, uint8_t bit, uint8_t stateMask, unsigned long maxloops) __asm__("countPulseASM");
 
@@ -47,7 +53,7 @@ enum deviceId
 	BAROMETER	= 0x40,	// 4
 	
 	IR			= 0x80,	// 8
-	US			= 0x90	// 9
+	US			= 0x90,	// 9
 };
 
 int freeRam() 
@@ -68,21 +74,20 @@ inline void send_data(char id, uint16_t time, char *data, int size)
 	}
 }
 
-char report[16];
-
 //Tasks flash LEDs at Pins 12 and 13 at 1Hz and 2Hz respectively.
 void usart_process(void *p)
 {
-	#define print_number(x) itoa(x, report, 10); \
+	/*#define print_number(x) itoa(x, report, 10); \
 							for (i = 0; report[i] != 0; ++i) \
 								debug_send(report[i]);
 	#define print_unumber(x)	utoa(x, report, 10); \
 								for (i = 0; report[i] != 0; ++i) \
-									debug_send(report[i]);
+									debug_send(report[i]);*/
 	
 	//#define print_number(x) for ()
 	
 	//int i;
+	//char report[16];
 	char data[6];
 	while(1)
 	{
@@ -134,6 +139,7 @@ void usart_process(void *p)
 			send_data(US, us_last_update, data, 2);
 			//debug_send('u');
 		}
+		
 		//vTaskDelay(1);
 		
 		/*data = usart_recv();
@@ -198,18 +204,24 @@ void twowire_process(void *p)
 	twi_init();
 	lsm303_init();
 	lps25h_init();
+	//start watchdog
+	wdt_enable(WDTO_60MS);
 	while(1)
 	{
+		wdt_reset();
 		lsm303_read_acc(&a_x, &a_y, &a_z);
-		a_last_update = xTaskGetTickCount();
+		a_last_update = ticks;
 		xSemaphoreGive(a_updated);
 		lsm303_read_mag(&m_x, &m_y, &m_z);
-		m_last_update = xTaskGetTickCount();
+		m_last_update = ticks;
 		xSemaphoreGive(m_updated);
 		//vTaskDelay(5);
-		ba_p = lps25h_read();
-		ba_last_update = xTaskGetTickCount();
-		xSemaphoreGive(ba_updated);
+		if (ticks >= ba_last_update+80)
+		{
+			ba_p = lps25h_read();
+			ba_last_update = ticks;
+			xSemaphoreGive(ba_updated);	
+		}
 		vTaskDelay(10);
 	}
 }
@@ -220,7 +232,7 @@ void distir_process(void *p)
 	while(1)
 	{
 		ir_dist = analog_read(0);
-		ir_last_update = xTaskGetTickCount();
+		ir_last_update = ticks;
 		xSemaphoreGive(ir_updated);
 		vTaskDelay(100);
 	}
@@ -232,44 +244,97 @@ void distultrasound_process(void *p)
 	#define US0_TIMEOUT_DELAY US0_TIMEOUT/10000*12
 	// PA 0 ** 22 ** D22 ECHO input 0
 	// PA 1 ** 23 ** D23 TRIG output 1
-	DDRA &= ~(1<<PA0);
-	DDRA |= (1<<PA1);
+	//pin 2		PE 4	INT4
+	//pin 3		PE 5	INT5
+	//pin 18	PD 3	INT3
+	//pin 19	PD 2	INT2
+	SemaphoreHandle_t result_updated = xSemaphoreCreateBinary();
+	//TickType_t last_wake = xTaskGetTickCount();
 	
-	DDRB |= (1<<PB7);
+	DDRD &= ~(1<<PD2);
+	DDRD &= ~(1<<PD3);
+	DDRE &= ~(1<<PE4);
+	DDRE &= ~(1<<PE5);
+	
+	//DDRA &= ~(1<<PA0);
+	DDRA |= (1<<PA1);
+	pulse_init();
 	while(1)
 	{
+		//vTaskSuspendAll();
 		PORTA &= ~(1<<PA1);
 		delayus(2);
 		PORTA |= (1<<PA1);
 		delayus(10);
 		PORTA &= ~(1<<PA1);
-		us_dist = measure_pulse_us((volatile uint8_t *)&PINA, PA0, 1, US0_TIMEOUT);
-		us_last_update = xTaskGetTickCount();
-		xSemaphoreGive(us_updated);
-		if ((us_dist>>10) > 50)
+		//us_dist = measure_pulse_us((volatile uint8_t *)&PINE, PE5, 1, US0_TIMEOUT);
+		/*if (us_dist != 0)
+			us_dist = (US0_TIMEOUT - us_dist)*12/10;*/
+		//us_last_update = xTaskGetTickCount();
+		//xSemaphoreGive(us_updated);
+		//xTaskResumeAll();
+		/*if ((us_dist>>10) > 50)
 			vTaskDelay(50);
 		else if (us_dist == 0)
 			vTaskDelay(100-US0_TIMEOUT_DELAY);
 		else
+			vTaskDelay(100-(us_dist>>10));*/
+		xSemaphoreTake(result_updated, 0);
+		pulse_read(19, result_updated, &us_dist);
+		if (xSemaphoreTake(result_updated, 20) == pdFALSE)
+		{
+			pulse_stop(19);
+			us_dist = 0;
+		}
+		us_last_update = ticks;
+		xSemaphoreGive(us_updated);
+		if (us_dist == 0)
+			vTaskDelay(80);
+		else
 			vTaskDelay(100-(us_dist>>10));
+		//vTaskDelayUntil(&last_wake, (TickType_t)100);
 	}
 }
 
-
 #define STACK_DEPTH 64
+
+extern "C" void vApplicationTickHook()
+{
+	++ticks;
+}
+
+uint32_t get_ticks()
+{
+	return ticks;
+}
 
 void vApplicationIdleHook()
 {
 	// Do nothing.
 }
 
-int main(void)
+uint8_t mcusr_mirror __attribute__ ((section (".noinit")));
+
+void get_mcusr(void) \
+__attribute__((naked)) \
+__attribute__((section(".init1")));
+void get_mcusr(void)
 {
+	mcusr_mirror = MCUSR;
+	MCUSR = 0;
+	wdt_disable();
+}
+
+int main()
+{
+	ticks = 0;
+	
 	debug_init(115200);
 	usart_init(115200);
-	usart_send('s');
-	usart_send('\r');
-	usart_send('\n');
+	debug_send('s');
+	debug_send(mcusr_mirror);
+	debug_send('\r');
+	debug_send('\n');
 	a_updated = xSemaphoreCreateBinary();
 	m_updated = xSemaphoreCreateBinary();
 	ba_updated = xSemaphoreCreateBinary();
@@ -279,7 +344,7 @@ int main(void)
 	TaskHandle_t t1, t2, t3, t4;
 	//	Create tasks 
 	xTaskCreate(usart_process, "usart", STACK_DEPTH, NULL, 1, &t1);
-	xTaskCreate(twowire_process, "twowire", STACK_DEPTH, NULL, 2, &t2);
+	xTaskCreate(twowire_process, "twowire", STACK_DEPTH, NULL, 3, &t2);
 	xTaskCreate(distir_process, "distir", STACK_DEPTH, NULL, 2, &t3);
 	xTaskCreate(distultrasound_process, "distus", STACK_DEPTH, NULL, 2, &t4);
 	
@@ -341,14 +406,11 @@ int16_t analog_read(int pin)
 	return (h << 8) | l;
 }
 
-#define clockCyclesPerMicrosecond() ( F_CPU / 1000000L )
-#define clockCyclesToMicroseconds(a) ( (a) / clockCyclesPerMicrosecond() )
-#define microsecondsToClockCycles(a) ( (a) * clockCyclesPerMicrosecond() )
 
-uint32_t initial, ending;
-uint8_t mask;
 int32_t measure_pulse_us(volatile uint8_t *port, uint8_t pin, uint8_t state, uint32_t time_left)
 {
+	uint32_t initial, ending;
+	uint8_t mask;
 	mask = (1<<pin);
 	state <<= pin;
 	while (((*port)&mask) == state && time_left)
@@ -370,7 +432,11 @@ int32_t measure_pulse_us(volatile uint8_t *port, uint8_t pin, uint8_t state, uin
 	return 0;
 }
 
-/*unsigned long measure_pulse_us2(volatile uint8_t *port, uint8_t pin, uint8_t state, unsigned long timeout)
+/*
+#define clockCyclesPerMicrosecond() ( F_CPU / 1000000L )
+#define clockCyclesToMicroseconds(a) ( (a) / clockCyclesPerMicrosecond() )
+#define microsecondsToClockCycles(a) ( (a) * clockCyclesPerMicrosecond() )
+unsigned long measure_pulse_us2(volatile uint8_t *port, uint8_t pin, uint8_t state, unsigned long timeout)
 {
 	uint8_t stateMask = (state ? 1<<pin : 0);
 
@@ -488,6 +554,8 @@ char debug_recv()
 	while ( !(UCSR0A & (1<<RXC0)) );
 	return UDR0;
 }
+
+
 
 /*
 const uint8_t PROGMEM digital_pin_to_port_PGM[] = {
