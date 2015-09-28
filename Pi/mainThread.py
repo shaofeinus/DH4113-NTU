@@ -3,6 +3,7 @@ import time
 import datetime
 from deadReckoning import pedometer
 from deadReckoning import compass
+from deadReckoning import barometer
 from deadReckoning import locationTracker
 from navigation import fullNavi
 from navigation import obstacleAvoidance
@@ -48,6 +49,7 @@ class LocationDisplayThread(threading.Thread):
             print("Total Steps:", locationTracker.getTotalSteps())
             print("Deviation from N:", locationTracker.getHeadingInDeg())
             print(locationTracker.getLocation())
+            print("Height:", locationTracker.getHeightInCM())
             time.sleep(1)
 
 
@@ -58,6 +60,7 @@ class LocationUpdateThread(threading.Thread):
         self.threadName = threadName
         self.totalPedoData = 0
         self.totalCompData = 0
+        self.totalBaroData = 0
         self.magX = 1
         self.magY = 1
         self.magZ = 1
@@ -66,6 +69,8 @@ class LocationUpdateThread(threading.Thread):
         self.accY = 1
         self.accZ = 1
         self.timeInMillisPedo = 0
+        self.baroReading = 1
+        self.timeInMillisBaro = 0
 
     def updatePedoData(self):
         if len(data[1]) == 0:
@@ -111,10 +116,27 @@ class LocationUpdateThread(threading.Thread):
             locationTracker.updateCompassData(self.magY, self.magX)
             self.totalCompData = 0
 
+    def updateBaroData(self):
+
+        if len(data[4]) == 0:
+            return
+        elif self.totalBaroData == 0:
+            self.timeInMillisBaro = data[4].popleft()
+            self.totalBaroData += 1
+        elif self.totalBaroData == 1:
+            self.baroReading = data[4].popleft()
+            self.totalBaroData += 1
+
+        if self.totalBaroData == 2:
+            # print "timeStamp:", self.timeInMillisBaro, "Reading:", self.baroReading, datetime.datetime.now()
+            locationTracker.updateBarometerData(self.baroReading)
+            self.totalBaroData = 0
+
     def run(self):
         while 1:
             self.updatePedoData()
             self.updateCompassData()
+            self.updateBaroData()
             continue
 
 
@@ -268,7 +290,7 @@ navi.generateFullPath(0, 1, 5)
 
 # Location tracker initialisation
 # TODO: Set initial position
-locationTracker = locationTracker.LocationTracker(pedometer.Pedometer(), compass.Compass(), 0, 0)
+locationTracker = locationTracker.LocationTracker(pedometer.Pedometer(), compass.Compass(), barometer.Barometer(), 0, 0)
 dataFeeder = dataFeeder.DataFeeder()
 
 # Locks for various variables
