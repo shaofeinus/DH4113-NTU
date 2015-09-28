@@ -1,5 +1,6 @@
 from serial import Serial
-from Queue import Queue
+import Queue
+import datetime
 
 __author__ = 'Shao Fei'
 
@@ -23,12 +24,16 @@ class DataFeeder:
         self.handshake3 = None
 
     def receive_data(self, inQueueLock):
-        data_input = [0]
-        if self.serialPort.inWaiting() > 0:
-            self.serialPort.readinto(data_input)
-            inQueueLock.acquire()
-            self.in_queue.put(int(ord(data_input[0])))
-            inQueueLock.release()
+        numBytes = self.serialPort.inWaiting()
+        #print numBytes
+        if numBytes > 0:
+            data_input = self.serialPort.read(numBytes)
+            charList = list(data_input)
+            for i in range(numBytes):
+                # inQueueLock.acquire()
+                self.in_queue.put(int(ord(charList[i])))
+                inQueueLock.release()
+
 
     def my_to_signed(self, num):
         if num >> 15 == 1:
@@ -37,69 +42,86 @@ class DataFeeder:
             return -num
         return num
 
+
+    def printAll(self, dev_id, timeStamp, data_print):
+        if dev_id == 2:
+            print ("id: "),
+            print (dev_id),
+            print (", timeStamp: "),
+            print (timeStamp),
+            print (", data: "),
+            print (data_print),
+            print (datetime.datetime.now())
+
     def process_data(self, data, inQueueLock, dataLock):
 
-        while self.in_queue.empty():
-            continue
+        # while self.in_queue.empty():
+        #     continue
 
         inQueueLock.acquire()
         data_in = self.in_queue.get()
-        inQueueLock.release()
+        # inQueueLock.release()
 
         dev_id = (data_in >> 4)
         timeStamp = ((data_in & 0xF) << 8)
 
-        while self.in_queue.empty():
-            continue
+        # while self.in_queue.empty():
+        #     continue
 
         inQueueLock.acquire()
         data_in = self.in_queue.get()
-        inQueueLock.release()
+        # inQueueLock.release()
 
         timeStamp = timeStamp | data_in
 
-        dataLock.acquire()
+        #dataLock.acquire()
         data[dev_id].put(timeStamp)
-        dataLock.release()
+        #dataLock.release()
+
+        data_print = []
 
         for x in range(self.num_bytes[dev_id]):
-            while self.in_queue.empty():
-                continue
+            # while self.in_queue.empty():
+            #     continue
 
             inQueueLock.acquire()
             data_in = self.in_queue.get()
-            inQueueLock.release()
+            # inQueueLock.release()
 
             dataTemp = data_in << 8
 
-            while self.in_queue.empty():
-                continue
+            # while self.in_queue.empty():
+            #     continue
 
             inQueueLock.acquire()
             data_in = self.in_queue.get()
-            inQueueLock.release()
+            # inQueueLock.release()
 
             dataTemp = dataTemp | data_in
 
             if dev_id == 4: #adds third byte for barometer reading
-                while self.in_queue.empty():
-                    continue
+                # while self.in_queue.empty():
+                #     continue
 
                 inQueueLock.acquire()
                 data_in = self.in_queue.get()
-                inQueueLock.release()
+                # inQueueLock.release()
 
                 dataTemp = (dataTemp << 8) | data_in
 
             if dev_id == 1 or dev_id == 2:
-                dataLock.acquire()
+                #dataLock.acquire()
                 data[dev_id].put(self.my_to_signed(dataTemp))
                 dataLock.release()
+                data_print.append(self.my_to_signed(dataTemp))
 
             else:
-                dataLock.acquire()
+                #dataLock.acquire()
                 data[dev_id].put(dataTemp)
                 dataLock.release()
+                data_print.append(dataTemp)
+
+        self.printAll(dev_id, timeStamp, data_print)
 
     def handshake(self):
         self.serialPort.write(self.handshake1)

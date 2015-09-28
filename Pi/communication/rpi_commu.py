@@ -1,6 +1,7 @@
 from serial import Serial
 import threading
 import Queue
+import datetime
 
 serialPort = Serial(port="/dev/ttyAMA0", baudrate=115200, timeout=2)
 
@@ -46,19 +47,25 @@ def handshake():
 
 def printAll(dev_id, timeStamp, data_print):
 
-    if dev_id == 1:
+    if dev_id == 2:
         print ("id: "),
         print (dev_id),
         print (", timeStamp: "),
         print (timeStamp),
         print (", data: "),
-        print (data_print)
+        print (data_print),
+        print datetime.datetime.now()
 
 def receive_data():
+    data_input = 0
     while True:
-        if serialPort.inWaiting() > 0:
-            serialPort.readinto(data_input)
-            in_queue.put(int(ord(data_input[0])))
+        numBytes = serialPort.inWaiting()
+        #print numBytes
+        if numBytes > 0:
+            data_input = serialPort.read(numBytes)
+            charList = list(data_input)
+            for i in range(numBytes):
+                in_queue.put(int(ord(charList[i])))
 
 def my_to_signed(num):
     if num >> 15 == 1:
@@ -111,7 +118,7 @@ def process_data():
 
 
 n = 10
-data_input = [0]
+#data_input = ""#[0]
 
 read_data_thread = threading.Thread(target=receive_data)
 process_data_thread = threading.Thread(target=process_data)

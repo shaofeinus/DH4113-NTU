@@ -5,7 +5,7 @@ from deadReckoning import compass
 from deadReckoning import locationTracker
 from navigation import fullNavi
 from navigation import obstacleAvoidance
-# from communication import dataFeeder
+from communication import dataFeeder
 from communication import dataFeederDum
 import time
 
@@ -49,7 +49,7 @@ class LocationDisplayThread(threading.Thread):
             print("Deviation from N:", locationTracker.getHeadingInDeg())
             print(locationTracker.getLocation())
             locationTrackerLock.release()
-            time.sleep(1)
+            time.sleep(1000)
 
 
 class LocationUpdateThread(threading.Thread):
@@ -64,7 +64,7 @@ class LocationUpdateThread(threading.Thread):
         while self.totalPedoData < 4:
             dataLock.acquire()
             if data[1].empty():
-                dataLock.release()
+                #dataLock.release()
                 continue
             elif self.totalPedoData == 0:
                 timeInMillis = data[1].get()
@@ -75,7 +75,7 @@ class LocationUpdateThread(threading.Thread):
             elif self.totalPedoData == 3:
                 accZ = data[1].get()
             self.totalPedoData += 1
-            dataLock.release()
+            #dataLock.release()
 
         self.totalPedoData = 0
 
@@ -88,7 +88,7 @@ class LocationUpdateThread(threading.Thread):
         while self.totalCompData < 4:
             dataLock.acquire()
             if data[2].empty():
-                dataLock.release()
+                #dataLock.release()
                 continue
             elif self.totalCompData == 0:
                 timeInMillis = data[2].get()
@@ -99,7 +99,7 @@ class LocationUpdateThread(threading.Thread):
             elif self.totalCompData == 3:
                 magZ = data[2].get()
             self.totalCompData += 1
-            dataLock.release()
+            #dataLock.release()
 
         self.totalCompData = 0
 
@@ -107,11 +107,14 @@ class LocationUpdateThread(threading.Thread):
         locationTracker.updateCompassData(magY, magZ)
         locationTrackerLock.release()
 
+        print timeInMillis
+
     def run(self):
         while 1:
             #print("updating")
             self.updatePedoData()
             self.updateCompassData()
+            continue
 
 class NavigationThread(threading.Thread):
     def __init__(self, threadID, threadName):
@@ -262,10 +265,10 @@ NUM_ID = 16
 data = [Queue.Queue() for x in range(NUM_ID)]
 
 locationTracker = locationTracker.LocationTracker(pedometer.Pedometer(), compass.Compass(), 0, 0)
-dataFeeder = dataFeederDum.DataFeederDum()
+dataFeeder = dataFeeder.DataFeeder()
 
-inQueueLock = threading.Lock()
-dataLock = threading.Lock()
+inQueueLock = threading.Semaphore()
+dataLock = threading.Semaphore()
 locationTrackerLock = threading.Lock()
 obstacleLock = threading.Lock()
 obstacleStatusLock = threading.Lock()
@@ -276,9 +279,9 @@ threads.append(ReceiveDataThread(1, "data receiving"))
 threads.append(ProcessDataThread(2, "data processing"))
 threads.append(LocationUpdateThread(3, "location update"))
 threads.append(LocationDisplayThread(4, "location display"))
-threads.append(NavigationThread(5, "navigation"))
-threads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
-threads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
+#threads.append(NavigationThread(5, "navigation"))
+#threads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
+#threads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
 
 for thread in threads:
     thread.start()
