@@ -40,11 +40,17 @@ class mapParser (object) :
                 return map[identifier]
 
         def loadMap(self, mapName) :
-            jsonMap = urllib2.urlopen(self.mapUrl(mapName))
-            self.buildingMap = json.load(jsonMap)
-            self.northAt = int(self.buildingMap['info']['northAt'])
-            self.numElements = len(self.buildingMap.get('map'))
-            self.matrix = [[0]*self.numElements for i in range(self.numElements)]
+                # json file input (server)
+##                jsonMap = urllib2.urlopen(self.mapUrl(mapName))
+##                self.buildingMap = json.load(jsonMap)
+                # json file input (non-server)
+                mapName += ".json"
+                with open(mapName) as jsonMap:
+                        self.buildingMap = json.load(jsonMap)
+                        
+                self.northAt = int(self.buildingMap['info']['northAt'])
+                self.numElements = len(self.buildingMap.get('map'))
+                self.matrix = [[0]*self.numElements for i in range(self.numElements)]
 
         
         def fillAMatrix(self) :
