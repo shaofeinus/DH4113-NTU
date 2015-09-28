@@ -18,6 +18,10 @@ class DataFeeder:
         self.serialPort.flushInput()
         self.serialPort.flushOutput()
 
+        self.handshake1 = None
+        self.handshake2 = None
+        self.handshake3 = None
+
     def receive_data(self, inQueueLock):
         data_input = [0]
         if self.serialPort.inWaiting() > 0:
@@ -96,3 +100,21 @@ class DataFeeder:
                 dataLock.acquire()
                 data[dev_id].put(dataTemp)
                 dataLock.release()
+
+    def handshake(self):
+        self.serialPort.write(self.handshake1)
+
+        while self.serialPort.inWaiting() <= 0:
+            continue
+        receive_handshake = [0]
+        self.serialPort.readinto(receive_handshake)
+        while receive_handshake[0] != self.handshake2:
+            print "handshake2 not received: ", receive_handshake[0]
+            print "re-sending handshake1..."
+            self.serialPort.write(self.handshake1)
+            while self.serialPort.inWaiting() <= 0:
+                continue
+            self.serialPort.readinto(receive_handshake)
+
+
+        self.serialPort.write(self.handshake3)
