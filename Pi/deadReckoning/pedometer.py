@@ -108,7 +108,7 @@ class Pedometer:
     def updateSteps(self):
 
         # For Debug
-        print self.accWindow
+        # print self.accWindow
 
         if len(self.accWindow) != 0:
             # Count steps based on steps window
