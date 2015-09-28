@@ -7,9 +7,9 @@ class Pedometer:
     # TODO: to be calibrated
     WINDOW_SIZE = 500                                       # window time = WINDOW_SIZE * WINDOW_INTERVAL_TIME
     WINDOW_INTERVAL_TIME = 10                               # in ms
-    ACC_REST = 160                                          # in Gs
-    ACC_THRESHOLD = 20                                      # in Gs
-    STEP_INTERVAL_TIME_LB = 100 / WINDOW_INTERVAL_TIME      # in ms
+    ACC_REST = 150                                          # in Gs
+    ACC_THRESHOLD = 40                                     # in Gs
+    STEP_INTERVAL_TIME_LB = 150 / WINDOW_INTERVAL_TIME      # in ms
     STEP_INTERVAL_TIME_UB = 1000 / WINDOW_INTERVAL_TIME     # in ms
 
     def __init__(self):
@@ -31,16 +31,17 @@ class Pedometer:
     # To be called at < 100Hz
     def updateWindow(self, accX, accY, accZ, timeInMillis):
 
-        accX /= 10
-        accY /= 10
-        accZ /= 10
+        accX /= 100
+        accY /= 100
+        accZ /= 100
 
         # Update steps if window is full
         if len(self.accWindow) == self.WINDOW_SIZE:
             self.updateSteps()
 
         # Get resultant acceleration
-        accR = float(math.sqrt(accX * accX + accY * accY + accZ * accZ))
+        # accR = float(math.sqrt(accX * accX + accY * accY + accZ * accZ))
+        accR = float(math.sqrt(accX * accX + accZ * accZ))
 
         # print(timeInMillis, accR)
 
@@ -105,6 +106,10 @@ class Pedometer:
         return stepCount
 
     def updateSteps(self):
+
+        # For Debug
+        print self.accWindow
+
         if len(self.accWindow) != 0:
             # Count steps based on steps window
             self.stepCount += self.getStepsInWindow()

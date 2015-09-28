@@ -1,5 +1,6 @@
 import threading
-import Queue
+import time
+import datetime
 from deadReckoning import pedometer
 from deadReckoning import compass
 from deadReckoning import locationTracker
@@ -7,13 +8,13 @@ from navigation import fullNavi
 from navigation import obstacleAvoidance
 from communication import dataFeeder
 from communication import dataFeederDum
-import time
+from collections import deque
+
 
 __author__ = 'Shao Fei'
 
 
 class ReceiveDataThread(threading.Thread):
-
     def __init__(self, threadID, threadName):
         threading.Thread.__init__(self)
         self.threadID = threadID
@@ -21,7 +22,7 @@ class ReceiveDataThread(threading.Thread):
 
     def run(self):
         while True:
-            dataFeeder.receive_data(inQueueLock)
+            dataFeeder.receive_data()
 
 
 class ProcessDataThread(threading.Thread):
@@ -32,7 +33,7 @@ class ProcessDataThread(threading.Thread):
 
     def run(self):
         while True:
-            dataFeeder.process_data(data, inQueueLock, dataLock)
+            dataFeeder.process_data(data)
 
 
 class LocationDisplayThread(threading.Thread):
@@ -43,13 +44,11 @@ class LocationDisplayThread(threading.Thread):
 
     def run(self):
         while 1:
-            locationTrackerLock.acquire()
             locationTracker.updateLocation()
             print("Total Steps:", locationTracker.getTotalSteps())
             print("Deviation from N:", locationTracker.getHeadingInDeg())
             print(locationTracker.getLocation())
-            locationTrackerLock.release()
-            time.sleep(1000)
+            time.sleep(1)
 
 
 class LocationUpdateThread(threading.Thread):
@@ -59,62 +58,65 @@ class LocationUpdateThread(threading.Thread):
         self.threadName = threadName
         self.totalPedoData = 0
         self.totalCompData = 0
+        self.magX = 1
+        self.magY = 1
+        self.magZ = 1
+        self.timeInMillisComp = 0
+        self.accX = 1
+        self.accY = 1
+        self.accZ = 1
+        self.timeInMillisPedo = 0
 
     def updatePedoData(self):
-        while self.totalPedoData < 4:
-            dataLock.acquire()
-            if data[1].empty():
-                #dataLock.release()
-                continue
-            elif self.totalPedoData == 0:
-                timeInMillis = data[1].get()
-            elif self.totalPedoData == 1:
-                accX = data[1].get()
-            elif self.totalPedoData == 2:
-                accY = data[1].get()
-            elif self.totalPedoData == 3:
-                accZ = data[1].get()
+        if len(data[1]) == 0:
+            return
+        elif self.totalPedoData == 0:
+            self.timeInMillisComp = data[1].popleft()
             self.totalPedoData += 1
-            #dataLock.release()
+        elif self.totalPedoData == 1:
+            self.accX = data[1].popleft()
+            self.totalPedoData += 1
+        elif self.totalPedoData == 2:
+            self.accY = data[1].popleft()
+            self.totalPedoData += 1
+        elif self.totalPedoData == 3:
+            self.accZ = data[1].popleft()
+            self.totalPedoData += 1
 
-        self.totalPedoData = 0
-
-        #print(timeInMillis, accX, accY, accZ)
-        locationTrackerLock.acquire()
-        locationTracker.updatePedoData(float(accX), float(accY), float(accZ), int(timeInMillis))
-        locationTrackerLock.release()
+        if self.totalPedoData == 4:
+            locationTracker.updatePedoData(float(self.accX), float(self.accY), float(self.accZ),
+                                           int(self.timeInMillisPedo))
+            # print "timeStamp:", self.timeInMillisComp, "AccX:", self.accX, "AccY:", self.accY, "AccZ:", self.accZ, "time:", datetime.datetime.now()
+            self.totalPedoData = 0
 
     def updateCompassData(self):
-        while self.totalCompData < 4:
-            dataLock.acquire()
-            if data[2].empty():
-                #dataLock.release()
-                continue
-            elif self.totalCompData == 0:
-                timeInMillis = data[2].get()
-            elif self.totalCompData == 1:
-                magX = data[2].get()
-            elif self.totalCompData == 2:
-                magY = data[2].get()
-            elif self.totalCompData == 3:
-                magZ = data[2].get()
+
+        if len(data[2]) == 0:
+            return
+        elif self.totalCompData == 0:
+            self.timeInMillisComp = data[2].popleft()
             self.totalCompData += 1
-            #dataLock.release()
+        elif self.totalCompData == 1:
+            self.magX = data[2].popleft()
+            self.totalCompData += 1
+        elif self.totalCompData == 2:
+            self.magY = data[2].popleft()
+            self.totalCompData += 1
+        elif self.totalCompData == 3:
+            self.magZ = data[2].popleft()
+            self.totalCompData += 1
 
-        self.totalCompData = 0
-
-        locationTrackerLock.acquire()
-        locationTracker.updateCompassData(magY, magZ)
-        locationTrackerLock.release()
-
-        print timeInMillis
+        if self.totalCompData == 4:
+            # print "timeStamp:", self.timeInMillisComp, "MagX:", self.magX, "MagY:", self.magY, "time:", datetime.datetime.now()
+            locationTracker.updateCompassData(self.magY, self.magX)
+            self.totalCompData = 0
 
     def run(self):
         while 1:
-            #print("updating")
             self.updatePedoData()
             self.updateCompassData()
             continue
+
 
 class NavigationThread(threading.Thread):
     def __init__(self, threadID, threadName):
@@ -123,13 +125,15 @@ class NavigationThread(threading.Thread):
         self.threadName = threadName
 
     def run(self):
-        while (1):
+        global obstacleDetected
+        global checkSideObstacle
+        while 1:
             locationTrackerLock.acquire()
             curX = locationTracker.getXCoord() * 100
             curY = locationTracker.getYCoord() * 100
             heading = locationTracker.getHeadingInDeg()
             locationTrackerLock.release()
-            if((obstacleDetected == 1) or (checkSideObstacle == 1)) :
+            if obstacleDetected == 1 or checkSideObstacle == 1:
                 time.sleep(0.5)
                 continue
             navi.updateCurLocation(curX, curY, heading)
@@ -146,21 +150,20 @@ class ObstacleAvoidanceThread(threading.Thread):
     def run(self):
         global obstacleDetected
         global checkSideObstacle
-        while (1):
-            dataLock.acquire()
-            if (data[5].empty() or data[6].empty() or data[10].empty() or
-                data[11].empty() or data[12].empty() or data[13].empty() or
-                data[14].empty()) :
-                dataLock.release()
-                continue
-            irL = data[5].get()
-            irR = data[6].get()
-            sonarTL = data[10].get()
-            sonarTR = data[11].get()
-            sonarC = data[12].get()
-            sonarLS = data[13].get()
-            sonarRS = data[14].get()
-            dataLock.release()
+        while 1:
+            if (len(data[5]) == 0 or len(data[6]) == 0 or len(data[10]) == 0 or
+                    len(data[11]) == 0 or len(data[12]) == 0 or len(data[13]) == 0 or
+                    len(data[14]) == 0):
+                return
+
+            irL = data[5].popleft()
+            irR = data[6].popleft()
+            sonarTL = data[10].popleft()
+            sonarTR = data[11].popleft()
+            sonarC = data[12].popleft()
+            sonarLS = data[13].popleft()
+            sonarRS = data[14].popleft()
+
             obstacleLock.acquire()
             obstacle.updateFrontSonarData(sonarTL, sonarTR, sonarC)
             obstacle.updateIRData(irL, irR)
@@ -168,31 +171,32 @@ class ObstacleAvoidanceThread(threading.Thread):
             obstacleStatusLock.acquire()
             obstacleStatus = obstacleDetected
             obstacleStatusLock.release()
-            if obstacle.isNewObstacleDetected(obstacleStatus) == 1 :
+            if obstacle.isNewObstacleDetected(obstacleStatus) == 1:
                 obstacleStatusLock.acquire()
                 obstacleDetected = 1
                 checkSideObstacle = 0
                 obstacleStatusLock.release()
                 obstacle.vibrateMotors()
-                
+
             obstacleStatusLock.acquire()
             obstacleStatus = obstacleDetected
             obstacleStatusLock.release()
-            if obstacleStatus == 1 :
+            if obstacleStatus == 1:
                 obstacleLock.acquire()
                 obstacle.updateFrontSonarData(sonarTL, sonarTR, sonarC)
                 obstacle.updateIRData(irL, irR)
                 obstacle.updateSideSonarData(sonarLS, sonarRS)
                 obstacleLock.release()
-                if obstacle.isFrontObstacleDetected() == 1 :
+                if obstacle.isFrontObstacleDetected() == 1:
                     obstacle.turnFromObstacle()
-                else :
+                else:
                     obstacle.turnOffMotors()
                     obstacleStatusLock.acquire()
                     obstacleDetected = 0
                     checkSideObstacle = 1
                     obstacleStatusLock.release()
             time.sleep(0.1)
+
 
 class ObstacleClearedThread(threading.Thread):
     def __init__(self, threadID, threadName):
@@ -201,31 +205,30 @@ class ObstacleClearedThread(threading.Thread):
         self.threadName = threadName
 
     def run(self):
-        while (1):
-            dataLock.acquire()
-            if (data[5].empty() or data[6].empty() or data[10].empty() or
-                data[11].empty() or data[12].empty() or data[13].empty() or
-                data[14].empty()) :
-                dataLock.release()
-                continue
-            irL = data[5].get()
-            irR = data[6].get()
-            sonarTL = data[10].get()
-            sonarTR = data[11].get()
-            sonarC = data[12].get()
-            sonarLS = data[13].get()
-            sonarRS = data[14].get()
-            dataLock.release()
+        global checkSideObstacle
+        while 1:
+            if (len(data[5]) == 0 or len(data[6]) == 0 or len(data[10]) == 0 or
+                    len(data[11]) == 0 or len(data[12]) == 0 or len(data[13]) == 0 or
+                    len(data[14]) == 0):
+                return
+
+            irL = data[5].popleft()
+            irR = data[6].popleft()
+            sonarTL = data[10].popleft()
+            sonarTR = data[11].popleft()
+            sonarC = data[12].popleft()
+            sonarLS = data[13].popleft()
+            sonarRS = data[14].popleft()
             obstacleStatusLock.acquire()
             toMonitorObstacle = checkSideObstacle
             obstacleStatusLock.release()
-            if toMonitorObstacle == 1 :
+            if toMonitorObstacle == 1:
                 obstacleLock.acquire()
                 obstacle.updateFrontSonarData(sonarTL, sonarTR, sonarC)
                 obstacle.updateIRData(irL, irR)
                 obstacle.updateSideSonarData(sonarLS, sonarRS)
                 obstacleLock.release()
-                if obstacle.checkObstacleCleared() == 1 :
+                if obstacle.checkObstacleCleared() == 1:
                     obstacleStatusLock.acquire()
                     checkSideObstacle = 0
                     print "obstacle cleared"
@@ -233,18 +236,7 @@ class ObstacleClearedThread(threading.Thread):
             time.sleep(0.5)
 
 
-
-# Obstacle avoidance initialization
-obstacle = obstacleAvoidance.obstacleAvoidance()
-# 1 if an obstacle avoidance is taking place, else 0
-obstacleDetected = 0
-checkSideObstacle = 0
-
-# Navigation initialization
-navi = fullNavi.fullNavi()
-navi.generateFullPath(0, 1, 5)
-
-
+# --------------------- START OF MAIN ----------------------- #
 
 # Constants
 NUM_ID = 16
@@ -262,29 +254,40 @@ NUM_ID = 16
 # 12 - sonar (front center)
 # 13 - sonar (left shoulder)
 # 14 - sonar (right shoulder)
-data = [Queue.Queue() for x in range(NUM_ID)]
+data = [deque() for x in range(NUM_ID)]
 
+# Obstacle avoidance initialization
+obstacle = obstacleAvoidance.obstacleAvoidance()
+# 1 if an obstacle avoidance is taking place, else 0
+obstacleDetected = 0
+checkSideObstacle = 0
+
+# Navigation initialization
+navi = fullNavi.fullNavi()
+navi.generateFullPath(0, 1, 5)
+
+# Location tracker initialisation
+# TODO: Set initial position
 locationTracker = locationTracker.LocationTracker(pedometer.Pedometer(), compass.Compass(), 0, 0)
 dataFeeder = dataFeeder.DataFeeder()
 
-inQueueLock = threading.Semaphore()
-dataLock = threading.Semaphore()
+# Locks for various variables
 locationTrackerLock = threading.Lock()
 obstacleLock = threading.Lock()
 obstacleStatusLock = threading.Lock()
 
+# List of threads
 threads = []
 
 threads.append(ReceiveDataThread(1, "data receiving"))
 threads.append(ProcessDataThread(2, "data processing"))
 threads.append(LocationUpdateThread(3, "location update"))
 threads.append(LocationDisplayThread(4, "location display"))
-#threads.append(NavigationThread(5, "navigation"))
-#threads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
-#threads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
+threads.append(NavigationThread(5, "navigation"))
+threads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
+threads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
 
 for thread in threads:
     thread.start()
 
 print("Exiting main thread")
-

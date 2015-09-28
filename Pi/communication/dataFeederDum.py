@@ -14,7 +14,7 @@ class DataFeederDum:
 
     def receive_data(self, inQueueLock):
 
-        inQueueLock.acquire()
+        #inQueueLock.acquire()
 
         # Pedometer
         self.in_queue.put(1)        # Dev id
