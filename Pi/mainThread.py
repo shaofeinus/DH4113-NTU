@@ -145,18 +145,18 @@ class ObstacleAvoidanceThread(threading.Thread):
         global checkSideObstacle
         while (1):
             dataLock.acquire()
-            if (data[5].empty() or data[6].empty() or data[8].empty() or
-                data[9].empty() or data[10].empty() or data[11].empty() or
-                data[12].empty()) :
+            if (data[5].empty() or data[6].empty() or data[10].empty() or
+                data[11].empty() or data[12].empty() or data[13].empty() or
+                data[14].empty()) :
                 dataLock.release()
                 continue
             irL = data[5].get()
             irR = data[6].get()
-            sonarTL = data[8].get()
-            sonarTR = data[9].get()
-            sonarC = data[10].get()
-            sonarLS = data[11].get()
-            sonarRS = data[12].get()
+            sonarTL = data[10].get()
+            sonarTR = data[11].get()
+            sonarC = data[12].get()
+            sonarLS = data[13].get()
+            sonarRS = data[14].get()
             dataLock.release()
             obstacleLock.acquire()
             obstacle.updateFrontSonarData(sonarTL, sonarTR, sonarC)
@@ -200,18 +200,18 @@ class ObstacleClearedThread(threading.Thread):
     def run(self):
         while (1):
             dataLock.acquire()
-            if (data[5].empty() or data[6].empty() or data[8].empty() or
-                data[9].empty() or data[10].empty() or data[11].empty() or
-                data[12].empty()) :
+            if (data[5].empty() or data[6].empty() or data[10].empty() or
+                data[11].empty() or data[12].empty() or data[13].empty() or
+                data[14].empty()) :
                 dataLock.release()
                 continue
             irL = data[5].get()
             irR = data[6].get()
-            sonarTL = data[8].get()
-            sonarTR = data[9].get()
-            sonarC = data[10].get()
-            sonarLS = data[11].get()
-            sonarRS = data[12].get()
+            sonarTL = data[10].get()
+            sonarTR = data[11].get()
+            sonarC = data[12].get()
+            sonarLS = data[13].get()
+            sonarRS = data[14].get()
             dataLock.release()
             obstacleStatusLock.acquire()
             toMonitorObstacle = checkSideObstacle
@@ -247,6 +247,18 @@ navi.generateFullPath(0, 1, 5)
 NUM_ID = 16
 
 # Data from Arduino
+# 1 - accelerometer
+# 2 - magnetometer
+# 3 - unused
+# 4 - barometer
+# 5 - IR (left)
+# 6 - IR (right)
+# 7-9 - unused
+# 10 - sonar (front top left)
+# 11 - sonar (front top right)
+# 12 - sonar (front center)
+# 13 - sonar (left shoulder)
+# 14 - sonar (right shoulder)
 data = [Queue.Queue() for x in range(NUM_ID)]
 
 locationTracker = locationTracker.LocationTracker(pedometer.Pedometer(), compass.Compass(), 0, 0)
