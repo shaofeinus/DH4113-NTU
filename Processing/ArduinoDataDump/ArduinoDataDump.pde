@@ -1,4 +1,5 @@
 import processing.serial.*;
+import java.util.*;
 
 String portName = "COM5";
 Serial myPort;  // Create object from Serial class
@@ -35,6 +36,7 @@ int[] additional_info;
 
 void setup() 
 {
+  size(600, 300);
   ir_time = new int[4];
   ir_dist = new int[4];
   ir_packets = new int[4];
@@ -49,7 +51,7 @@ void setup()
   reset_times = new LinkedList<Long>();
   additional_info = new int[3];
   val = new int[16];
-  size(600, 200 + 20 * (COUNT_US+COUNT_IR));
+  
   offset = 0;
   start_count = 0;
   myPort = new Serial(this, portName, 115200);
