@@ -33,8 +33,8 @@ class DataFeederDum:
         self.in_queue.put(self.startTime)       # Time
 
         self.in_queue.put(2000)
+        self.in_queue.put(0)
         self.in_queue.put(2000)
-        self.in_queue.put(self.startTime % 2000)
 
         inQueueLock.release()
 
