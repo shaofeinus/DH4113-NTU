@@ -97,10 +97,14 @@ class LocationUpdateThread(threading.Thread):
             self.totalPedoData += 1
 
         if self.totalPedoData == 4:
-            locationTracker.updatePedoData(float(self.accX), float(self.accY), float(self.accZ),
-                                           int(self.timeInMillisPedo))
-            # print "timeStamp:", self.timeInMillisComp, "AccX:", self.accX, "AccY:", self.accY, "AccZ:", self.accZ, "time:", datetime.datetime.now()
+            # Parameter accY points forward
+            # Parameter yReading points downwards
+            locationTracker.updatePedoData(accY=float(self.accX),  accZ=float(self.accZ),
+                                           timeInMillis=int(self.timeInMillisPedo))
             self.totalPedoData = 0
+
+            # print "timeStamp:", self.timeInMillisComp, "AccX:", self.accX, "AccY:", self.accY, "AccZ:", self.accZ, "time:", datetime.datetime.now()
+
 
     def updateCompassData(self):
 
@@ -120,9 +124,12 @@ class LocationUpdateThread(threading.Thread):
             self.totalCompData += 1
 
         if self.totalCompData == 4:
-            # print "timeStamp:", self.timeInMillisComp, "MagX:", self.magX, "MagY:", self.magY, "time:", datetime.datetime.now()
-            locationTracker.updateCompassData(self.magY, self.magX)
+            # Parameter xReading points rightward
+            # Parameter yReading points forward
+            locationTracker.updateCompassData(xReading=self.magY, yReading=self.magX)
             self.totalCompData = 0
+
+            # print "timeStamp:", self.timeInMillisComp, "MagX:", self.magX, "MagY:", self.magY, "time:", datetime.datetime.now()
 
     def updateBaroData(self):
 

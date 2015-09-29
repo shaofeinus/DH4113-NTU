@@ -5,16 +5,15 @@ __author__ = 'Shao Fei'
 
 class LocationTracker:
 
-    STEP_DISTANCE = 0.5     # in m
+    HALF_STEP_DISTANCE = 25     # in cm
 
     def __init__(self, pedometer, compass, barometer, initX, initY):
-        # Dummies
-        self.currX = initX
-        self.currY = initY
+        self.currX = initX      # Points eastwards
+        self.currY = initY      # Points northwards
         self.pedometer = pedometer
         self.compass = compass
         self.barometer = barometer
-        self.totalSteps = 0
+        self.totalHalfSteps = 0
         self.totalDistance = 0
 
     # Public
@@ -31,7 +30,7 @@ class LocationTracker:
 
     # Public
     def getTotalSteps(self):
-        return self.totalSteps
+        return math.ceil(self.totalHalfSteps / 2.0)
 
     # Public
     def getTotalDistance(self):
@@ -54,14 +53,15 @@ class LocationTracker:
         return self.barometer.getFloor()
 
     # Public
+    # Called when there is a need to recalibrate location
     def setLocation(self, x, y):
         self.currX = x
         self.currY = y
         return
 
     # Public
-    def updatePedoData(self, accX, accY, accZ, timeInMillis):
-        self.pedometer.updateWindow(accX, accY, accZ, timeInMillis)
+    def updatePedoData(self, accY, accZ, timeInMillis):
+        self.pedometer.updateWindow(accY, accZ, timeInMillis)
 
     # Public
     def updateCompassData(self, xReading, yReading):
@@ -73,17 +73,20 @@ class LocationTracker:
 
     # Public
     def updateLocation(self):
-        currSteps = self.pedometer.getStepCount()
-        self.totalSteps += currSteps
+        currHalfSteps = self.pedometer.getStepCount()
+        self.totalHalfSteps += currHalfSteps
 
-        distance = currSteps * self.STEP_DISTANCE
-        self.totalDistance += distance
+        # Reflects true steps, 1/2 of what is recorded (pseudo steps)
+        currDistance = currHalfSteps * self.HALF_STEP_DISTANCE
 
         heading = self.compass.getHeadingInRad()
 
-        xDistance = distance * math.sin(heading)
-        yDistance = distance * math.cos(heading)
+        # x points to the East
+        xCurrDistance = currDistance * math.sin(heading)
+        # y points to the North
+        yCurrDistance = currDistance * math.cos(heading)
 
-        self.currX += xDistance
-        self.currY += yDistance
+        self.currX += xCurrDistance
+        self.currY += yCurrDistance
+        self.totalDistance += currDistance
         return
