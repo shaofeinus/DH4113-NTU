@@ -1,4 +1,5 @@
 import time
+import math
 #import RPi.GPIO as GPIO
 
 # API:
@@ -18,9 +19,8 @@ class obstacleAvoidance (object) :
 
         self.lastTurnedDirection = 0
         # sonar readings (cm):
-        self.sonarTL = None         # front top left
-        self.sonarTR = None         # front top right
-        self.sonarC = None          # center
+        self.sonarT = None          # front top
+        self.sonarB = None          # front bottom
         self.sonarLS = None         # left shoulder
         self.sonarRS = None         # right shoulder
 
@@ -39,19 +39,24 @@ class obstacleAvoidance (object) :
         ##GPIO.output(leftPin, True)
         ##GPIO.output(rightPin, True)
 
+    def convertIRToCm(self, irData) :
+        return 10650.08 * (irData ** -0.935) - 10
+
+    def convertSonarToCm(self, sonarData) :
+        return sonarData / 29 / 2
+
     # update sonar data
-    def updateFrontSonarData(self, topLeft, topRight, center) :
-        self.sonarTL = topLeft
-        self.sonarTR = topRight
-        self.sonarC = center
+    def updateFrontSonarData(self, top, bottom) :
+        self.sonarT = self.convertSonarToCm(top)
+        self.sonarB = self.convertSonarToCm(bottom)
 
     def updateSideSonarData(self, left, right) :
-        self.sonarLS = left
-        self.sonarRS = right
+        self.sonarLS = self.convertSonarToCm(left)
+        self.sonarRS = self.convertSonarToCm(right)
 
     def updateIRData(self, left, right) :
-        self.irL = left
-        self.irR = right        
+        self.irL = self.convertIRtoCm(left)
+        self.irR = self.convertIRtoCm(right)        
 
     # indicates which side to turn via motors
     def turnFromObstacle(self) :
@@ -102,11 +107,10 @@ class obstacleAvoidance (object) :
     def isNewObstacleDetected(self, alreadyDetected) :
 ##        print "ENTER NEW AVOID OBSTACLE"
         if alreadyDetected == 0 :
-            if ((self.sonarTL < self.FRONT_OBSTACLE_DISTANCE) or
-                (self.sonarTR < self.FRONT_OBSTACLE_DISTANCE) or
-                (self.sonarC < self.FRONT_OBSTACLE_DISTANCE) or
-                (self.irL < self.BOTTOM_OBSTACLE_DISTANCE) or
-                (self.irR < self.BOTTOM_OBSTACLE_DISTANCE)) :
+            if (((self.sonarT < self.FRONT_OBSTACLE_DISTANCE) and (self.sonarT != 0)) or
+                ((self.sonarB < self.FRONT_OBSTACLE_DISTANCE) and (self.sonarB != 0))or
+                ((self.irL < self.BOTTOM_OBSTACLE_DISTANCE) and (self.irL != 0)) or
+                ((self.irR < self.BOTTOM_OBSTACLE_DISTANCE) and (self.irR != 0))) :
                 return 1
             else :
                 return 0
@@ -117,11 +121,10 @@ class obstacleAvoidance (object) :
     # else return 0
     def isFrontObstacleDetected(self) :
 ##        print "ENTER FRONT AVOID OBSTACLE"
-        if ((self.sonarTL < self.FRONT_OBSTACLE_DISTANCE) or
-            (self.sonarTR < self.FRONT_OBSTACLE_DISTANCE) or
-            (self.sonarC < self.FRONT_OBSTACLE_DISTANCE) or
-            (self.irL < self.BOTTOM_OBSTACLE_DISTANCE) or
-            (self.irR < self.BOTTOM_OBSTACLE_DISTANCE)) :
+        if (((self.sonarT < self.FRONT_OBSTACLE_DISTANCE) and (self.sonarT != 0)) or
+            ((self.sonarB < self.FRONT_OBSTACLE_DISTANCE) and (self.sonarB != 0))or
+            ((self.irL < self.BOTTOM_OBSTACLE_DISTANCE) and (self.irL != 0)) or
+            ((self.irR < self.BOTTOM_OBSTACLE_DISTANCE) and (self.irR != 0))) :
             return 1
         else :
             return 0
