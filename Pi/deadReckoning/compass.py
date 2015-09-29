@@ -8,7 +8,7 @@ __author__ = 'Shao Fei'
 # Compass assumes that the IMU is places such that
 # z-axis is pointing upward
 # y-axis is pointing forward
-# x-axis is point sidewards TODO: left or right to be calibrated
+# x-axis is pointing rightwards TODO: left or right to be calibrated
 # Compass reading is in radians
 class Compass:
 

@@ -28,10 +28,11 @@ class Pedometer:
 
     # Public #
     # Updates the acc values window
-    # To be called at < 100Hz
-    def updateWindow(self, accX, accY, accZ, timeInMillis):
+    # To be called at 100Hz
+    # accY points forward
+    # accZ points downward
+    def updateWindow(self, accY, accZ, timeInMillis):
 
-        accX /= 100
         accY /= 100
         accZ /= 100
 
@@ -40,8 +41,7 @@ class Pedometer:
             self.updateSteps()
 
         # Get resultant acceleration
-        # accR = float(math.sqrt(accX * accX + accY * accY + accZ * accZ))
-        accR = float(math.sqrt(accX * accX + accZ * accZ))
+        accR = float(math.sqrt(accY * accY + accZ * accZ))
 
         # print(timeInMillis, accR)
 
