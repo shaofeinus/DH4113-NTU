@@ -91,7 +91,7 @@ class LocationUpdateThread(threading.Thread):
         if self.totalPedoData == 4:
             locationTracker.updatePedoData(float(self.accX), float(self.accY), float(self.accZ),
                                            int(self.timeInMillisPedo))
-            # print "timeStamp:", self.timeInMillisComp, "AccX:", self.accX, "AccY:", self.accY, "AccZ:", self.accZ, "time:", datetime.datetime.now()
+            #print "timeStamp:", self.timeInMillisComp, "AccX:", self.accX, "AccY:", self.accY, "AccZ:", self.accZ, "time:", datetime.datetime.now()
             self.totalPedoData = 0
 
     def updateCompassData(self):
@@ -173,17 +173,17 @@ class ObstacleAvoidanceThread(threading.Thread):
         global obstacleDetected
         global checkSideObstacle
         while 1:
-            if (len(data[5]) == 0 or len(data[6]) == 0 or len(data[10]) == 0 or
-                    len(data[11]) == 0 or len(data[12]) == 0 or len(data[13]) == 0 or
-                    len(data[14]) == 0):
-                return
+            # if (len(data[5]) == 0 or len(data[6]) == 0 or len(data[10]) == 0 or
+            #         len(data[11]) == 0 or len(data[12]) == 0 or len(data[13]) == 0 or
+            #         len(data[14]) == 0):
+            #     return
 
-            irL = data[5].popleft()
-            irR = data[6].popleft()
-            sonarT = data[10].popleft()
-            sonarB = data[11].popleft()
-            sonarLS = data[12].popleft()
-            sonarRS = data[13].popleft()
+            irL = data[5]
+            irR = data[6]
+            sonarT = data[10]
+            sonarB = data[11]
+            sonarLS = data[12]
+            sonarRS = data[13]
 
             obstacleLock.acquire()
             obstacle.updateFrontSonarData(sonarT, sonarB)
@@ -228,17 +228,17 @@ class ObstacleClearedThread(threading.Thread):
     def run(self):
         global checkSideObstacle
         while 1:
-            if (len(data[5]) == 0 or len(data[6]) == 0 or len(data[10]) == 0 or
-                    len(data[11]) == 0 or len(data[12]) == 0 or len(data[13]) == 0 or
-                    len(data[14]) == 0):
-                return
+            # if (len(data[5]) == 0 or len(data[6]) == 0 or len(data[10]) == 0 or
+            #         len(data[11]) == 0 or len(data[12]) == 0 or len(data[13]) == 0 or
+            #         len(data[14]) == 0):
+            #     return
 
-            irL = data[5].popleft()
-            irR = data[6].popleft()
-            sonarTL = data[10].popleft()
-            sonarTR = data[11].popleft()
-            sonarLS = data[12].popleft()
-            sonarRS = data[13].popleft()
+            irL = data[5]
+            irR = data[6]
+            sonarTL = data[10]
+            sonarTR = data[11]
+            sonarLS = data[12]
+            sonarRS = data[13]
             obstacleStatusLock.acquire()
             toMonitorObstacle = checkSideObstacle
             obstacleStatusLock.release()

@@ -18,6 +18,8 @@ class DataFeeder:
             self.serialPort.open()
         self.serialPort.flushInput()
         self.serialPort.flushOutput()
+        self.x = 0
+        self.y = 0
 
     def receive_data(self):
         numBytes = self.serialPort.inWaiting()
@@ -50,18 +52,23 @@ class DataFeeder:
 
         dev_id = (data_in >> 4)
 
+        # if dev_id == 1:
+        #     self.x += 1
+        # elif dev_id == 2:
+        #     self.y += 2
+        # print "num_id 1:", self.x, "num_id2:", self.y
         timeStamp = ((data_in & 0xF) << 8)
 
         data_in = self.in_queue.get()
 
         timeStamp = timeStamp | data_in
 
-        data[dev_id].append(timeStamp)
+        if dev_id < 5:
+            data[dev_id].append(timeStamp)
 
         # data_print = []
 
         for x in range(self.num_bytes[dev_id]):
-
             # First byte
             data_in = self.in_queue.get()
             dataTemp = data_in << 8
