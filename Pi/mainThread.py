@@ -180,14 +180,13 @@ class ObstacleAvoidanceThread(threading.Thread):
 
             irL = data[5].popleft()
             irR = data[6].popleft()
-            sonarTL = data[10].popleft()
-            sonarTR = data[11].popleft()
-            sonarC = data[12].popleft()
-            sonarLS = data[13].popleft()
-            sonarRS = data[14].popleft()
+            sonarT = data[10].popleft()
+            sonarB = data[11].popleft()
+            sonarLS = data[12].popleft()
+            sonarRS = data[13].popleft()
 
             obstacleLock.acquire()
-            obstacle.updateFrontSonarData(sonarTL, sonarTR, sonarC)
+            obstacle.updateFrontSonarData(sonarT, sonarB)
             obstacle.updateIRData(irL, irR)
             obstacleLock.release()
             obstacleStatusLock.acquire()
@@ -205,7 +204,7 @@ class ObstacleAvoidanceThread(threading.Thread):
             obstacleStatusLock.release()
             if obstacleStatus == 1:
                 obstacleLock.acquire()
-                obstacle.updateFrontSonarData(sonarTL, sonarTR, sonarC)
+                obstacle.updateFrontSonarData(sonarT, sonarB)
                 obstacle.updateIRData(irL, irR)
                 obstacle.updateSideSonarData(sonarLS, sonarRS)
                 obstacleLock.release()
@@ -238,15 +237,14 @@ class ObstacleClearedThread(threading.Thread):
             irR = data[6].popleft()
             sonarTL = data[10].popleft()
             sonarTR = data[11].popleft()
-            sonarC = data[12].popleft()
-            sonarLS = data[13].popleft()
-            sonarRS = data[14].popleft()
+            sonarLS = data[12].popleft()
+            sonarRS = data[13].popleft()
             obstacleStatusLock.acquire()
             toMonitorObstacle = checkSideObstacle
             obstacleStatusLock.release()
             if toMonitorObstacle == 1:
                 obstacleLock.acquire()
-                obstacle.updateFrontSonarData(sonarTL, sonarTR, sonarC)
+                obstacle.updateFrontSonarData(sonarT, sonarB)
                 obstacle.updateIRData(irL, irR)
                 obstacle.updateSideSonarData(sonarLS, sonarRS)
                 obstacleLock.release()
@@ -271,11 +269,10 @@ NUM_ID = 16
 # 5 - IR (left)
 # 6 - IR (right)
 # 7-9 - unused
-# 10 - sonar (front top left)
-# 11 - sonar (front top right)
-# 12 - sonar (front center)
-# 13 - sonar (left shoulder)
-# 14 - sonar (right shoulder)
+# 10 - sonar (front top)
+# 11 - sonar (front bottom)
+# 12 - sonar (left shoulder)
+# 13 - sonar (right shoulder)
 data = [deque() for x in range(NUM_ID)]
 
 # Obstacle avoidance initialization
