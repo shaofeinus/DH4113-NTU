@@ -18,22 +18,17 @@ class DataFeeder:
             self.serialPort.open()
         self.serialPort.flushInput()
         self.serialPort.flushOutput()
-
         self.handshake1 = None
         self.handshake2 = None
         self.handshake3 = None
 
     def receive_data(self, inQueueLock):
         numBytes = self.serialPort.inWaiting()
-        #print numBytes
         if numBytes > 0:
             data_input = self.serialPort.read(numBytes)
             charList = list(data_input)
             for i in range(numBytes):
-                # inQueueLock.acquire()
                 self.in_queue.put(int(ord(charList[i])))
-                inQueueLock.release()
-
 
     def my_to_signed(self, num):
         if num >> 15 == 1:
@@ -41,7 +36,6 @@ class DataFeeder:
             num += 1
             return -num
         return num
-
 
     def printAll(self, dev_id, timeStamp, data_print):
         if dev_id == 2:
@@ -53,75 +47,59 @@ class DataFeeder:
             print (data_print),
             print (datetime.datetime.now())
 
-    def process_data(self, data, inQueueLock, dataLock):
+    def process_data(self, data):
 
-        # while self.in_queue.empty():
-        #     continue
-
-        inQueueLock.acquire()
         data_in = self.in_queue.get()
-        # inQueueLock.release()
 
         dev_id = (data_in >> 4)
+
         timeStamp = ((data_in & 0xF) << 8)
 
-        # while self.in_queue.empty():
-        #     continue
-
-        inQueueLock.acquire()
         data_in = self.in_queue.get()
-        # inQueueLock.release()
 
         timeStamp = timeStamp | data_in
 
-        #dataLock.acquire()
-        data[dev_id].put(timeStamp)
-        #dataLock.release()
+        data[dev_id].append(timeStamp)
 
-        data_print = []
+        # data_print = []
 
         for x in range(self.num_bytes[dev_id]):
-            # while self.in_queue.empty():
-            #     continue
 
-            inQueueLock.acquire()
+            # First byte
             data_in = self.in_queue.get()
-            # inQueueLock.release()
-
             dataTemp = data_in << 8
 
-            # while self.in_queue.empty():
-            #     continue
-
-            inQueueLock.acquire()
+            # Second byte
             data_in = self.in_queue.get()
-            # inQueueLock.release()
-
             dataTemp = dataTemp | data_in
 
-            if dev_id == 4: #adds third byte for barometer reading
-                # while self.in_queue.empty():
-                #     continue
+            # Adds third byte for barometer reading
+            if dev_id == 4:
 
-                inQueueLock.acquire()
                 data_in = self.in_queue.get()
-                # inQueueLock.release()
-
                 dataTemp = (dataTemp << 8) | data_in
 
+            # If Accelerometer and Magnetometer, check for sign
             if dev_id == 1 or dev_id == 2:
-                #dataLock.acquire()
-                data[dev_id].put(self.my_to_signed(dataTemp))
-                dataLock.release()
-                data_print.append(self.my_to_signed(dataTemp))
+                data[dev_id].append(self.my_to_signed(dataTemp))
+                # data_print.append(self.my_to_signed(dataTemp))
 
+            # If not Accelerometer, Magnetometer, Barometer or Gyroscope,
+            # take out last reading before adding new reading
+            elif not (dev_id == 3 or dev_id == 4):
+                if not len(data[dev_id]) == 0:
+                    data[dev_id].pop()
+                data[dev_id].append(dataTemp)
+                # data_print.append(dataTemp)
+
+            # If  Barometer or Gyroscope, add reading straight
             else:
                 #dataLock.acquire()
                 data[dev_id].put(dataTemp)
-                dataLock.release()
-                data_print.append(dataTemp)
+                self.dataLock.release()
+                #data_print.append(dataTemp)
 
-        self.printAll(dev_id, timeStamp, data_print)
+        #self.printAll(dev_id, timeStamp, data_print)
 
     def handshake(self):
         self.serialPort.write(self.handshake1)

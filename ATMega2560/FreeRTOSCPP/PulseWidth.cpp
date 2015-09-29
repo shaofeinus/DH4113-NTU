@@ -12,10 +12,10 @@
 
 extern uint32_t get_ticks();
 
-SemaphoreHandle_t sema[4];
-int32_t* data_address[4];
-uint32_t start_time[4];
-char stage[4];
+SemaphoreHandle_t sema1, sema2, sema3, sema4;
+int32_t *data_address1, *data_address2, *data_address3, *data_address4;
+uint32_t start_time1, start_time2, start_time3, start_time4;
+char stage1, stage2, stage3, stage4;
 
 #define INT_CLEAR_PIN2() EIFR |= 1<<INTF4
 #define INT_CLEAR_PIN3() EIFR |= 1<<INTF5
@@ -58,64 +58,64 @@ void pulse_read(char pin, SemaphoreHandle_t semaphore, int32_t* address)
 	{
 		case 2:
 			INT_DISABLE_PIN2();
-			sema[0] = semaphore;
-			data_address[0] = address;
+			sema1 = semaphore;
+			data_address1 = address;
 			pin_state = PINE&(1<<PE4);
 			if (pin_state)
 			{
-				stage[0] = 0;
+				stage1 = 0;
 			}
 			else
 			{
-				stage[0] = 1;
+				stage1 = 1;
 			}
 			INT_CLEAR_PIN2();
 			INT_ENABLE_PIN2();
 			break;
 		case 3:
 			INT_DISABLE_PIN3();
-			sema[1] = semaphore;
-			data_address[1] = address;
+			sema2 = semaphore;
+			data_address2 = address;
 			pin_state = PINE&(1<<PE5);
 			if (pin_state)
 			{
-				stage[1] = 0;
+				stage2 = 0;
 			}
 			else
 			{
-				stage[1] = 1;
+				stage2 = 1;
 			}
 			INT_CLEAR_PIN3();
 			INT_ENABLE_PIN3();
 			break;
 		case 18:
 			INT_DISABLE_PIN18();
-			sema[2] = semaphore;
-			data_address[2] = address;
+			sema3 = semaphore;
+			data_address3 = address;
 			pin_state = PIND&(1<<PD3);
 			if (pin_state)
 			{
-				stage[2] = 0;
+				stage3 = 0;
 			}
 			else
 			{
-				stage[2] = 1;
+				stage3 = 1;
 			}
 			INT_CLEAR_PIN18();
 			INT_ENABLE_PIN18();
 			break;
 		case 19:
 			INT_DISABLE_PIN19();
-			sema[3] = semaphore;
-			data_address[3] = address;
+			sema4 = semaphore;
+			data_address4 = address;
 			pin_state = PIND&(1<<PD2);
 			if (pin_state)
 			{
-				stage[3] = 0;
+				stage4 = 0;
 			}
 			else
 			{
-				stage[3] = 1;
+				stage4 = 1;
 			}
 			INT_CLEAR_PIN19();
 			INT_ENABLE_PIN19();
@@ -152,25 +152,25 @@ ISR(INT2_vect)
 {
 	uint32_t time = get_ticks();
 	char pin_state = PIND&(1<<PD2);
-	++stage[3];
-	if (stage[3] == 1 && !pin_state)
+	++stage4;
+	if (stage4 == 1 && !pin_state)
 	{
 		//Do nothing
 	}
-	else if (stage[3] == 2 && pin_state)
+	else if (stage4 == 2 && pin_state)
 	{
-		start_time[3] = time * 1000 + (TCNT1>>1);
+		start_time4 = time * 1000 + (TCNT1>>1);
 	}
-	else if (stage[3] == 3 && !pin_state)
+	else if (stage4 == 3 && !pin_state)
 	{
-		*(data_address[3]) = (time * 1000 + (TCNT1>>1)) - start_time[3];
-		xSemaphoreGiveFromISR(sema[3], NULL);
+		*(data_address4) = (time * 1000 + (TCNT1>>1)) - start_time4;
+		xSemaphoreGiveFromISR(sema4, NULL);
 		INT_DISABLE_PIN19();
 	}
 	else
 	{
-		*(data_address[3]) = 0;
-		xSemaphoreGiveFromISR(sema[3], NULL);
+		*(data_address4) = 0;
+		xSemaphoreGiveFromISR(sema4, NULL);
 		INT_DISABLE_PIN19();
 	}
 }
@@ -180,25 +180,25 @@ ISR(INT3_vect)
 {
 	uint32_t time = get_ticks();
 	char pin_state = PIND&(1<<PD3);
-	++stage[2];
-	if (stage[2] == 1 && !pin_state)
+	++stage3;
+	if (stage3 == 1 && !pin_state)
 	{
 		//Do nothing
 	}
-	else if (stage[2] == 2 && pin_state)
+	else if (stage3 == 2 && pin_state)
 	{
-		start_time[2] = time * 1000 + (TCNT1>>1);
+		start_time3 = time * 1000 + (TCNT1>>1);
 	}
-	else if (stage[2] == 3 && !pin_state)
+	else if (stage3 == 3 && !pin_state)
 	{
-		*(data_address[2]) = (time * 1000 + (TCNT1>>1)) - start_time[2];
-		xSemaphoreGiveFromISR(sema[2], NULL);
+		*(data_address3) = (time * 1000 + (TCNT1>>1)) - start_time3;
+		xSemaphoreGiveFromISR(sema3, NULL);
 		INT_DISABLE_PIN18();
 	}
 	else
 	{
-		*(data_address[2]) = 0;
-		xSemaphoreGiveFromISR(sema[2], NULL);
+		*(data_address3) = 0;
+		xSemaphoreGiveFromISR(sema3, NULL);
 		INT_DISABLE_PIN18();
 	}
 }
@@ -208,25 +208,25 @@ ISR(INT4_vect)
 {
 	uint32_t time = get_ticks();
 	char pin_state = PINE&(1<<PE4);
-	++stage[0];
-	if (stage[0] == 1 && !pin_state)
+	++stage1;
+	if (stage1 == 1 && !pin_state)
 	{
 		//Do nothing
 	}
-	else if (stage[0] == 2 && pin_state)
+	else if (stage1 == 2 && pin_state)
 	{
-		start_time[0] = time * 1000 + (TCNT1>>1);
+		start_time1 = time * 1000 + (TCNT1>>1);
 	}
-	else if (stage[0] == 3 && !pin_state)
+	else if (stage1 == 3 && !pin_state)
 	{
-		*(data_address[0]) = (time * 1000 + (TCNT1>>1)) - start_time[0];
-		xSemaphoreGiveFromISR(sema[0], NULL);
+		*(data_address1) = (time * 1000 + (TCNT1>>1)) - start_time1;
+		xSemaphoreGiveFromISR(sema1, NULL);
 		INT_DISABLE_PIN2();
 	}
 	else
 	{
-		*(data_address[0]) = 0;
-		xSemaphoreGiveFromISR(sema[0], NULL);
+		*(data_address1) = 0;
+		xSemaphoreGiveFromISR(sema1, NULL);
 		INT_DISABLE_PIN2();
 	}
 }
@@ -236,25 +236,25 @@ ISR(INT5_vect)
 {
 	uint32_t time = get_ticks();
 	char pin_state = PINE&(1<<PE5);
-	++stage[1];
-	if (stage[1] == 1 && !pin_state)
+	++stage2;
+	if (stage2 == 1 && !pin_state)
 	{
 		//Do nothing
 	}
-	else if (stage[1] == 2 && pin_state)
+	else if (stage2 == 2 && pin_state)
 	{
-		start_time[1] = time * 1000 + (TCNT1>>1);
+		start_time2 = time * 1000 + (TCNT1>>1);
 	}
-	else if (stage[1] == 3 && !pin_state)
+	else if (stage2 == 3 && !pin_state)
 	{
-		*(data_address[1]) = (time * 1000 + (TCNT1>>1)) - start_time[1];
-		xSemaphoreGiveFromISR(sema[1], NULL);
+		*(data_address2) = (time * 1000 + (TCNT1>>1)) - start_time2;
+		xSemaphoreGiveFromISR(sema2, NULL);
 		INT_DISABLE_PIN3();
 	}
 	else
 	{
-		*(data_address[1]) = 0;
-		xSemaphoreGiveFromISR(sema[1], NULL);
+		*(data_address2) = 0;
+		xSemaphoreGiveFromISR(sema2, NULL);
 		INT_DISABLE_PIN3();
 	}
 }
