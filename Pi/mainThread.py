@@ -178,12 +178,12 @@ class ObstacleAvoidanceThread(threading.Thread):
                     len(data[14]) == 0):
                 return
 
-            irL = data[5].popleft()
-            irR = data[6].popleft()
-            sonarT = data[10].popleft()
-            sonarB = data[11].popleft()
-            sonarLS = data[12].popleft()
-            sonarRS = data[13].popleft()
+            irL = data[5]
+            irR = data[6]
+            sonarT = data[10]
+            sonarB = data[11]
+            sonarLS = data[12]
+            sonarRS = data[13]
 
             obstacleLock.acquire()
             obstacle.updateFrontSonarData(sonarT, sonarB)
@@ -233,12 +233,12 @@ class ObstacleClearedThread(threading.Thread):
                     len(data[14]) == 0):
                 return
 
-            irL = data[5].popleft()
-            irR = data[6].popleft()
-            sonarTL = data[10].popleft()
-            sonarTR = data[11].popleft()
-            sonarLS = data[12].popleft()
-            sonarRS = data[13].popleft()
+            irL = data[5]
+            irR = data[6]
+            sonarTL = data[10]
+            sonarTR = data[11]
+            sonarLS = data[12]
+            sonarRS = data[13]
             obstacleStatusLock.acquire()
             toMonitorObstacle = checkSideObstacle
             obstacleStatusLock.release()
