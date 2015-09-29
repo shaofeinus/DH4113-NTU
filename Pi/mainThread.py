@@ -99,7 +99,7 @@ class LocationUpdateThread(threading.Thread):
         if self.totalPedoData == 4:
             locationTracker.updatePedoData(float(self.accX), float(self.accY), float(self.accZ),
                                            int(self.timeInMillisPedo))
-            #print "timeStamp:", self.timeInMillisComp, "AccX:", self.accX, "AccY:", self.accY, "AccZ:", self.accZ, "time:", datetime.datetime.now()
+            # print "timeStamp:", self.timeInMillisComp, "AccX:", self.accX, "AccY:", self.accY, "AccZ:", self.accZ, "time:", datetime.datetime.now()
             self.totalPedoData = 0
 
     def updateCompassData(self):
@@ -314,11 +314,14 @@ threads.append(ReceiveDataThread(1, "data receiving"))
 threads.append(ProcessDataThread(2, "data processing"))
 threads.append(LocationUpdateThread(3, "location update"))
 threads.append(LocationDisplayThread(4, "location display"))
-threads.append(NavigationThread(5, "navigation"))
-threads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
-threads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
+#threads.append(NavigationThread(5, "navigation"))
+#threads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
+#threads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
 
 for thread in threads:
     thread.start()
+
+#for threads in threads:
+    #thread.join()
 
 print("Exiting main thread")
