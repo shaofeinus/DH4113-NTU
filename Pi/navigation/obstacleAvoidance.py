@@ -38,9 +38,10 @@ class obstacleAvoidance (object) :
         ### initially turned off
         ##GPIO.output(leftPin, True)
         ##GPIO.output(rightPin, True)
-
     def convertIRToCm(self, irData) :
-        return 10650.08 * (irData ** -0.935) - 10
+        if irData > 0:
+            return 10650.08 * (math.pow(irData, -0.935)) - 10
+        return 0
 
     def convertSonarToCm(self, sonarData) :
         return sonarData / 29 / 2
@@ -55,8 +56,8 @@ class obstacleAvoidance (object) :
         self.sonarRS = self.convertSonarToCm(right)
 
     def updateIRData(self, left, right) :
-        self.irL = self.convertIRtoCm(left)
-        self.irR = self.convertIRtoCm(right)        
+        self.irL = self.convertIRToCm(left)
+        self.irR = self.convertIRToCm(right)
 
     # indicates which side to turn via motors
     def turnFromObstacle(self) :

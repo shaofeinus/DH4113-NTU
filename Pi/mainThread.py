@@ -35,6 +35,14 @@ class ProcessDataThread(threading.Thread):
     def run(self):
         while True:
             dataFeeder.process_data(data)
+            # print data[5],
+            # print data[6],
+            # print data[9],
+            # print data[10],
+            # print data[11],
+            # print data[12],
+            # print data[13]
+
 
 
 class LocationDisplayThread(threading.Thread):

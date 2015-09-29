@@ -52,6 +52,7 @@ class DataFeeder:
 
         dev_id = (data_in >> 4)
 
+        print dev_id
         # if dev_id == 1:
         #     self.x += 1
         # elif dev_id == 2:
