@@ -80,9 +80,9 @@ class obstacleAvoidance (object) :
     # choose which direction to turn, default turn right
     # returns 1 for right, 2 for left, 0 if both sides blocked
     def getSideToTurn(self) :
-        if self.sonarRS > self.SIDE_WALL_DISTANCE :
+        if ((self.sonarRS > self.SIDE_WALL_DISTANCE) and (self.sonarRS != 0))  :
             return 1
-        elif self.sonarLS > self.SIDE_WALL_DISTANCE :
+        elif ((self.sonarLS > self.SIDE_WALL_DISTANCE)  and (self.sonarLS != 0)):
             return 2
         else :
             return 0
@@ -141,7 +141,7 @@ class obstacleAvoidance (object) :
         else :
             sideSonar = self.sonarRS
 
-        if(sideSonar < self.SIDE_OBSTACLE_DISTANCE) :
+        if((sideSonar < self.SIDE_OBSTACLE_DISTANCE) and (sideSonar != 0)) :
             return 0
         else :
             return 1
