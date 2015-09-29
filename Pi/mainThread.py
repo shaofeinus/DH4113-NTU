@@ -260,6 +260,8 @@ class ObstacleClearedThread(threading.Thread):
 
 # Constants
 NUM_ID = 16
+NUM_QUEUED_ID = 5
+NUM_SINGLE_ID = 11
 
 # Data from Arduino
 # 1 - accelerometer
@@ -273,7 +275,9 @@ NUM_ID = 16
 # 11 - sonar (front bottom)
 # 12 - sonar (left shoulder)
 # 13 - sonar (right shoulder)
-data = [deque() for x in range(NUM_ID)]
+data = [deque() for x in range(NUM_QUEUED_ID)]
+data_single = [0 for x in range(NUM_SINGLE_ID)]
+data.extend(data_single)
 
 # Obstacle avoidance initialization
 obstacle = obstacleAvoidance.obstacleAvoidance()

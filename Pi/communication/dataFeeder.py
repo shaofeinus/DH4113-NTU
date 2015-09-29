@@ -84,9 +84,10 @@ class DataFeeder:
             # If not Accelerometer, Magnetometer, Barometer or Gyroscope,
             # take out last reading before adding new reading
             elif not (dev_id == 3 or dev_id == 4):
-                if not len(data[dev_id]) == 0:
-                    data[dev_id].pop()
-                data[dev_id].append(dataTemp)
+                data[dev_id] = dataTemp
+                # if not len(data[dev_id]) == 0:
+                #     data[dev_id].pop()
+                # data[dev_id].append(dataTemp)
                 # data_print.append(dataTemp)
 
             # If  Barometer or Gyroscope, add reading straight
