@@ -40,10 +40,13 @@ class obstacleAvoidance (object) :
         ##GPIO.output(rightPin, True)
     def convertIRToCm(self, irData) :
         if irData > 0:
+##            print "IRValue: " + str(10650.08 * (math.pow(irData, -0.935)) - 10)
             return 10650.08 * (math.pow(irData, -0.935)) - 10
+##        print 'IRValue: 0'
         return 0
 
     def convertSonarToCm(self, sonarData) :
+##        print sonarData/29/2
         return sonarData / 29 / 2
 
     # update sonar data
