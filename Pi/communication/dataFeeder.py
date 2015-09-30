@@ -64,7 +64,7 @@ class DataFeeder:
 
         timeStamp = timeStamp | data_in
 
-        if dev_id < 5:
+        if dev_id > 0 and dev_id < 5:
             data[dev_id].append(timeStamp)
 
         # data_print = []
@@ -99,7 +99,7 @@ class DataFeeder:
                 # data_print.append(dataTemp)
 
             # If  Barometer or Gyroscope, add reading straight
-            else:
+            elif dev_id < 16 and dev_id > 0:
                 data[dev_id].append(dataTemp)
                 # data_print.append(dataTemp)
 
