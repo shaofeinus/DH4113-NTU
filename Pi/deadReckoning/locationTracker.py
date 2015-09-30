@@ -30,7 +30,7 @@ class LocationTracker:
 
     # Public
     def getTotalSteps(self):
-        return math.ceil(self.totalHalfSteps / 2.0)
+        return math.ceil(self.totalHalfSteps / 1.0)
 
     # Public
     def getTotalDistance(self):

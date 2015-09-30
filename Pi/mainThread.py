@@ -35,13 +35,13 @@ class ProcessDataThread(threading.Thread):
     def run(self):
         while True:
             dataFeeder.process_data(data)
-            # print data[5],
-            # print data[6],
-            # print data[9],
-            # print data[10],
-            # print data[11],
-            # print data[12],
-            # print data[13]
+##            print data[6],
+##            print data[7],
+##            print data[11],
+##            print data[12],
+##            print data[13],
+##            print data[14]
+            
 
 
 
@@ -99,7 +99,7 @@ class LocationUpdateThread(threading.Thread):
         if self.totalPedoData == 4:
             # Parameter accY points forward
             # Parameter yReading points downwards
-            locationTracker.updatePedoData(accY=float(self.accX),  accZ=float(self.accZ),
+            locationTracker.updatePedoData(accY=float(self.accZ),  accZ=float(self.accX),
                                            timeInMillis=int(self.timeInMillisPedo))
             self.totalPedoData = 0
 
@@ -126,7 +126,7 @@ class LocationUpdateThread(threading.Thread):
         if self.totalCompData == 4:
             # Parameter xReading points rightward
             # Parameter yReading points forward
-            locationTracker.updateCompassData(xReading=self.magY, yReading=self.magX)
+            locationTracker.updateCompassData(xReading=-self.magY, yReading=self.magZ)
             self.totalCompData = 0
 
             # print "timeStamp:", self.timeInMillisComp, "MagX:", self.magX, "MagY:", self.magY, "time:", datetime.datetime.now()
@@ -188,11 +188,6 @@ class ObstacleAvoidanceThread(threading.Thread):
         global obstacleDetected
         global checkSideObstacle
         while 1:
-            # if (len(data[5]) == 0 or len(data[6]) == 0 or len(data[10]) == 0 or
-            #         len(data[11]) == 0 or len(data[12]) == 0 or len(data[13]) == 0 or
-            #         len(data[14]) == 0):
-            #     return
-
             irL = data[5]
             irR = data[6]
             sonarT = data[10]
@@ -243,11 +238,6 @@ class ObstacleClearedThread(threading.Thread):
     def run(self):
         global checkSideObstacle
         while 1:
-            # if (len(data[5]) == 0 or len(data[6]) == 0 or len(data[10]) == 0 or
-            #         len(data[11]) == 0 or len(data[12]) == 0 or len(data[13]) == 0 or
-            #         len(data[14]) == 0):
-            #     return
-
             irL = data[5]
             irR = data[6]
             sonarT = data[10]
@@ -283,13 +273,14 @@ NUM_SINGLE_ID = 11
 # 2 - magnetometer
 # 3 - unused
 # 4 - barometer
-# 5 - IR (left)
-# 6 - IR (right)
-# 7-9 - unused
-# 10 - sonar (front top)
-# 11 - sonar (front bottom)
-# 12 - sonar (left shoulder)
-# 13 - sonar (right shoulder)
+# 5 - unused
+# 6 - IR (left)
+# 7 - IR (right)
+# 8-10 - unused 
+# 11 - sonar (front top) (29 trig 19 echo)
+# 12 - sonar (left shoulder) (27 trig 18 echo)
+# 13 - sonar (right shoulder) (25 trig 2 echo)
+# 14 - sonar (front bottom) 
 data = [deque() for x in range(NUM_QUEUED_ID)]
 data_single = [0 for x in range(NUM_SINGLE_ID)]
 data.extend(data_single)

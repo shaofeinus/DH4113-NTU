@@ -2,9 +2,9 @@ import distAngleCalc
 from p2pNavi import navigation
 from jsonParsing import mapParser
 from dijkstra import pathFinder
+import RPi.GPIO as GPIO
 import math
 import time
-#import RPi.GPIO as GPIO
 
 # API:
 # generateFullPath(building, start, end)
@@ -36,16 +36,20 @@ class fullNavi(object) :
         self.nexY = 0               # cm
         self.nodeNavi = navigation()
 
-##        # set up GPIO using BCM numbering
-##        GPIO.setmode(GPIO.BCM)
-##
-##        # GPIO Pins 9 and 10 set to pull up
-##        GPIO.setup(leftPin, GPIO.OUT)
-##        GPIO.setup(rightPin, GPIO.OUT)
-##
-##        # initially turned off
-##        GPIO.output(leftPin, True)
-##        GPIO.output(rightPin, True)
+        self.leftPin = 9
+        self.rightPin = 10
+
+        # set up GPIO using BCM numbering
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setwarnings(False)
+
+        # GPIO Pins 9 and 10 set to pull up
+        GPIO.setup(self.leftPin, GPIO.OUT)
+        GPIO.setup(self.rightPin, GPIO.OUT)
+
+        # initially turned off
+        GPIO.output(self.leftPin, False)
+        GPIO.output(self.rightPin, False)
 
     def updateCurLocation(self, x, y, heading) :
         self.curX = x
@@ -78,14 +82,14 @@ class fullNavi(object) :
 
 
     def alertNodeReached(self) :
-##        GPIO.output(leftPin, False)
-##        GPIO.output(rightPin, False)
+        GPIO.output(self.leftPin, True)
+        GPIO.output(self.rightPin, True)
         prevNode = self.pathList[self.pathListIndex]
         curNodeName = self.comMap[self.mapNumber].getLocationName(prevNode)
         print "You have reached " + curNodeName + "!"
 ##        time.sleep(1)
-##        GPIO.output(leftPin, True)
-##        GPIO.output(rightPin, True)      
+        GPIO.output(self.leftPin, False)
+        GPIO.output(self.rightPin, False)      
 
     def provideNexNodeDirections(self) :
         nexNode =  self.pathList[self.pathListIndex + 1]

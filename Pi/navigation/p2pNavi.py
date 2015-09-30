@@ -1,6 +1,6 @@
 import distAngleCalc
 import math
-#import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO
 
 # API:
 # setNorthAt(northAt)
@@ -132,16 +132,16 @@ class navigation (object) :
             turnAngle = self.getApproxTurnAngle()            
             if turnAngle > 0 :
                 print "Move towards the right!"
-        ##        GPIO.output(rightPin, False)
-        ##        GPIO.output(leftPin, True)
+##                GPIO.output(self.rightPin, True)
+##                GPIO.output(self.leftPin, False)
             elif turnAngle < 0 :
                 print "Move towards the left!"
-        ##        GPIO.output(leftPin, False)
-        ##        GPIO.output(rightPin, True)
+##                GPIO.output(self.leftPin, True)
+##                GPIO.output(self.rightPin, False)
             else :
                 print "Keep going in your current direction!"
-        ##        GPIO.output(leftPin, True)
-        ##        GPIO.output(rightPin, True)
+##                GPIO.output(self.leftPin, False)
+##                GPIO.output(self.rightPin, False)
 
             return 0
         else :

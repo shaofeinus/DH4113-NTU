@@ -1,17 +1,17 @@
 import time
 import math
-#import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO
 
 # API:
 # avoidObstacle()
 # TODO : change obstacle tolerance values with experimental data
 class obstacleAvoidance (object) :
     def __init__(self) :       
-        self.FRONT_OBSTACLE_DISTANCE = 60
-        self.BOTTOM_OBSTACLE_DISTANCE = 60
+        self.FRONT_OBSTACLE_DISTANCE = 75
+        self.BOTTOM_OBSTACLE_DISTANCE = 65
         self.SIDE_WALL_DISTANCE = 100
-        self.SIDE_OBSTACLE_DISTANCE = 70
-        self.VIBRATE_DURATION = 3
+        self.SIDE_OBSTACLE_DISTANCE = 65
+        self.VIBRATE_DURATION = 2
 
         # GPIO Pins for vibration motors
         self.leftPin = 9
@@ -29,15 +29,16 @@ class obstacleAvoidance (object) :
         self.irR = None             # bottom right
 
         # set up GPIO using BCM numbering
-        ##GPIO.setmode(GPIO.BCM)
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setwarnings(False)
 
         # GPIO Pins set to pull up
-        ##GPIO.setup(leftPin, GPIO.OUT)
-        ##GPIO.setup(righttPin, GPIO.OUT)
+        GPIO.setup(self.leftPin, GPIO.OUT)
+        GPIO.setup(self.rightPin, GPIO.OUT)
 
-        ### initially turned off
-        ##GPIO.output(leftPin, True)
-        ##GPIO.output(rightPin, True)
+        # initially turned off
+        GPIO.output(self.leftPin, False)
+        GPIO.output(self.rightPin, False)
     def convertIRToCm(self, irData) :
         if irData > 0:
 ##            print "IRValue: " + str(10650.08 * (math.pow(irData, -0.935)) - 10)
@@ -64,19 +65,19 @@ class obstacleAvoidance (object) :
 
     # indicates which side to turn via motors
     def turnFromObstacle(self) :
-##        print "ENTER TURN FROM OBSTACLE"
+        print "ENTER TURN FROM OBSTACLE"
         self.lastTurnedDirection = self.getSideToTurn()
         if self.lastTurnedDirection == 1 :
-    ##        GPIO.output(leftPin, True)
-    ##        GPIO.output(rightPin, False)
-             print "Turn right! Right vibrator activated"
+            GPIO.output(self.leftPin, False)
+            GPIO.output(self.rightPin, True)
+            print "Turn right! Right vibrator activated"
         elif self.lastTurnedDirection == 2 :
-    ##        GPIO.output(leftPin, False)
-    ##        GPIO.output(rightPin, True)
+            GPIO.output(self.leftPin, True)
+            GPIO.output(self.rightPin, False)
             print "Turn left! Left vibrator activated"
         else :
-    ##        GPIO.output(leftPin, False)
-    ##        GPIO.output(rightPin, False)
+            GPIO.output(self.leftPin, True)
+            GPIO.output(self.rightPin, True)
             print "Both side blocked! Both vibration motors activated"
 
     
@@ -90,18 +91,30 @@ class obstacleAvoidance (object) :
         else :
             return 0
 
+##    # same as above, but choose the side with more space        
+##    def getSideToTurn(self) :
+##        if ((self.sonarLS > self.sonarRS) and
+##            ((self.sonarLS > self.SIDE_WALL_DISTANCE) or
+##             (self.sonarLS == 0))):
+##            return 2
+##        elif ((self.sonarRS != 0) and (self.sonarLS != 0) and
+##              (self.sonarRS < self.SIDE_WALL_DISTANCE) and
+##              (self.sonarLS < self.SIDE_WALL_DISTANCE)) :
+##            return 0
+##        else  :
+##            return 1
 
     def vibrateMotors(self) :
-##        GPIO.output(leftPin, False)
-##        GPIO.output(rightPin, False)
-        print "Obstacle encountered! Vibrate both sensors for 3 seconds"
+        GPIO.output(self.leftPin, True)
+        GPIO.output(self.rightPin, True)
+        print "Obstacle encountered! Vibrate both sensors for " + str(self.VIBRATE_DURATION) + " seconds"
         # wait for VIBRATE_DURATION before proceeding
         time.sleep(self.VIBRATE_DURATION)
 
     def turnOffMotors(self) :
         print "Vibration motors turned off"
-##        GPIO.output(leftPin, True)
-##        GPIO.output(rightPin, True)
+        GPIO.output(self.leftPin, False)
+        GPIO.output(self.rightPin, False)
 
 
     # detects new obstacles:
@@ -138,7 +151,7 @@ class obstacleAvoidance (object) :
     # until the obstacle is completely cleared
     # returns 1 if obstacle is cleared, 0 otherwise
     def checkObstacleCleared(self) :
-##        print "ENTER CHECK OBSTACLE CLEARED"
+        print "ENTER CHECK OBSTACLE CLEARED"
         if(self.lastTurnedDirection == 1) :
             sideSonar = self.sonarLS
         else :
@@ -147,5 +160,6 @@ class obstacleAvoidance (object) :
         if((sideSonar < self.SIDE_OBSTACLE_DISTANCE) and (sideSonar != 0)) :
             return 0
         else :
+            self.turnOffMotors()
             return 1
  
