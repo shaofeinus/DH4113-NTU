@@ -9,7 +9,7 @@ __author__ = 'Shao Fei'
 # z-axis is pointing upward
 # y-axis is pointing forward
 # x-axis is pointing rightwards TODO: left or right to be calibrated
-# Compass reading is in radians
+# Compass reading is in radians clockwise from North
 class Compass:
 
     WINDOW_SIZE = 10
@@ -63,12 +63,12 @@ class Compass:
         return
 
     # Public
-    # Reading is in radians
+    # Reading is in radians of [0, 2 * pi] clockwise from North
     def getHeadingInRad(self):
         return self.currHeading
 
     # Public
-    # Reading is in radians
+    # Reading is in degrees of [-180, 180] clockwise from North
     def getHeadingInDeg(self):
         heading = self.currHeading
         if heading < math.pi:
