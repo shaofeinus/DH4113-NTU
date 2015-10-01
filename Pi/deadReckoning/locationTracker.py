@@ -1,4 +1,7 @@
 import math
+import barometer
+import compass
+import pedometer
 
 __author__ = 'Shao Fei'
 
@@ -7,14 +10,15 @@ class LocationTracker:
 
     HALF_STEP_DISTANCE = 40     # in cm
 
-    def __init__(self, pedometer, compass, barometer, initX, initY):
+    def __init__(self, initX, initY, northAt):
         self.currX = initX      # Points eastwards
         self.currY = initY      # Points northwards
-        self.pedometer = pedometer
-        self.compass = compass
-        self.barometer = barometer
+        self.pedometer = pedometer.Pedometer()
+        self.compass = compass.Compass()
+        self.barometer = barometer.Barometer()
         self.totalHalfSteps = 0
         self.totalDistance = 0
+        self.northAt = northAt / 180 * math.pi      # In rad
 
     # Public
     def getLocation(self):
@@ -79,14 +83,25 @@ class LocationTracker:
         # Reflects true steps, 1/2 of what is recorded (pseudo steps)
         currDistance = currHalfSteps * self.HALF_STEP_DISTANCE
 
+        # Heading wrt to North
         heading = self.compass.getHeadingInRad()
 
+        # Heading wrt to y-axis of map
+        headingWRTMap = self.getHeadingWRTMap(heading)
+
         # x points to the East
-        xCurrDistance = currDistance * math.sin(heading)
+        xCurrDistance = currDistance * math.sin(headingWRTMap)
         # y points to the North
-        yCurrDistance = currDistance * math.cos(heading)
+        yCurrDistance = currDistance * math.cos(headingWRTMap)
 
         self.currX += xCurrDistance
         self.currY += yCurrDistance
         self.totalDistance += currDistance
         return
+
+    # Get heading wrt y-axis of map (pointing upwards of north)
+    def getHeadingWRTMap(self, headingInRad):
+        # TODO: Test out
+        headingWRTMap = (headingInRad + self.northAt) % (2 * math.pi)
+        return headingWRTMap
+

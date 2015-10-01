@@ -1,9 +1,6 @@
 import threading
 import time
 import datetime
-from deadReckoning import pedometer
-from deadReckoning import compass
-from deadReckoning import barometer
 from deadReckoning import locationTracker
 from navigation import fullNavi
 from navigation import obstacleAvoidance
@@ -297,7 +294,7 @@ navi.generateFullPath(0, 1, 5)
 
 # Location tracker initialisation
 # TODO: Set initial position
-locationTracker = locationTracker.LocationTracker(pedometer.Pedometer(), compass.Compass(), barometer.Barometer(), 0, 0)
+locationTracker = locationTracker.LocationTracker(0, 0, 0)
 dataFeeder = dataFeeder.DataFeeder()
 
 # Locks for various variables
