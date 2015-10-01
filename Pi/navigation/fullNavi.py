@@ -2,7 +2,7 @@ import distAngleCalc
 from p2pNavi import navigation
 from jsonParsing import mapParser
 from dijkstra import pathFinder
-import RPi.GPIO as GPIO
+##import RPi.GPIO as GPIO
 import math
 import time
 
@@ -15,12 +15,9 @@ import time
 class fullNavi(object) :
     def __init__(self) :
         self.comMap = []
-        self.comMap.append(mapParser("com1L2"))
-        self.comMap.append(mapParser("com2L2"))
-        self.comMap.append(mapParser("com2L3"))
-        
-        # 0 for com1L2, 1 for com2L2, 2 for com2L3
-        self.mapNumber = 0
+        self.buildingName = None
+        self.levelNumber = 0
+        self.mapNumber = 0          # index of map in comMap list
         self.startLocation = 0
         self.endLocation = 0
         self.curX = 0               # cm
@@ -39,17 +36,17 @@ class fullNavi(object) :
         self.leftPin = 9
         self.rightPin = 10
 
-        # set up GPIO using BCM numbering
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setwarnings(False)
-
-        # GPIO Pins 9 and 10 set to pull up
-        GPIO.setup(self.leftPin, GPIO.OUT)
-        GPIO.setup(self.rightPin, GPIO.OUT)
-
-        # initially turned off
-        GPIO.output(self.leftPin, False)
-        GPIO.output(self.rightPin, False)
+##        # set up GPIO using BCM numbering
+##        GPIO.setmode(GPIO.BCM)
+##        GPIO.setwarnings(False)
+##
+##        # GPIO Pins 9 and 10 set to pull up
+##        GPIO.setup(self.leftPin, GPIO.OUT)
+##        GPIO.setup(self.rightPin, GPIO.OUT)
+##
+##        # initially turned off
+##        GPIO.output(self.leftPin, False)
+##        GPIO.output(self.rightPin, False)
 
     def updateCurLocation(self, x, y, heading) :
         self.curX = x
@@ -58,14 +55,18 @@ class fullNavi(object) :
         self.nodeNavi.updateCurCoord(x, y)
         self.nodeNavi.updateHeading(heading)
 
-    def generateFullPath(self, building, start, end) :
+    def generateFullPath(self, buildingName, levelNumber, start, end) :
+        self.mapNumber = 0
+        self.comMap.append(mapParser())
+        self.comMap[self.mapNumber].setMap(buildingName, levelNumber)
         self.startLocation = start
         self.endLocation = end
-        self.mapNumber = building
+        self.buildingName = buildingName
+        self.levelNumber = levelNumber
         pathFind = pathFinder()
-        pathFind.setMap(building)
+        pathFind.setMap(buildingName, levelNumber)
         self.pathList = pathFind.getPath(start, end)
-        self.northAt = self.comMap[building].getNorthAt()
+        self.northAt = self.comMap[self.mapNumber].getNorthAt()
         self.updatePrevNexCoord()
         print "Path: " + str(self.pathList)
 
@@ -82,14 +83,14 @@ class fullNavi(object) :
 
 
     def alertNodeReached(self) :
-        GPIO.output(self.leftPin, True)
-        GPIO.output(self.rightPin, True)
+##        GPIO.output(self.leftPin, True)
+##        GPIO.output(self.rightPin, True)
         prevNode = self.pathList[self.pathListIndex]
         curNodeName = self.comMap[self.mapNumber].getLocationName(prevNode)
         print "You have reached " + curNodeName + "!"
 ##        time.sleep(1)
-        GPIO.output(self.leftPin, False)
-        GPIO.output(self.rightPin, False)      
+##        GPIO.output(self.leftPin, False)
+##        GPIO.output(self.rightPin, False)      
 
     def provideNexNodeDirections(self) :
         nexNode =  self.pathList[self.pathListIndex + 1]

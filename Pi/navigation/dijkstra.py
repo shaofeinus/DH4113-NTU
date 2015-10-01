@@ -99,22 +99,8 @@ class pathFinder (object) :
             path.reverse()
         return path
     
-    def setMap(self, mapNo):
-        self.mapNo = mapNo        
-        if self.mapNo == 0:
-            self.currMap = mapParser("com1L2")
-        elif self.mapNo == 1:
-            self.currMap = mapParser("com2L2")
-        elif self.mapNo == 2:
-            self.currMap = mapParser("com2L3")
-
-##        if mapName == "com1L2" :
-##            self.currMap = mapParser("com1L2")
-##        elif mapName == "com2L2" :
-##            self.currMap = mapParser("com2L2")
-##        elif mapName == "com2L3" :
-##            self.currMap = mapParser("com2L3")
-
-            
+    def setMap(self, buildingName, levelNumber):
+        self.currMap = mapParser()
+        self.currMap.setMap(buildingName, levelNumber)
         self.NUM_NODES = self.currMap.numElements
     

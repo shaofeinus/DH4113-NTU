@@ -12,7 +12,9 @@ def calcAngle(x1, y1, x2, y2, northAt) :
         xprime = x2 - x1
         yprime = y2 - y1
 
-        if xprime == 0 or yprime == 0: 
+        if xprime == 0 and yprime == 0:
+                return 0
+        elif xprime == 0 or yprime == 0:
                 if x2 > x1 :
                         angle = 90
                 elif x2 < x1 :
@@ -20,9 +22,9 @@ def calcAngle(x1, y1, x2, y2, northAt) :
                 elif y2 > y1 : 
                         angle = 0
                 elif y2 < y1 :
-                        angle = 180 
+                        angle = 180
         # degree obtained via reverse tan2 inputs and add 360 if angle < 0
-        else : 
+        else :
                 angle = math.degrees(math.atan2(xprime, yprime))
         
         if angle < 0 :
