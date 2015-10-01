@@ -5,7 +5,7 @@ __author__ = 'Shao Fei'
 
 class LocationTracker:
 
-    HALF_STEP_DISTANCE = 25     # in cm
+    HALF_STEP_DISTANCE = 40     # in cm
 
     def __init__(self, pedometer, compass, barometer, initX, initY):
         self.currX = initX      # Points eastwards
