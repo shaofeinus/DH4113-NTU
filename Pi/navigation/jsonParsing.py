@@ -30,24 +30,41 @@ class mapParser (object) :
                 self.northAt = 0
                 self.numElements = 0
                 self.matrix = {}
+                self.loadedMaps = ["com1L2.json", "com2L2.json", "com2L3.json"]
                 
         
         # returns the URL of the map
         def mapUrl(self, buildingName, levelNumber) :
                 mapName = "http://ShowMyWay.comp.nus.edu.sg/getMapInfo.php?Building=" + str(buildingName) + "&Level=" + str(levelNumber)
                 return mapName
-        
-        # return 1 if successful, 0 if unsuccessful
-        def setMap(self, buildingName, levelNumber) :
+
+        def isMapAlreadyLoaded(self, newMapName) :
+                for i in self.loadedMaps :
+                        if newMapName == i :
+                                return True
+                return False
+
+        # load from text file
+        def jsonFileInput(self, mapName) :        
+                with open(mapName) as jsonMap:
+                        self.buildingMap = json.load(jsonMap)
+                        
+        # load from server
+        def jsonServerInput(self, buildingName, levelNumber) :
                 # json server input
                 jsonMap = urllib2.urlopen(self.mapUrl(buildingName, levelNumber))
                 self.buildingMap = json.load(jsonMap)
+        
+        # return 1 if successful, 0 if unsuccessful
+        def setMap(self, buildingName, levelNumber) :
+                mapName = str(buildingName) + "L" + str(levelNumber) + ".json"
+                if(self.isMapAlreadyLoaded(mapName) is True) :
+                        self.jsonFileInput(mapName)
+                else :
+                        self.jsonServerInput(buildingName, levelNumber)
+
                 if self.buildingMap['info'] is None :
                         return 0
-                # json file input
-##                mapName = str(buildingName) + "L" + str(levelNumber) + ".json"
-##                with open(mapName) as jsonMap:
-##                        self.buildingMap = json.load(jsonMap)
                         
                 self.northAt = int(self.buildingMap['info']['northAt'])
                 self.numElements = len(self.buildingMap.get('map'))
