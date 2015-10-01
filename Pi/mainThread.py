@@ -52,6 +52,7 @@ class LocationDisplayThread(threading.Thread):
         while 1:
             locationTracker.updateLocation()
             print("Total Steps:", locationTracker.getTotalSteps())
+            print("distance:", locationTracker.getTotalDistance())
             print("Deviation from N:", locationTracker.getHeadingInDeg())
             print(locationTracker.getLocation())
             print("Height:", locationTracker.getHeightInCM())

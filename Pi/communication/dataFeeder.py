@@ -37,14 +37,13 @@ class DataFeeder:
         return num
 
     def printAll(self, dev_id, timeStamp, data_print):
-        if dev_id == 2:
-            print ("id: "),
-            print (dev_id),
-            print (", timeStamp: "),
-            print (timeStamp),
-            print (", data: "),
-            print (data_print),
-            print (datetime.datetime.now())
+        print ("id: "),
+        print (dev_id),
+        print (", timeStamp: "),
+        print (timeStamp),
+        print (", data: "),
+        print (data_print),
+        print (datetime.datetime.now())
 
     def process_data(self, data):
 
