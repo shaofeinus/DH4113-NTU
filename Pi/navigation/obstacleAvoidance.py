@@ -19,13 +19,19 @@ class obstacleAvoidance (object) :
         self.rightPin = 10
 
         self.lastTurnedDirection = 0
-        # sonar readings (cm):
-        self.sonarFT = None         # front top
+        
+        # front top sonar
+        self.sonarFT = [self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE]
+        # front bottom IR
+        self.irFB = [self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE]
+
+        historyIndex = -1
+        
+        # side sonar readings (cm):
         self.sonarLS = None         # left side
         self.sonarRS = None         # right side
 
-        # IR readings (cm):
-        self.irFB = None            # front bottom
+        # IR readings (cm):   
         self.irLS = None            # left side
         self.irRS = None            # right side
 
@@ -59,16 +65,29 @@ class obstacleAvoidance (object) :
             return self.LARGE_VALUE
         return sonarData / 29 / 2
 
-    # update sonar data
+
     def updateFrontSensorData(self, sonarFront, irFront) :
-        self.sonarFT = self.convertSonarToCm(sonarFront)
-        self.irFB = self.convertIRToCm(irFront)
+        self.historyIndex = (self.historyIndex + 1) % 3
+        self.sonarFT[self.historyIndex] = self.convertSonarToCm(sonarFront)
+        self.irFB[self.historyIndex] = self.convertIRToCm(irFront)
 
     def updateSideSensorData(self, sonarLeft, sonarRight, irLeft, irRight) :
         self.sonarLS = self.convertSonarToCm(sonarLeft)
         self.sonarRS = self.convertSonarToCm(sonarRight)
         self.irLS = self.convertIRToCm(irLeft)
         self.irRS = self.convertIRToCm(irRight)
+
+    def hasSonarObstacle(self) :
+        for i in self.sonarFT :
+            if i > self.FRONT_OBSTACLE_DISTANCE :
+                return False
+        return True
+
+    def hasIrObstacle(self) :
+        for i in self.irFB :
+            if i > self.FRONT_OBSTACLE_DISTANCE :
+                return False
+        return True
 
     # indicates which side to turn via motors
     def turnFromObstacle(self) :
@@ -105,7 +124,6 @@ class obstacleAvoidance (object) :
         else :
              return 1
 
-        
     def vibrateMotors(self) :
 ##        GPIO.output(self.leftPin, True)
 ##        GPIO.output(self.rightPin, True)
@@ -118,31 +136,24 @@ class obstacleAvoidance (object) :
 ##        GPIO.output(self.leftPin, False)
 ##        GPIO.output(self.rightPin, False)
 
-
     # detects new obstacles:
-    # if alreadyDetected is 1, return 0, else
-    # if an obstacle is detected, vibrates both motors
-    # and returns 1, else returns 0
+    # if alreadyDetected is 1, return False, else
+    # if an obstacle is detected, returns True
+    # else returns False
     def isNewObstacleDetected(self, alreadyDetected) :
-##        print "ENTER NEW AVOID OBSTACLE"
         if alreadyDetected == 0 :
-            if ((self.sonarFT < self.FRONT_OBSTACLE_DISTANCE) and
-                 (self.irFB < self.FRONT_OBSTACLE_DISTANCE)) :
-                 return 1
-            else :
-                return 0
+            return self.isFrontObstacleDetected()
         else :
-            return 0
+            return False
 
-    # returns 1 if an obstacle is detected in front
-    # else return 0
-    def isFrontObstacleDetected(self) :
-##        print "ENTER FRONT AVOID OBSTACLE"
-        if ((self.sonarFT < self.FRONT_OBSTACLE_DISTANCE) and
-                 (self.irFB < self.FRONT_OBSTACLE_DISTANCE)) :
-            return 1
+    # returns True if an obstacle is detected in front
+    # else return False
+    def isFrontObstacleDetected(self) :          
+        if ((self.hasSonarObstacle() is True) or
+            (self.hasIrObstacle() is True)) :
+            return True
         else :
-            return 0
+            return False
 
 
     # monitor the obstacle from the side while the person walks forward,
