@@ -4,7 +4,7 @@ import datetime
 from deadReckoning import locationTracker
 from navigation import fullNavi
 from navigation import obstacleAvoidance
-from communication import dataFeeder
+#from communication import dataFeeder
 from communication import dataFeederDum
 from collections import deque
 
@@ -34,12 +34,10 @@ class ProcessDataThread(threading.Thread):
             dataFeeder.process_data(data)
 ##            print data[6],
 ##            print data[7],
+##            print data[8],
 ##            print data[11],
 ##            print data[12],
-##            print data[13],
-##            print data[14]
-            
-
+##            print data[13]
 
 
 class LocationDisplayThread(threading.Thread):
