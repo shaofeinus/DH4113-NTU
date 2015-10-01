@@ -1,6 +1,6 @@
 import distAngleCalc
 import math
-import RPi.GPIO as GPIO
+##import RPi.GPIO as GPIO
 
 # API:
 # setNorthAt(northAt)

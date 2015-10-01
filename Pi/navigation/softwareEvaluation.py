@@ -32,20 +32,17 @@ def getTurnDirection(curX, curY, nexX, nexY, curAngle, northAt) :
     return turnAngle
             
 
-building = int(raw_input("Enter building name (0-com1L2/1-com2L2/2-com2L3): "))
+buildingName = str(raw_input("Enter building name: "))
+levelNumber = int(raw_input("Enter level number: "))
 startIndex = int(raw_input("Enter starting node: "))
 endIndex = int(raw_input("Enter ending node: "))
 
 findPath = pathFinder()
-findPath.setMap(building)
+findPath.setMap(buildingName, levelNumber)
 pathList = findPath.getPath(startIndex, endIndex)
+comMap = mapParser()
+comMap.setMap(buildingName, levelNumber)
 
-if building == 0 :
-    comMap = mapParser("com1L2")
-elif building == 1 :
-    comMap = mapParser("com2L2")
-elif building == 2 :
-    comMap = mapParser("com2L3")
 
 numNodes = len(pathList)
 print "Node list: [",
@@ -72,7 +69,10 @@ while x != xDest or y != yDest :
     turnAngle = getTurnDirection(x, y, nexX, nexY, heading, northAt)
     
     print "Nearest node: " + str(nextNode + 1)
-    print "Turning angle: " + str(turnAngle)
+    if(distance == 0) :
+        print "Turning angle: " + "0"
+    else :
+        print "Turning angle: " + str(turnAngle)
     print "Distance to nearest node: " + str(distance) + "cm"    
 
     x = int(raw_input("Enter x: "))

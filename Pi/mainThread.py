@@ -188,16 +188,16 @@ class ObstacleAvoidanceThread(threading.Thread):
         global obstacleDetected
         global checkSideObstacle
         while 1:
-            irL = data[5]
-            irR = data[6]
-            sonarT = data[10]
-            sonarB = data[11]
+            irFB = data[6]
+            irLS = data[7]
+            irRS = data[8]
+            sonarFT = data[11]
             sonarLS = data[12]
             sonarRS = data[13]
 
             obstacleLock.acquire()
-            obstacle.updateFrontSonarData(sonarT, sonarB)
-            obstacle.updateIRData(irL, irR)
+            obstacle.updateFrontSensorData(sonarFT, irFB)
+            obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
             obstacleLock.release()
             obstacleStatusLock.acquire()
             obstacleStatus = obstacleDetected
@@ -214,9 +214,8 @@ class ObstacleAvoidanceThread(threading.Thread):
             obstacleStatusLock.release()
             if obstacleStatus == 1:
                 obstacleLock.acquire()
-                obstacle.updateFrontSonarData(sonarT, sonarB)
-                obstacle.updateIRData(irL, irR)
-                obstacle.updateSideSonarData(sonarLS, sonarRS)
+                obstacle.updateFrontSensorData(sonarFT, irFB)
+                obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
                 obstacleLock.release()
                 if obstacle.isFrontObstacleDetected() == 1:
                     obstacle.turnFromObstacle()
@@ -238,10 +237,10 @@ class ObstacleClearedThread(threading.Thread):
     def run(self):
         global checkSideObstacle
         while 1:
-            irL = data[5]
-            irR = data[6]
-            sonarT = data[10]
-            sonarB = data[11]
+            irFB = data[6]
+            irLS = data[7]
+            irRS = data[8]
+            sonarFT = data[11]
             sonarLS = data[12]
             sonarRS = data[13]
             obstacleStatusLock.acquire()
@@ -249,9 +248,8 @@ class ObstacleClearedThread(threading.Thread):
             obstacleStatusLock.release()
             if toMonitorObstacle == 1:
                 obstacleLock.acquire()
-                obstacle.updateFrontSonarData(sonarT, sonarB)
-                obstacle.updateIRData(irL, irR)
-                obstacle.updateSideSonarData(sonarLS, sonarRS)
+                obstacle.updateFrontSensorData(sonarFT, irFB)
+                obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
                 obstacleLock.release()
                 if obstacle.checkObstacleCleared() == 1:
                     obstacleStatusLock.acquire()
@@ -274,13 +272,14 @@ NUM_SINGLE_ID = 11
 # 3 - unused
 # 4 - barometer
 # 5 - unused
-# 6 - IR (left)
-# 7 - IR (right)
-# 8-10 - unused 
+# 6 - IR (front bottom)
+# 7 - IR (left side)
+# 8 - IR (right side)
+# 9-10 - unused 
 # 11 - sonar (front top) (29 trig 19 echo)
-# 12 - sonar (left shoulder) (27 trig 18 echo)
-# 13 - sonar (right shoulder) (25 trig 2 echo)
-# 14 - sonar (front bottom) 
+# 12 - sonar (left side) (27 trig 18 echo)
+# 13 - sonar (right side) (25 trig 2 echo)
+
 data = [deque() for x in range(NUM_QUEUED_ID)]
 data_single = [0 for x in range(NUM_SINGLE_ID)]
 data.extend(data_single)
@@ -293,7 +292,7 @@ checkSideObstacle = 0
 
 # Navigation initialization
 navi = fullNavi.fullNavi()
-navi.generateFullPath(0, 1, 5)
+navi.generateFullPath("com1", 2, 1, 5)
 
 # Location tracker initialisation
 # TODO: Set initial position

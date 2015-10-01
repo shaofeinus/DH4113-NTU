@@ -11,6 +11,8 @@ import distAngleCalc
 # Adjacency matrix name is matrix
 
 # API:
+# mapParser()
+# setMap(buildingName, levelNumber)
 # getLocationName(index)
 # getNorthAt()
 # getLocationXCoord(index)
@@ -22,35 +24,36 @@ import distAngleCalc
 # index is in the range {0 to n-1}
 
 class mapParser (object) :
-        def __init__(self, mapName) :
-                self.mapName = mapName
+        def __init__(self) :
+                self.mapName = None
                 self.buildingMap = {}
                 self.northAt = 0
                 self.numElements = 0
                 self.matrix = {}
-                self.loadMap(mapName)
-                self.fillAMatrix()
                 
         
         # returns the URL of the map
-        def mapUrl(self, identifier) :
-                map = {"com1L2" : "http://ShowMyWay.comp.nus.edu.sg/getMapInfo.php?Building=COM1&Level=2", 
-                       "com2L2" : "http://showmyway.comp.nus.edu.sg/getMapInfo.php?Building=COM2&Level=2",
-                       "com2L3" : "http://showmyway.comp.nus.edu.sg/getMapInfo.php?Building=COM2&Level=3"}
-                return map[identifier]
-
-        def loadMap(self, mapName) :
-                # json file input (server)
-##                jsonMap = urllib2.urlopen(self.mapUrl(mapName))
-##                self.buildingMap = json.load(jsonMap)
-                # json file input (non-server)
-                mapName += ".json"
-                with open(mapName) as jsonMap:
-                        self.buildingMap = json.load(jsonMap)
+        def mapUrl(self, buildingName, levelNumber) :
+                mapName = "http://ShowMyWay.comp.nus.edu.sg/getMapInfo.php?Building=" + str(buildingName) + "&Level=" + str(levelNumber)
+                return mapName
+        
+        # return 1 if successful, 0 if unsuccessful
+        def setMap(self, buildingName, levelNumber) :
+                # json server input
+                jsonMap = urllib2.urlopen(self.mapUrl(buildingName, levelNumber))
+                self.buildingMap = json.load(jsonMap)
+                if self.buildingMap['info'] is None :
+                        return 0
+                # json file input
+##                mapName = str(buildingName) + "L" + str(levelNumber) + ".json"
+##                with open(mapName) as jsonMap:
+##                        self.buildingMap = json.load(jsonMap)
                         
                 self.northAt = int(self.buildingMap['info']['northAt'])
                 self.numElements = len(self.buildingMap.get('map'))
                 self.matrix = [[0]*self.numElements for i in range(self.numElements)]
+                self.fillAMatrix()
+                return 1
 
         
         def fillAMatrix(self) :
