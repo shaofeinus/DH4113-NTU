@@ -4,7 +4,7 @@ import datetime
 from deadReckoning import locationTracker
 from navigation import fullNavi
 from navigation import obstacleAvoidance
-#from communication import dataFeeder
+from communication import dataFeeder
 from communication import dataFeederDum
 from collections import deque
 
@@ -198,7 +198,7 @@ class ObstacleAvoidanceThread(threading.Thread):
             obstacleStatusLock.acquire()
             obstacleStatus = obstacleDetected
             obstacleStatusLock.release()
-            if obstacle.isNewObstacleDetected(obstacleStatus) == 1:
+            if obstacle.isNewObstacleDetected(obstacleStatus) is True:
                 obstacleStatusLock.acquire()
                 obstacleDetected = 1
                 checkSideObstacle = 0
@@ -213,7 +213,7 @@ class ObstacleAvoidanceThread(threading.Thread):
                 obstacle.updateFrontSensorData(sonarFT, irFB)
                 obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
                 obstacleLock.release()
-                if obstacle.isFrontObstacleDetected() == 1:
+                if obstacle.isFrontObstacleDetected() is True:
                     obstacle.turnFromObstacle()
                 else:
                     obstacle.turnOffMotors()
