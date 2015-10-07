@@ -32,12 +32,12 @@ class ProcessDataThread(threading.Thread):
     def run(self):
         while True:
             dataFeeder.process_data(data)
-##            print data[6],
-##            print data[7],
-##            print data[8],
-##            print data[11],
-##            print data[12],
-##            print data[13]
+        # print data[6],
+        # print data[7],
+        # print data[8],
+        # print data[11],
+        # print data[12],
+        # print data[13],
 
 
 class LocationDisplayThread(threading.Thread):
@@ -45,6 +45,7 @@ class LocationDisplayThread(threading.Thread):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.threadName = threadName
+        self.steps = 0;
 
     def run(self):
         while 1:
@@ -80,7 +81,7 @@ class LocationUpdateThread(threading.Thread):
         if len(data[1]) == 0:
             return
         elif self.totalPedoData == 0:
-            self.timeInMillisComp = data[1].popleft()
+            self.timeInMillisPedo = data[1].popleft()
             self.totalPedoData += 1
         elif self.totalPedoData == 1:
             self.accX = data[1].popleft()
@@ -93,13 +94,10 @@ class LocationUpdateThread(threading.Thread):
             self.totalPedoData += 1
 
         if self.totalPedoData == 4:
-            # Parameter accY points forward
-            # Parameter yReading points downwards
-            locationTracker.updatePedoData(accY=float(self.accZ),  accZ=float(self.accX),
-                                           timeInMillis=int(self.timeInMillisPedo))
+            locationTracker.updatePedoData(self.accX, self.accY, self.accZ, self.timeInMillisPedo)
             self.totalPedoData = 0
 
-            # print "timeStamp:", self.timeInMillisComp, "AccX:", self.accX, "AccY:", self.accY, "AccZ:", self.accZ, "time:", datetime.datetime.now()
+            # print "timeStamp:", self.timeInMillisPedo, "AccX:", self.accX, "AccY:", self.accY, "AccZ:", self.accZ, "time:", datetime.datetime.now()
 
 
     def updateCompassData(self):
@@ -307,9 +305,9 @@ threads.append(ReceiveDataThread(1, "data receiving"))
 threads.append(ProcessDataThread(2, "data processing"))
 threads.append(LocationUpdateThread(3, "location update"))
 threads.append(LocationDisplayThread(4, "location display"))
-threads.append(NavigationThread(5, "navigation"))
-threads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
-threads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
+# threads.append(NavigationThread(5, "navigation"))
+# threads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
+# threads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
 
 for thread in threads:
     thread.start()

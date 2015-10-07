@@ -66,7 +66,7 @@ class DataFeeder:
         if dev_id > 0 and dev_id < 5:
             data[dev_id].append(timeStamp)
 
-        # data_print = []
+        data_print = []
 
         for x in range(self.num_bytes[dev_id]):
             # First byte
@@ -86,7 +86,7 @@ class DataFeeder:
             # If Accelerometer and Magnetometer, check for sign
             if dev_id == 1 or dev_id == 2:
                 data[dev_id].append(self.my_to_signed(dataTemp))
-                # data_print.append(self.my_to_signed(dataTemp))
+                data_print.append(self.my_to_signed(dataTemp))
 
             # If not Accelerometer, Magnetometer, Barometer or Gyroscope,
             # take out last reading before adding new reading
@@ -95,11 +95,12 @@ class DataFeeder:
                 # if not len(data[dev_id]) == 0:
                 #     data[dev_id].pop()
                 # data[dev_id].append(dataTemp)
-                # data_print.append(dataTemp)
+                data_print.append(dataTemp)
+                pass
 
             # If  Barometer or Gyroscope, add reading straight
             elif dev_id < 16 and dev_id > 0:
                 data[dev_id].append(dataTemp)
-                # data_print.append(dataTemp)
+                data_print.append(dataTemp)
 
         # self.printAll(dev_id, timeStamp, data_print)

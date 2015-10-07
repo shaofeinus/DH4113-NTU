@@ -2,6 +2,7 @@ import math
 import barometer
 import compass
 import pedometer
+import pedometer2
 
 __author__ = 'Shao Fei'
 
@@ -13,7 +14,8 @@ class LocationTracker:
     def __init__(self, initX, initY, northAt):
         self.currX = initX      # Points eastwards
         self.currY = initY      # Points northwards
-        self.pedometer = pedometer.Pedometer()
+        #self.pedometer = pedometer.Pedometer()
+        self.pedometer = pedometer2.Pedometer2()
         self.compass = compass.Compass()
         self.barometer = barometer.Barometer()
         self.totalHalfSteps = 0
@@ -64,8 +66,9 @@ class LocationTracker:
         return
 
     # Public
-    def updatePedoData(self, accY, accZ, timeInMillis):
-        self.pedometer.updateWindow(accY, accZ, timeInMillis)
+    def updatePedoData(self, accX, accY, accZ, timeInMillis):
+        # self.pedometer.updateWindow(accY, accZ, timeInMillis)
+        self.pedometer.insertData(accX, accY, accZ, timeInMillis)
 
     # Public
     def updateCompassData(self, xReading, yReading):
@@ -104,4 +107,3 @@ class LocationTracker:
         # TODO: Test out
         headingWRTMap = (headingInRad + self.northAt) % (2 * math.pi)
         return headingWRTMap
-

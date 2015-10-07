@@ -13,19 +13,13 @@ class Pedometer2:
     ACC_WINDOW_SIZE = ACC_WINDOW_TIME / ACC_DATA_INTERVAL
     SINGLE_DATA_WINDOW_SIZE = 5
 
-    ACC_H_THRESHOLD = 1600
-    ACC_L_THRESHOLD = 1600
+    ACC_H_THRESHOLD = 20000
+    ACC_L_THRESHOLD = 12500
     HIGH_LOW_INTERVAL_MAX = 500  # In ms
-    HIGH_LOW_INTERVAL_MIN = 50  # In ms
+    HIGH_LOW_INTERVAL_MIN = 20  # In ms
 
     # dataUpdateRate in Hz
-    def __init__(self, dataUpdateRate):
-
-        if dataUpdateRate is not None:
-            self.ACC_DATA_INTERVAL = 1.0 / dataUpdateRate * 1000  # In ms
-
-        self.ACC_WINDOW_SIZE = int(self.ACC_WINDOW_TIME / self.ACC_DATA_INTERVAL) + 1
-        # self.DATA_WINDOW_LENGTH = int(self.DATA_LENGTH / self.DATA_INTERVAL) + 1
+    def __init__(self):
 
         self.accWindow = deque(maxlen=self.ACC_WINDOW_SIZE)
         self.singleDataWindow = deque(maxlen=self.SINGLE_DATA_WINDOW_SIZE)
@@ -37,7 +31,7 @@ class Pedometer2:
         self.stepsSinceLastQuery = 0
 
     # Public
-    def getSteps(self):
+    def getStepCount(self):
         steps = 0
         while self.stepsSinceLastQuery:
             steps += 1
@@ -56,32 +50,36 @@ class Pedometer2:
 
             # If time elapsed too long
             if timeInMillis - self.prevUpdateTime >= 2 * self.ACC_DATA_INTERVAL:
+                # print "too long"
                 timeElapsed = timeInMillis - self.prevUpdateTime
                 self.addMultipleSingleData(accX, accY, accZ, timeElapsed)
 
             # If time elapsed too short
             elif 0 <= timeInMillis - self.prevUpdateTime <= 0.5 * self.ACC_DATA_INTERVAL:
+                # print timeInMillis, "too short"
                 return
 
             # If clock overflowed
             elif timeInMillis - self.prevUpdateTime < 0:
+                # print "clock overflow"
                 if timeInMillis + (self.CLOCK_MAX - self.prevUpdateTime) >= 2 * self.ACC_DATA_INTERVAL:
                     timeElapsed = timeInMillis + (self.CLOCK_MAX - self.prevUpdateTime)
                     self.addMultipleSingleData(accX, accY, accZ, timeElapsed)
                 elif timeInMillis + (self.CLOCK_MAX - self.prevUpdateTime) <= 0.5 * self.ACC_DATA_INTERVAL:
                     return
                 else:
-                    newData = (accX, accY, accX)
+                    newData = (accX, accY, accZ)
                     self.updateSingleDataWindow(newData)
 
             # If time elapsed in range
             else:
-                newData = (accX, accY, accX)
+                # print "swee swee"
+                newData = (accX, accY, accZ)
                 self.updateSingleDataWindow(newData)
 
         # If first ever acc data
         else:
-            newData = (accX, accY, accX)
+            newData = (accX, accY, accZ)
             self.updateSingleDataWindow(newData)
 
         self.prevUpdateTime = timeInMillis
@@ -118,7 +116,7 @@ class Pedometer2:
             self.singleDataWindow.append(newAccG)
 
     def calculateAccG(self, newData):
-        return newData[2]
+        return newData[0]
 
     # Updates the acc data window
     def updateAccWindow(self, accG):
@@ -142,7 +140,10 @@ class Pedometer2:
             # Get accG one by one
             accG = self.accWindow.popleft()
 
-            print accG
+            # For data extraction
+            # f = open('pedodata.csv', 'a')
+            # f.write(str(accG) + "\n")
+            # f.close()
 
             # If current accG exceeds H threshold, update prev H time
             # Prev H time is only reset when a step is recognised
@@ -181,3 +182,4 @@ class Pedometer2:
         # If local prev H time is not reset, all H are paired with a L, reset the global prev H time
         else:
             self.prevHighTimeGlobal = self.ACC_WINDOW_TIME
+
