@@ -160,8 +160,8 @@ class NavigationThread(threading.Thread):
         global checkSideObstacle
         while 1:
             locationTrackerLock.acquire()
-            curX = locationTracker.getXCoord() * 100
-            curY = locationTracker.getYCoord() * 100
+            curX = locationTracker.getXCoord()
+            curY = locationTracker.getYCoord()
             heading = locationTracker.getHeadingInDeg()
             locationTrackerLock.release()
             if obstacleDetected == 1 or checkSideObstacle == 1:
