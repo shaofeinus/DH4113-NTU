@@ -32,12 +32,12 @@ class ProcessDataThread(threading.Thread):
     def run(self):
         while True:
             dataFeeder.process_data(data)
-        # print data[6],
-        # print data[7],
-        # print data[8],
-        # print data[11],
-        # print data[12],
-        # print data[13],
+##        print data[6],
+##        print data[7],
+##        print data[8],
+##        print data[11],
+##        print data[12],
+##        print data[13],
 
 
 class LocationDisplayThread(threading.Thread):
@@ -211,7 +211,7 @@ class ObstacleAvoidanceThread(threading.Thread):
                 obstacle.updateFrontSensorData(sonarFT, irFB)
                 obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
                 obstacleLock.release()
-                if obstacle.isFrontObstacleDetected() is True:
+                if obstacle.isFrontObstacleDetected(obstacleStatus) is True:
                     obstacle.turnFromObstacle()
                 else:
                     obstacle.turnOffMotors()
@@ -272,7 +272,7 @@ NUM_SINGLE_ID = 11
 # 9-10 - unused 
 # 11 - sonar (front top) (29 trig 19 echo)
 # 12 - sonar (left side) (27 trig 18 echo)
-# 13 - sonar (right side) (25 trig 2 echo)
+# 13 - sonar (right side) (25 trig  2 echo)
 
 data = [deque() for x in range(NUM_QUEUED_ID)]
 data_single = [0 for x in range(NUM_SINGLE_ID)]
@@ -306,8 +306,8 @@ threads.append(ProcessDataThread(2, "data processing"))
 threads.append(LocationUpdateThread(3, "location update"))
 threads.append(LocationDisplayThread(4, "location display"))
 # threads.append(NavigationThread(5, "navigation"))
-# threads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
-# threads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
+##threads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
+##threads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
 
 for thread in threads:
     thread.start()
