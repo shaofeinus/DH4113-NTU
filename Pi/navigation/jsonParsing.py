@@ -55,7 +55,7 @@ class mapParser (object) :
                 jsonMap = urllib2.urlopen(self.mapUrl(buildingName, levelNumber))
                 self.buildingMap = json.load(jsonMap)
         
-        # return 1 if successful, 0 if unsuccessful
+        # return True if successful, False if unsuccessful
         def setMap(self, buildingName, levelNumber) :
                 mapName = str(buildingName) + "L" + str(levelNumber) + ".json"
                 if(self.isMapAlreadyLoaded(mapName) is True) :
@@ -64,13 +64,13 @@ class mapParser (object) :
                         self.jsonServerInput(buildingName, levelNumber)
 
                 if self.buildingMap['info'] is None :
-                        return 0
+                        return False
                         
                 self.northAt = int(self.buildingMap['info']['northAt'])
                 self.numElements = len(self.buildingMap.get('map'))
                 self.matrix = [[0]*self.numElements for i in range(self.numElements)]
                 self.fillAMatrix()
-                return 1
+                return True
 
         
         def fillAMatrix(self) :

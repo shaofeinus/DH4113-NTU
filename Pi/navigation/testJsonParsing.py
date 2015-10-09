@@ -1,16 +1,10 @@
 import jsonParsing
 
-com1L2 = jsonParsing.mapParser()
-com1L2.setMap("com2", 3)
+building = raw_input("Enter building name or number: ")
+level = raw_input("Enter level: ")
 
-for i in range(com1L2.numElements):
-    print com1L2.getLocationName(i)
+maps = jsonParsing.mapParser()
+maps.setMap(building, level)
 
-watever = jsonParsing.mapParser()
-watever.setMap("watever", 99)
-
-for i in range(watever.numElements):
-    print watever.getLocationName(i)
-    
-
-print "first location: " + str(com1L2.getLocationYCoord(0))
+for i in range(maps.numElements):
+    print maps.getLocationName(i)
