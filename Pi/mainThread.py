@@ -1,6 +1,7 @@
 import threading
 import time
 import datetime
+from deadReckoning import angleCalibrator
 from deadReckoning import locationTracker
 from navigation import fullNavi
 from navigation import obstacleAvoidance
@@ -40,21 +41,64 @@ class ProcessDataThread(threading.Thread):
         # print data[13],
 
 
+class CalibrationThread(threading.Thread):
+    def __init__(self, threadID, threadName):
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+        self.threadName = threadName
+        self.calibrator = angleCalibrator.AngleCalibrator()
+        self.isDone = [False]
+        self.accX = 0
+        self.accY = 0
+        self.accZ = 0
+        self.totalData = 0
+
+    def run(self):
+        while not self.isDone[0]:
+            self.feedData()
+        locationTracker.pedometer.calibrate(self.calibrator.getAngles()[0],
+                                            self.calibrator.getAngles()[1],
+                                            self.calibrator.getAngles()[2])
+        print self.calibrator.getAngles()
+
+    def feedData(self):
+        if len(data[1]) == 0:
+            return
+        elif self.totalData == 0:
+            data[1].popleft()
+            self.totalData += 1
+        elif self.totalData == 1:
+            self.accX = data[1].popleft()
+            self.totalData += 1
+        elif self.totalData == 2:
+            self.accY = data[1].popleft()
+            self.totalData += 1
+        elif self.totalData == 3:
+            self.accZ = data[1].popleft()
+            self.totalData += 1
+
+        if self.totalData == 4:
+            self.calibrator.feedData(self.accX, self.accY, self.accZ, self.isDone)
+            self.totalData = 0
+
+
 class LocationDisplayThread(threading.Thread):
     def __init__(self, threadID, threadName):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.threadName = threadName
-        self.steps = 0;
 
     def run(self):
         while 1:
+            locationTrackerLock.acquire()
             locationTracker.updateLocation()
-            print("Total Steps:", locationTracker.getTotalSteps())
-            print("distance:", locationTracker.getTotalDistance())
-            print("Deviation from N:", locationTracker.getHeadingInDeg())
-            print(locationTracker.getLocation())
-            print("Height:", locationTracker.getHeightInCM())
+            print "Total Steps:", locationTracker.getTotalSteps()
+            print "Total Distance:", locationTracker.getTotalDistance()
+            print "Deviation from N:", locationTracker.getHeadingInDeg()
+            print "Deviation from Map N:", locationTracker.getHeadingWRTMapInDeg()
+            print locationTracker.getLocation()
+            print "Height:", locationTracker.getHeightInCM()
+            locationTrackerLock.release()
             time.sleep(1)
 
 
@@ -96,7 +140,6 @@ class LocationUpdateThread(threading.Thread):
         if self.totalPedoData == 4:
             locationTracker.updatePedoData(self.accX, self.accY, self.accZ, self.timeInMillisPedo)
             self.totalPedoData = 0
-
             # print "timeStamp:", self.timeInMillisPedo, "AccX:", self.accX, "AccY:", self.accY, "AccZ:", self.accZ, "time:", datetime.datetime.now()
 
 
@@ -122,7 +165,6 @@ class LocationUpdateThread(threading.Thread):
             # Parameter yReading points forward
             locationTracker.updateCompassData(xReading=-self.magY, yReading=self.magZ)
             self.totalCompData = 0
-
             # print "timeStamp:", self.timeInMillisComp, "MagX:", self.magX, "MagY:", self.magY, "time:", datetime.datetime.now()
 
     def updateBaroData(self):
@@ -143,9 +185,11 @@ class LocationUpdateThread(threading.Thread):
 
     def run(self):
         while 1:
+            locationTrackerLock.acquire()
             self.updatePedoData()
             self.updateCompassData()
             self.updateBaroData()
+            locationTrackerLock.release()
             continue
 
 
@@ -290,13 +334,27 @@ navi.generateFullPath("com1", 2, 1, 5)
 
 # Location tracker initialisation
 # TODO: Set initial position
-locationTracker = locationTracker.LocationTracker(0, 0, 0)
+locationTracker = locationTracker.LocationTracker(500, 500, 270.0)
 dataFeeder = dataFeeder.DataFeeder()
 
 # Locks for various variables
 locationTrackerLock = threading.Lock()
 obstacleLock = threading.Lock()
 obstacleStatusLock = threading.Lock()
+
+# Threads to receive data from Arduino
+# ReceiveDataThread(1, "data receiving").start()
+# ProcessDataThread(2, "data processing").start()
+
+# Init threads
+# initThreads = []
+# initThreads.append(CalibrationThread(-1, "calibrating pedometer and compass"))
+#
+# for thread in initThreads:
+#     thread.start()
+#
+# for thread in initThreads:
+#     thread.join()
 
 # List of threads
 threads = []
@@ -312,7 +370,7 @@ threads.append(LocationDisplayThread(4, "location display"))
 for thread in threads:
     thread.start()
 
-for threads in threads:
+for thread in threads:
     thread.join()
 
 print("Exiting main thread")

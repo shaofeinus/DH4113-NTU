@@ -9,18 +9,22 @@ __author__ = 'Shao Fei'
 
 class LocationTracker:
 
-    HALF_STEP_DISTANCE = 40     # in cm
+    STEP_DISTANCE = 40     # in cm
 
     def __init__(self, initX, initY, northAt):
         self.currX = initX      # Points eastwards
         self.currY = initY      # Points northwards
-        #self.pedometer = pedometer.Pedometer()
         self.pedometer = pedometer2.Pedometer2()
         self.compass = compass.Compass()
         self.barometer = barometer.Barometer()
-        self.totalHalfSteps = 0
+        self.totalSteps = 0
         self.totalDistance = 0
         self.northAt = northAt / 180 * math.pi      # In rad
+        self.firstUpdate = True
+        self.headingWRTMapInRad = 0
+        self.headingWRTMapInDeg = 0
+        self.headingWRTNorthInRad = 0
+        self.headingWRTNorthInDeg = 0
 
     # Public
     def getLocation(self):
@@ -36,7 +40,7 @@ class LocationTracker:
 
     # Public
     def getTotalSteps(self):
-        return math.ceil(self.totalHalfSteps / 1.0)
+        return self.totalSteps
 
     # Public
     def getTotalDistance(self):
@@ -44,11 +48,15 @@ class LocationTracker:
 
     # Public
     def getHeadingInRad(self):
-        return self.compass.getHeadingInRad()
+        return self.headingWRTNorthInRad
 
     # Public
     def getHeadingInDeg(self):
-        return self.compass.getHeadingInDeg()
+        return self.headingWRTNorthInDeg
+
+    # Public
+    def getHeadingWRTMapInDeg(self):
+        return self.headingWRTMapInDeg
 
     # Public
     def getHeightInCM(self):
@@ -67,7 +75,6 @@ class LocationTracker:
 
     # Public
     def updatePedoData(self, accX, accY, accZ, timeInMillis):
-        # self.pedometer.updateWindow(accY, accZ, timeInMillis)
         self.pedometer.insertData(accX, accY, accZ, timeInMillis)
 
     # Public
@@ -80,30 +87,52 @@ class LocationTracker:
 
     # Public
     def updateLocation(self):
-        currHalfSteps = self.pedometer.getStepCount()
-        self.totalHalfSteps += currHalfSteps
+
+        currSteps = self.pedometer.getStepCount()
+        self.totalSteps += currSteps
 
         # Reflects true steps, 1/2 of what is recorded (pseudo steps)
-        currDistance = currHalfSteps * self.HALF_STEP_DISTANCE
+        currDistance = currSteps * self.STEP_DISTANCE
 
         # Heading wrt to North
-        heading = self.compass.getHeadingInRad()
+        self.headingWRTNorthInRad = self.compass.getHeadingInRad()
+        self.headingWRTNorthInDeg = self.compass.getHeadingInDeg()
 
         # Heading wrt to y-axis of map
-        headingWRTMap = self.getHeadingWRTMap(heading)
+        self.headingWRTMapInRad = self.getHeadingWRTMap(self.headingWRTNorthInRad)
+        self.headingWRTMapInDeg = self.headingConvert(self.headingWRTMapInRad)
 
         # x points to the East
-        xCurrDistance = currDistance * math.sin(headingWRTMap)
+        xCurrDistance = currDistance * math.sin(self.headingWRTMapInRad)
         # y points to the North
-        yCurrDistance = currDistance * math.cos(headingWRTMap)
+        yCurrDistance = currDistance * math.cos(self.headingWRTMapInRad)
 
         self.currX += xCurrDistance
         self.currY += yCurrDistance
         self.totalDistance += currDistance
-        return
+
+        f = open('locationdata.csv', 'a')
+        if self.firstUpdate:
+            f.write('distance covered,degrees from top of map,currX,currY\n')
+            self.firstUpdate = False
+
+        f.write(str(currDistance) + ',' +
+                str(self.headingWRTMapInDeg) + ',' +
+                str(self.currX) + ',' +
+                str(self.currY) + '\n')
+        f.close()
 
     # Get heading wrt y-axis of map (pointing upwards of north)
     def getHeadingWRTMap(self, headingInRad):
         # TODO: Test out
         headingWRTMap = (headingInRad + self.northAt) % (2 * math.pi)
+        # print 'Heading from top of map:', headingWRTMap / math.pi * 180
         return headingWRTMap
+
+    # For testing only
+    @ staticmethod
+    def headingConvert(headingInRad):
+        if headingInRad < math.pi:
+            return headingInRad / (2 * math.pi) * 360
+        else:
+            return -1 * (2 * math.pi - headingInRad) / (2 * math.pi) * 360
