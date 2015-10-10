@@ -12,7 +12,7 @@ __author__ = 'Shao Fei'
 # Compass reading is in radians clockwise from North
 class Compass:
 
-    WINDOW_SIZE = 10
+    WINDOW_SIZE = 50
 
     def __init__(self):
         self.currHeading = 0
