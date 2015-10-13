@@ -24,6 +24,7 @@ class DataFeeder:
     def receive_data(self):
         numBytes = self.serialPort.inWaiting()
         if numBytes > 0:
+            # print numBytes
             data_input = self.serialPort.read(numBytes)
             charList = list(data_input)
             for i in range(numBytes):
