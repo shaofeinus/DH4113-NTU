@@ -1,7 +1,8 @@
 import threading
 import time
+import math
 import datetime
-from deadReckoning import angleCalibrator
+from deadReckoning import compassCalibrator
 from deadReckoning import locationTracker
 from navigation import fullNavi
 from navigation import obstacleAvoidance
@@ -21,7 +22,10 @@ class ReceiveDataThread(threading.Thread):
 
     def run(self):
         while True:
+            dataInLock.acquire()
+            # print 'receiving'
             dataFeeder.receive_data()
+            dataInLock.release()
 
 
 class ProcessDataThread(threading.Thread):
@@ -33,12 +37,12 @@ class ProcessDataThread(threading.Thread):
     def run(self):
         while True:
             dataFeeder.process_data(data)
-##        print data[6],
-##        print data[7],
-##        print data[8],
-##        print data[11],
-##        print data[12],
-##        print data[13],
+       # print data[6],
+       # print data[7],
+       # print data[8],
+       # print data[11],
+       # print data[12],
+       # print data[13],
 
 
 class CalibrationThread(threading.Thread):
@@ -46,40 +50,105 @@ class CalibrationThread(threading.Thread):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.threadName = threadName
-        self.calibrator = angleCalibrator.AngleCalibrator()
-        self.isDone = [False]
+
+        self.calibrator = locationTracker.compass.calibrator
+        self.isDone = {'tilt': False, 'nOffset': False}
+
         self.accX = 0
         self.accY = 0
         self.accZ = 0
-        self.totalData = 0
+        self.totalAccData = 0
+        self.magX = 0
+        self.magY = 0
+        self.magZ = 0
+        self.totalMagData = 0
 
     def run(self):
-        while not self.isDone[0]:
-            self.feedData()
-        locationTracker.pedometer.calibrate(self.calibrator.getAngles()[0],
-                                            self.calibrator.getAngles()[1],
-                                            self.calibrator.getAngles()[2])
-        print self.calibrator.getAngles()
 
-    def feedData(self):
+        magXrange = (-4328, 5605)
+        magYRange = (-5096, 5002)
+        magZRange = (-4618, 4655)
+        self.calibrator.inputManualRange(magZRange, magYRange, magXrange)
+
+        dataInLock.acquire()
+        validInput = False
+        while not validInput:
+            userInput = raw_input("Press enter to calibrate? y/n ")
+            if userInput == 'y':
+                validInput = True
+            elif userInput == 'n':
+                dataInLock.release()
+                return
+            else:
+                print 'Enter y/n'
+
+        for i in range(0, 5):
+            print 5 - i
+            time.sleep(1)
+
+        print 'Calibrating'
+        dataFeeder.serialPort.flushInput()
+        dataFeeder.serialPort.flushOutput()
+        dataInLock.release()
+
+        while not self.isDone['tilt']:
+            self.calibrateTilt()
+
+        while not self.isDone['nOffset']:
+            self.calibrateOffset()
+
+        dataInLock.acquire()
+        raw_input('Your are ' + str(self.calibrator.getNOffsetAngle() / (2 * math.pi) * 360) + ' from N.')
+        dataFeeder.serialPort.flushInput()
+        dataFeeder.serialPort.flushOutput()
+        dataInLock.release()
+
+    def calibrateTilt(self):
         if len(data[1]) == 0:
             return
-        elif self.totalData == 0:
+        elif self.totalAccData == 0:
             data[1].popleft()
-            self.totalData += 1
-        elif self.totalData == 1:
+            self.totalAccData += 1
+        elif self.totalAccData == 1:
             self.accX = data[1].popleft()
-            self.totalData += 1
-        elif self.totalData == 2:
+            self.totalAccData += 1
+        elif self.totalAccData == 2:
             self.accY = data[1].popleft()
-            self.totalData += 1
-        elif self.totalData == 3:
+            self.totalAccData += 1
+        elif self.totalAccData == 3:
             self.accZ = data[1].popleft()
-            self.totalData += 1
+            self.totalAccData += 1
 
-        if self.totalData == 4:
-            self.calibrator.feedData(self.accX, self.accY, self.accZ, self.isDone)
-            self.totalData = 0
+        if self.totalAccData == 4:
+            # x points to front
+            # y points to left
+            # z points to up
+            self.calibrator.calibrateTilt(-self.accZ, self.accY, self.accX, self.isDone)
+            self.totalAccData = 0
+
+    def calibrateOffset(self):
+
+        if len(data[2]) == 0:
+            return
+        elif self.totalMagData == 0:
+            data[2].popleft()
+            self.totalMagData += 1
+        elif self.totalMagData == 1:
+            self.magX = data[2].popleft()
+            self.totalMagData += 1
+        elif self.totalMagData == 2:
+            self.magY = data[2].popleft()
+            self.totalMagData += 1
+        elif self.totalMagData == 3:
+            self.magZ = data[2].popleft()
+            self.totalMagData += 1
+
+        if self.totalMagData == 4:
+            # x points to front
+            # y points to left
+            # z points to up
+            self.calibrator.calibrateNOffset(-self.magZ, self.magY, self.magX, self.isDone)
+            self.totalMagData = 0
 
 
 class LocationDisplayThread(threading.Thread):
@@ -140,8 +209,10 @@ class LocationUpdateThread(threading.Thread):
         if self.totalPedoData == 4:
             locationTracker.updatePedoData(self.accX, self.accY, self.accZ, self.timeInMillisPedo)
             self.totalPedoData = 0
+            # f = open('accdata.csv', 'a')
+            # f.write(str(self.accX) + ',' + str(self.accY) + ',' + str(self.accZ) + '\n')
+            # f.close()
             # print "timeStamp:", self.timeInMillisPedo, "AccX:", self.accX, "AccY:", self.accY, "AccZ:", self.accZ, "time:", datetime.datetime.now()
-
 
     def updateCompassData(self):
 
@@ -161,11 +232,15 @@ class LocationUpdateThread(threading.Thread):
             self.totalCompData += 1
 
         if self.totalCompData == 4:
-            # Parameter xReading points rightward
+            # Parameter xReading points left
             # Parameter yReading points forward
-            locationTracker.updateCompassData(xReading=-self.magY, yReading=self.magZ)
+            locationTracker.updateCompassData(-self.magZ, self.magY, self.magX)
             self.totalCompData = 0
-            # print "timeStamp:", self.timeInMillisComp, "MagX:", self.magX, "MagY:", self.magY, "time:", datetime.datetime.now()
+            # f = open('compdata.csv', 'a')
+            # f.write(str(self.magX) + ',' + str(self.magY) + ',' + str(self.magZ) + '\n')
+            # f.close()
+            # print "timeStamp:", self.timeInMillisComp, "MagX:", self.magX, "MagY:", self.magY, "MagZ:", self.magZ, \
+            #     "time:", datetime.datetime.now()
 
     def updateBaroData(self):
 
@@ -190,7 +265,6 @@ class LocationUpdateThread(threading.Thread):
             self.updateCompassData()
             self.updateBaroData()
             locationTrackerLock.release()
-            continue
 
 
 class NavigationThread(threading.Thread):
@@ -334,43 +408,48 @@ navi.generateFullPath("com1", 2, 1, 5)
 
 # Location tracker initialisation
 # TODO: Set initial position
-locationTracker = locationTracker.LocationTracker(500, 500, 270.0)
+locationTracker = locationTracker.LocationTracker(0, 0, 0.0)
 dataFeeder = dataFeeder.DataFeeder()
 
 # Locks for various variables
 locationTrackerLock = threading.Lock()
 obstacleLock = threading.Lock()
 obstacleStatusLock = threading.Lock()
+dataInLock = threading.Lock()
 
 # Threads to receive data from Arduino
-# ReceiveDataThread(1, "data receiving").start()
-# ProcessDataThread(2, "data processing").start()
+dataThreads = []
+dataThreads.append(ReceiveDataThread(1, "data receiving"))
+dataThreads.append(ProcessDataThread(2, "data processing"))
+
+for thread in dataThreads:
+    thread.start()
 
 # Init threads
-# initThreads = []
-# initThreads.append(CalibrationThread(-1, "calibrating pedometer and compass"))
-#
-# for thread in initThreads:
-#     thread.start()
-#
-# for thread in initThreads:
-#     thread.join()
+initThreads = []
+initThreads.append(CalibrationThread(-1, "calibrating pedometer and compass"))
+
+for thread in initThreads:
+    thread.start()
+
+for thread in initThreads:
+    thread.join()
 
 # List of threads
-threads = []
+mainThreads = []
 
-threads.append(ReceiveDataThread(1, "data receiving"))
-threads.append(ProcessDataThread(2, "data processing"))
-threads.append(LocationUpdateThread(3, "location update"))
-threads.append(LocationDisplayThread(4, "location display"))
+# threads.append(ReceiveDataThread(1, "data receiving"))
+# threads.append(ProcessDataThread(2, "data processing"))
+mainThreads.append(LocationUpdateThread(3, "location update"))
+mainThreads.append(LocationDisplayThread(4, "location display"))
 # threads.append(NavigationThread(5, "navigation"))
 ##threads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
 ##threads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
 
-for thread in threads:
+for thread in mainThreads:
     thread.start()
 
-for thread in threads:
+for thread in (mainThreads + dataThreads):
     thread.join()
 
 print("Exiting main thread")

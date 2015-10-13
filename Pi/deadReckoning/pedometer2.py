@@ -18,8 +18,8 @@ class Pedometer2:
     ACC_WINDOW_SIZE = ACC_WINDOW_TIME / ACC_DATA_INTERVAL
     SINGLE_DATA_WINDOW_SIZE = 5
 
-    ACC_H_THRESHOLD = 1.25     # In G
-    ACC_L_THRESHOLD = 0.85     # In G
+    ACC_H_THRESHOLD = 1.2     # In G
+    ACC_L_THRESHOLD = 0.8     # In G
     ACC_REST = 0.97
 
     HIGH_LOW_INTERVAL_MAX = 500  # In ms
@@ -74,9 +74,11 @@ class Pedometer2:
 
             # If time elapsed too long
             if timeInMillis - self.prevUpdateTime >= 2 * self.ACC_DATA_INTERVAL:
+                newData = (accX, accY, accZ)
+                self.updateSingleDataWindow(newData)
                 # print "too long"
-                timeElapsed = timeInMillis - self.prevUpdateTime
-                self.addMultipleSingleData(accX, accY, accZ, timeElapsed)
+                # timeElapsed = timeInMillis - self.prevUpdateTime
+                # self.addMultipleSingleData(accX, accY, accZ, timeElapsed)
 
             # If time elapsed too short
             elif 0 <= timeInMillis - self.prevUpdateTime <= 0.5 * self.ACC_DATA_INTERVAL:
@@ -90,8 +92,10 @@ class Pedometer2:
 
                 # If If time elapsed too long
                 if timeInMillis + (self.CLOCK_MAX - self.prevUpdateTime) >= 2 * self.ACC_DATA_INTERVAL:
-                    timeElapsed = timeInMillis + (self.CLOCK_MAX - self.prevUpdateTime)
-                    self.addMultipleSingleData(accX, accY, accZ, timeElapsed)
+                    newData = (accX, accY, accZ)
+                    self.updateSingleDataWindow(newData)
+                    # timeElapsed = timeInMillis + (self.CLOCK_MAX - self.prevUpdateTime)
+                    # self.addMultipleSingleData(accX, accY, accZ, timeElapsed)
 
                 # If time elapsed too short
                 elif timeInMillis + (self.CLOCK_MAX - self.prevUpdateTime) <= 0.5 * self.ACC_DATA_INTERVAL:
