@@ -5,7 +5,6 @@ __author__ = 'Dan'
 key_pad = keypad_polling.keypad()
 
 while True:
-    key_pad.poll_number()
-    print key_pad.out_str, key_pad.curr_chr
+    print key_pad.get_input_ext_num("ENTER STRING")
 
 print "exit"
