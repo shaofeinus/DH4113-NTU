@@ -1,8 +1,29 @@
 import RPi.GPIO as GPIO
 import time
+import threading
+from collections import deque
 from voiceCommands import speak
 
 __author__ = 'Dan'
+
+chr_queue = deque()
+
+class speak_thread(threading.Thread):
+    def __init__(self, threadName, threadID):
+        threading.Thread.__init__(self)
+        self.threadName = threadName
+        self.threadID = threadID
+    def run(self):
+        globals chr_queue
+
+        while True:
+            if len(chr_queue) > 0:
+                speak(str(chr_queue.popleft()))
+
+#THREAD SETUP
+speakThread = speak_thread("speak_thread", 1)
+speakThread.start()
+
 
 class keypad(object):
     def __init__(self):
@@ -197,6 +218,7 @@ class keypad(object):
         # [6, 7, 8]       =>       [7, 8, 9]
         # [9, 10, 11]     =>       [fwd, space, del]
         ##print "np:", num_pressed
+        global chr_queue
         if num_pressed == self.VOID_PRESS:
             if self.curr_chr != '':
                 self.out_str += self.curr_chr
@@ -214,7 +236,7 @@ class keypad(object):
             self.prev_num = -3 #update keypress history
         elif num_pressed == 9: #fwd
             self.out_str += self.key_map[self.prev_num][self.num_count]
-            speak(str(self.key_map[self.prev_num][self.num_count]))
+            chr_queue.append(self.key_map[self.prev_num][self.num_count]) ##speak(str(self.key_map[self.prev_num][self.num_count]))
             self.curr_chr = '' #clear curr_chr
             self.num_count = 0 #reset count on key map
             self.prev_num = -3 #update keypress history
@@ -244,7 +266,7 @@ class keypad(object):
             elif num_pressed != self.prev_num: #normal keys, different num
                 if self.prev_num != -3: #first press condition
                     self.out_str += self.key_map[self.prev_num][self.num_count]
-                    speak(self.key_map[self.prev_num][self.num_count])
+                    chr_queue.append(self.key_map[self.prev_num][self.num_count]) ##speak(self.key_map[self.prev_num][self.num_count])
                 self.num_count = 0 #reset count on keymap
                 self.prev_num = num_pressed #update keypress history
                 self.curr_chr = self.key_map[self.prev_num][self.num_count] #update curr_char to new value
