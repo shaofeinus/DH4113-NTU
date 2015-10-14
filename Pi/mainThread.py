@@ -425,26 +425,26 @@ dataThreads.append(ProcessDataThread(2, "data processing"))
 for thread in dataThreads:
     thread.start()
 
-# Init threads
-initThreads = []
-initThreads.append(CalibrationThread(-1, "calibrating pedometer and compass"))
-
-for thread in initThreads:
-    thread.start()
-
-for thread in initThreads:
-    thread.join()
+### Init threads
+##initThreads = []
+##initThreads.append(CalibrationThread(-1, "calibrating pedometer and compass"))
+##
+##for thread in initThreads:
+##    thread.start()
+##
+##for thread in initThreads:
+##    thread.join()
 
 # List of threads
 mainThreads = []
 
-# threads.append(ReceiveDataThread(1, "data receiving"))
-# threads.append(ProcessDataThread(2, "data processing"))
+# mainThreads.append(ReceiveDataThread(1, "data receiving"))
+# mainThreads.append(ProcessDataThread(2, "data processing"))
 mainThreads.append(LocationUpdateThread(3, "location update"))
 mainThreads.append(LocationDisplayThread(4, "location display"))
-# threads.append(NavigationThread(5, "navigation"))
-##threads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
-##threads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
+# mainThreads.append(NavigationThread(5, "navigation"))
+mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
+mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
 
 for thread in mainThreads:
     thread.start()
