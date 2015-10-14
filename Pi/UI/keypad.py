@@ -2,14 +2,16 @@ import RPi.GPIO as GPIO
 import time
 from collections import deque
 
+deb_time = 0
+hori = [25, 8, 7]
+vert = [27, 22, 23, 24]
+num_map = [[0,1,2],[3,4,5],[6,7,8],[9,10,11]]
+HOLD_DELAY = 1
+num_queue = deque()
 
 class keypad(object):
     def __init__(self):
-        self.hori = [25, 8, 7]
-        self.vert = [27, 22, 23, 24]
-        self.num_map = [[0,1,2],[3,4,5],[6,7,8],[9,10,11]]
-        self.deb_time = 0
-        self.HOLD_DELAY = 1
+
         #press_time = 0
         self.key_map = [['.',',','?','!'], ['a','b','c'], ['d','e','f'],
                 ['g','h','i'], ['j','k','l'], ['m','n','o'],
@@ -25,64 +27,65 @@ class keypad(object):
         self.out_str = ""
         self.curr_chr = ''
 
-        self.GPIO.setwarnings(False)
-        self.GPIO.setmode(GPIO.BCM)
+        GPIO.setwarnings(False)
+        GPIO.setmode(GPIO.BCM)
 
-        self.GPIO.setup(self.hori, self.GPIO.OUT, initial=self.GPIO.HIGH)
-        self.GPIO.setup(self.vert, self.GPIO.IN)
+        GPIO.setup(hori, GPIO.OUT, initial=GPIO.HIGH)
+        GPIO.setup(vert, GPIO.IN)
 
-        for x in range(len(self.vert)):
-             self.GPIO.add_event_detect(self.vert[x], self.GPIO.RISING, callback=self.getHori)
-
-    def debounce(self, channel):
-
-        if time.time() - self.deb_time < 0.05 or self.GPIO.input(channel) == self.GPIO.LOW:
-            return False
-        self.deb_time = time.time()
-        return True
+        for x in range(len(vert)):
+             GPIO.add_event_detect(vert[x], GPIO.RISING, callback=self.getHori)
 
     def getHori(self, channel):
-        if not self.debounce(channel):
+        # print "deb"
+        global deb_time
+        if time.time() - deb_time < 0.05 or GPIO.input(channel) == GPIO.LOW: #debounce
             return
+        deb_time = time.time()
+
+        global hori
+        global vert
+        global num_map
+        global HOLD_DELAY
 
         num_pressed = 0;
+        # print "enter"
+        # for x in range(len(vert)):#disable all interrupts to prevent multiple interrupts running at once
+        #     GPIO.remove_event_detect(vert[x])
+        GPIO.remove_event_detect(channel) #disable interrupts
 
-        for x in range(len(self.vert)):#disable all interrupts to prevent multiple interrupts running at once
-             self.GPIO.remove_event_detect(self.vert[x])
-        #self.GPIO.remove_event_detect(channel) #disable interrupts
-
-        for x in range(len(self.hori)):
-            self.GPIO.output(self.hori[x], self.GPIO.LOW) #clear horizontals one by one
-            if self.GPIO.input(channel) == self.GPIO.LOW: #check if channel is pulled low, if yes the row and col match
-                #time.sleep(0.01)
-                num_pressed = self.num_map[self.vert.index(channel)][x] #update num_pressed
-            self.GPIO.output(self.hori[x], self.GPIO.HIGH) # set the horizontal
+        for x in range(len(hori)):
+            GPIO.output(hori[x], GPIO.LOW) #clear horizontals one by one
+            if GPIO.input(channel) == GPIO.LOW: #check if channel is pulled low, if yes the row and col match
+                # time.sleep(0.01)
+                num_pressed = num_map[vert.index(channel)][x] #update num_pressed
+            GPIO.output(hori[x], GPIO.HIGH) # set the horizontal
 
         hold_timer_start = time.time()
         hold_timer_end = hold_timer_start
-        while self.GPIO.input(channel) == self.GPIO.HIGH: #check for hold button
+        while GPIO.input(channel) == GPIO.HIGH: #check for hold button
             hold_timer_end = time.time()
-            if hold_timer_end - hold_timer_start >= self.HOLD_DELAY:
+            if hold_timer_end - hold_timer_start >= HOLD_DELAY:
                 break
 
-        if hold_timer_end - hold_timer_start >= self.HOLD_DELAY:
-            self.num_queue.put(self.num_map[self.vert.index(channel)][x] + 12) #enq extended  num press
+        if hold_timer_end - hold_timer_start >= HOLD_DELAY:
+            self.num_queue.append(num_pressed + 12) #enq extended  num press
         else:
-            self.num_queue.put(self.num_map[self.vert.index(channel)][x]) #enq num press
+            self.num_queue.append(num_pressed) #enq num press
 
-        for x in range(len(self.vert)): #enable all interrupts
-             self.GPIO.add_event_detect(self.vert[x], GPIO.RISING, callback=self.getHori)
-        #GPIO.add_event_detect(channel, GPIO.RISING, callback=self.getHori)
+        # for x in range(len(vert)): #enable all interrupts
+        #      GPIO.add_event_detect(vert[x], GPIO.RISING, callback=self.getHori)
+        GPIO.add_event_detect(channel, GPIO.RISING, callback=self.getHori)
 
     def gen_single(self):
-        while self.num_queue.empty():
+        while len(self.num_queue) == 0:
             pass
-        return self.num_queue.empty()
+        return self.num_queue.popleft()
 
     def gen_string(self):
-        while self.num_queue.empty():
+        while len(self.num_queue) == 0:
             pass
-        num = self.num_queue.get()
+        num = self.num_queue.popleft()
 
         # print num
         # [0, 1, 2]       =>       [1, 2, 3]

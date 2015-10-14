@@ -78,8 +78,8 @@ class LocationTracker:
         self.pedometer.insertData(accX, accY, accZ, timeInMillis)
 
     # Public
-    def updateCompassData(self, xReading, yReading):
-        self.compass.updateReading(xReading, yReading)
+    def updateCompassData(self, magX, magY, magZ):
+        self.compass.updateReading(magX, magY, magZ)
 
     # Public
     def updateBarometerData(self, reading):
