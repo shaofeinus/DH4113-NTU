@@ -1,5 +1,6 @@
 import RPi.GPIO as GPIO
 import time
+from collections import deque
 from voiceCommands import speak
 
 __author__ = 'Dan'
