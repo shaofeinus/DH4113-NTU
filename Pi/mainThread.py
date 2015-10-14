@@ -310,9 +310,9 @@ NUM_SINGLE_ID = 11
 # 3 - unused
 # 4 - barometer
 # 5 - unused
-# 6 - IR (front bottom)
-# 7 - IR (left side)
-# 8 - IR (right side)
+# 6 - IR (front bottom) (0)
+# 7 - IR (left side) (1)
+# 8 - IR (right side) (2)
 # 9-10 - unused 
 # 11 - sonar (front top) (29 trig 19 echo)
 # 12 - sonar (left side) (27 trig 18 echo)

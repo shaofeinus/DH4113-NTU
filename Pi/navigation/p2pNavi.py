@@ -25,9 +25,9 @@ class navigation (object) :
         self.rightPin = 10
 
         # deviation tolerance
-        self.maxDeviation = 50       # cm
+        self.maxDeviation = 75       # cm
         # vicinity tolerance
-        self.maxTolerance = 10       # cm
+        self.maxTolerance = 50       # cm
         # angle tolerance
         self.angleTolerance = 15     # degrees
 
@@ -130,14 +130,15 @@ class navigation (object) :
 
         if ((curXDisp > self.maxTolerance) or (curYDisp > self.maxTolerance)) :
             turnAngle = self.getApproxTurnAngle()            
-            if turnAngle > 0 :
-                print "Move towards the right!"
-##                GPIO.output(self.rightPin, True)
-##                GPIO.output(self.leftPin, False)
-            elif turnAngle < 0 :
-                print "Move towards the left!"
-##                GPIO.output(self.leftPin, True)
-##                GPIO.output(self.rightPin, False)
+            if(math.fabs(turnAngle - self.curAngle) > self.angleTolerance) :
+                if turnAngle > 0 :
+                    print "Move towards the right!"
+##                    GPIO.output(self.rightPin, True)
+##                    GPIO.output(self.leftPin, False)
+                elif turnAngle < 0 :
+                    print "Move towards the left!"
+##                    GPIO.output(self.leftPin, True)
+##                    GPIO.output(self.rightPin, False)
             else :
                 print "Keep going in your current direction!"
 ##                GPIO.output(self.leftPin, False)
