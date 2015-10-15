@@ -12,35 +12,59 @@ __author__ = 'Shao Fei'
 # Compass reading is in radians clockwise from North
 class Compass:
 
-    WINDOW_SIZE = 100
+    WINDOW_SIZE = 50
 
     def __init__(self):
         self.currHeading = 0
-        self.xWindow = deque(maxlen=self.WINDOW_SIZE)
-        self.yWindow = deque(maxlen=self.WINDOW_SIZE)
-        self.zWindow = deque(maxlen=self.WINDOW_SIZE)
+        self.magXWindow = deque(maxlen=self.WINDOW_SIZE)
+        self.magYWindow = deque(maxlen=self.WINDOW_SIZE)
+        self.magZWindow = deque(maxlen=self.WINDOW_SIZE)
+        self.accXWindow = deque(maxlen=self.WINDOW_SIZE)
+        self.accYWindow = deque(maxlen=self.WINDOW_SIZE)
+        self.accZWindow = deque(maxlen=self.WINDOW_SIZE)
         self.calibrator = compassCalibrator.CompassCalibrator()
 
-    def queueReadings(self, xReading, yReading, zReading):
-        if len(self.xWindow) == self.WINDOW_SIZE:
-            self.xWindow.popleft()
-            self.yWindow.popleft()
-            self.zWindow.popleft()
-        self.xWindow.append(xReading)
-        self.yWindow.append(yReading)
-        self.zWindow.append(zReading)
+    def queueMagReadings(self, xReading, yReading, zReading):
+        if len(self.magXWindow) == self.WINDOW_SIZE:
+            self.magXWindow.popleft()
+            self.magYWindow.popleft()
+            self.magZWindow.popleft()
+        self.magXWindow.append(xReading)
+        self.magYWindow.append(yReading)
+        self.magZWindow.append(zReading)
+
+    def queueAccReadings(self, xReading, yReading, zReading):
+        if len(self.accXWindow) == self.WINDOW_SIZE:
+            self.accXWindow.popleft()
+            self.accYWindow.popleft()
+            self.accZWindow.popleft()
+        self.accXWindow.append(xReading)
+        self.accYWindow.append(yReading)
+        self.accZWindow.append(zReading)
 
     # Public
     # x points to front
     # y points to left
     # z points to up
-    def updateReading(self, xReading, yReading, zReading):
+    def updateAccReading(self, xReading, yReading, zReading):
 
-        self.queueReadings(xReading, yReading, zReading)
+        self.queueAccReadings(xReading, yReading, zReading)
 
-        magX = float(sum(self.xWindow)/len(self.xWindow))
-        magY = float(sum(self.yWindow)/len(self.yWindow))
-        magZ = float(sum(self.zWindow)/len(self.zWindow))
+        # accX = float(sum(self.accXWindow))/len(self.accXWindow)
+        # accY = float(sum(self.accYWindow))/len(self.accYWindow)
+        # accZ = float(sum(self.accZWindow))/len(self.accZWindow)
+
+    # Public
+    # x points to front
+    # y points to left
+    # z points to up
+    def updateMagReading(self, xReading, yReading, zReading):
+
+        self.queueMagReadings(xReading, yReading, zReading)
+
+        # magX = float(sum(self.magXWindow))/len(self.magXWindow)
+        # magY = float(sum(self.magYWindow))/len(self.magYWindow)
+        # magZ = float(sum(self.magZWindow))/len(self.magZWindow)
 
         # # North is 90 deg to the left
         # if magY == 0 and magX < 0:
@@ -68,24 +92,46 @@ class Compass:
         #         heading = 2 * math.pi + theta
 
         # Heading in [0, 2 * pi]
-        heading = self.calibrator.calculateDeviceHeading(magX, magY, magZ)
+        # heading = self.calibrator.calculateDeviceHeading(magX, magY, magZ)
+        #
+        # if self.calibrator.NOffsetAngle > heading:
+        #     self.currHeading = 2 * math.pi - (self.calibrator.NOffsetAngle - heading)
+        # else:
+        #     self.currHeading = heading - self.calibrator.NOffsetAngle
 
-        if self.calibrator.NOffsetAngle > heading:
-            self.currHeading = 2 * math.pi - (self.calibrator.NOffsetAngle - heading)
+    def calculateHeadingInRad(self):
+
+        accX = float(sum(self.accXWindow))/len(self.accXWindow)
+        accY = float(sum(self.accYWindow))/len(self.accYWindow)
+        accZ = float(sum(self.accZWindow))/len(self.accZWindow)
+
+        magX = float(sum(self.magXWindow))/len(self.magXWindow)
+        magY = float(sum(self.magYWindow))/len(self.magYWindow)
+        magZ = float(sum(self.magZWindow))/len(self.magZWindow)
+
+        # Heading in [0, 2 * pi]
+        devHeading = self.calibrator.calculateDeviceHeading(float(magX), float(magY), float(magZ))
+
+        movingOffset = self.calibrator.calculateMovingOffset(accX, accY, accZ)
+
+        if self.calibrator.NOffsetAngle + movingOffset > devHeading:
+            currHeading = 2 * math.pi - (self.calibrator.NOffsetAngle + movingOffset - devHeading)
         else:
-            self.currHeading = heading - self.calibrator.NOffsetAngle
+            currHeading = devHeading - (self.calibrator.NOffsetAngle + movingOffset)
+
+        return currHeading
 
     # Public
     # Reading is in radians of [0, 2 * pi] clockwise from North
     def getHeadingInRad(self):
+        self.currHeading = self.calculateHeadingInRad()
         return self.currHeading
 
     # Public
     # Reading is in degrees of [-180, 180] clockwise from North
     def getHeadingInDeg(self):
-        heading = self.currHeading
-        if heading < math.pi:
-            return heading / (2 * math.pi) * 360
+        self.currHeading = self.calculateHeadingInRad()
+        if self.currHeading < math.pi:
+            return self.currHeading / (2 * math.pi) * 360
         else:
-            return -1 * (2 * math.pi - heading) / (2 * math.pi) * 360
-
+            return -1 * (2 * math.pi - self.currHeading) / (2 * math.pi) * 360
