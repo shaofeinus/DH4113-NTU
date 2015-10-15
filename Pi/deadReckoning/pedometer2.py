@@ -32,8 +32,8 @@ class Pedometer2:
         self.yxAngle = 0.0
         self.xzAngle = 0.0
         self.zyAngle = 0.0
-        self.pitch = None
-        self.roll = None
+        self.pitch = 0.0
+        self.roll = 0.0
 
     # Public
     def calibrate(self, pitch, roll):

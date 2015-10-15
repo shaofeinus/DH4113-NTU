@@ -188,7 +188,7 @@ class CompassCalibrator:
         else:
             magYComp = magY*math.cos(self.roll) - magZ*math.sin(self.roll)
 
-        print 'x comp', magXComp, 'y comp', magYComp
+        # print 'x comp', magXComp, 'y comp', magYComp
 
         # print 'after tilt correction:', magX, magY, magZ
 

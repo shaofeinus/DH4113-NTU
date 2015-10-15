@@ -161,17 +161,24 @@ class LocationDisplayThread(threading.Thread):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.threadName = threadName
+        self.count = 0
 
     def run(self):
         while 1:
             locationTrackerLock.acquire()
             locationTracker.updateLocation()
-            print "Total Steps:", locationTracker.getTotalSteps()
-            print "Total Distance:", locationTracker.getTotalDistance()
-            print "Deviation from N:", locationTracker.getHeadingInDeg()
-            print "Deviation from Map N:", locationTracker.getHeadingWRTMapInDeg()
-            print locationTracker.getLocation()
-            print "Height:", locationTracker.getHeightInCM()
+
+            if self.count == 3:
+                print "Total Steps:", locationTracker.getTotalSteps()
+                print "Total Distance:", locationTracker.getTotalDistance()
+                print "Deviation from N:", locationTracker.getHeadingInDeg()
+                print "Deviation from Map N:", locationTracker.getHeadingWRTMapInDeg()
+                print locationTracker.getLocation()
+                print "Height:", locationTracker.getHeightInCM()
+                self.count = 0
+            else:
+                self.count += 1
+
             locationTrackerLock.release()
             time.sleep(0.5)
 
@@ -303,7 +310,9 @@ class NavigationThread(threading.Thread):
                 time.sleep(0.5)
                 continue
             navi.updateCurLocation(curX, curY, heading)
-            navi.fullNavigate()
+            isNavigationDone = navi.fullNavigate()
+            if isNavigationDone is True :
+                return
             time.sleep(1)
 
 
@@ -422,11 +431,11 @@ checkSideObstacle = 0
 
 # Navigation initialization
 navi = fullNavi.fullNavi()
-navi.generateFullPath("com1", 2, 1, 5)
+navi.generateFullPath("com1", 2, 36, 10)
 
 # Location tracker initialisation
 # TODO: Set initial position
-locationTracker = locationTracker.LocationTracker(0, 0, 0.0)
+locationTracker = locationTracker.LocationTracker(4263.0, 609.0, 0.0)
 dataFeeder = dataFeeder.DataFeeder()
 
 # Locks for various variables
@@ -444,14 +453,14 @@ for thread in dataThreads:
     thread.start()
 
 ### Init threads
-##initThreads = []
-##initThreads.append(CalibrationThread(-1, "calibrating pedometer and compass"))
-##
-##for thread in initThreads:
-##    thread.start()
-##
-##for thread in initThreads:
-##    thread.join()
+initThreads = []
+initThreads.append(CalibrationThread(-1, "calibrating pedometer and compass"))
+
+for thread in initThreads:
+   thread.start()
+
+for thread in initThreads:
+   thread.join()
 
 # List of threads
 mainThreads = []
@@ -460,9 +469,9 @@ mainThreads = []
 # mainThreads.append(ProcessDataThread(2, "data processing"))
 mainThreads.append(LocationUpdateThread(3, "location update"))
 mainThreads.append(LocationDisplayThread(4, "location display"))
-# mainThreads.append(NavigationThread(5, "navigation"))
-mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
-mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
+mainThreads.append(NavigationThread(5, "navigation"))
+# mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
+# mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
 
 for thread in mainThreads:
     thread.start()

@@ -11,11 +11,12 @@ import time
 # generateFullPath(building, start, end)
 # 0 for com1L2, 1 for com2L2, 2 for com2L3
 # updateCurLocation(x, y, heading)
+# isInitialAngleCorrect()
 # fullNavigate()
 
 class fullNavi(object) :
     def __init__(self) :
-        self.ANGLE_TOLERANCE = 10
+        self.ANGLE_TOLERANCE = 13
         self.comMap = []
         self.buildingName = None
         self.levelNumber = 0
@@ -58,8 +59,13 @@ class fullNavi(object) :
         self.nodeNavi.updateCurCoord(x, y)
         self.nodeNavi.updateHeading(heading)
 
+    # returns false if at a node, but not facing in the direction of the next node
+    def isInitialAngleCorrect(self):
+        return self.angleCorrect
+
     def generateFullPath(self, buildingName, levelNumber, start, end) :
         self.mapNumber = 0
+        self.pathListIndex = 0
         self.comMap.append(mapParser())
         self.comMap[self.mapNumber].setMap(buildingName, levelNumber)
         self.startLocation = start
@@ -69,7 +75,8 @@ class fullNavi(object) :
         pathFind = pathFinder()
         pathFind.setMap(buildingName, levelNumber)
         self.pathList = pathFind.getPath(start, end)
-        self.northAt = self.comMap[self.mapNumber].getNorthAt()
+##        self.northAt = self.comMap[self.mapNumber].getNorthAt()
+        self.northAt = 0
         self.updatePrevNexCoord()
         print "Path: " + str(self.pathList)
         self.provideNexNodeDirections()
@@ -93,6 +100,7 @@ class fullNavi(object) :
         prevNode = self.pathList[self.pathListIndex]
         curNodeName = self.comMap[self.mapNumber].getLocationName(prevNode)
         print "You have reached " + curNodeName + "!"
+        print "PATHLIST INDEX is: " + str(self.pathListIndex)
 ##        time.sleep(1)
 ##        GPIO.output(self.leftPin, False)
 ##        GPIO.output(self.rightPin, False)      
@@ -116,9 +124,11 @@ class fullNavi(object) :
             print "Move straight ahead"
             return True
 
+    # returns true if navigation is complete
     def fullNavigate(self) :
         if self.angleCorrect is False :
             self.angleCorrect = self.ensureTurnedCorrectDirection()
+            return False
         else :
             isNodeReached = self.nodeNavi.navigate()
 
@@ -131,5 +141,7 @@ class fullNavi(object) :
                     self.angleCorrect = False
                 else :
                     print "NAVIGATION COMPLETE!!!"
+                    return True
+        return False
         
         
