@@ -7,6 +7,7 @@ from voiceCommands import speak
 __author__ = 'Dan'
 
 chr_queue = deque()
+stop_sema = False
 
 class speak_thread(threading.Thread):
     def __init__(self, threadName, threadID):
@@ -14,16 +15,18 @@ class speak_thread(threading.Thread):
         self.threadName = threadName
         self.threadID = threadID
     def run(self):
-        globals chr_queue
-
+        global chr_queue
+        global stop_sema
         while True:
+            if stop_sema:
+                chr_queue.clear()
+                stop_sema = False
             if len(chr_queue) > 0:
                 speak(str(chr_queue.popleft()))
 
 #THREAD SETUP
 speakThread = speak_thread("speak_thread", 1)
 speakThread.start()
-
 
 class keypad(object):
     def __init__(self):
@@ -54,6 +57,7 @@ class keypad(object):
         self.end_flag = False
         self.str_input = ""
         self.ext_num_input = -1
+        self.en_snd = True
 
         #OTHER CONSTANTS
         self.VOID_PRESS = -3
@@ -65,13 +69,21 @@ class keypad(object):
         self.GPIO.setup(self.hori, self.GPIO.OUT, initial=self.GPIO.LOW) #clear all horizontals
         self.GPIO.setup(self.vert, self.GPIO.IN)
 
+
+    def toggle_sound(self):
+        self.en_snd = not self.en_snd
+
     def get_input_str(self, prompt):
+        global chr_queue
         while True:
             print prompt
             speak(prompt)
+            chr_queue.clear()
             self.str_input = self.poll_for_str()
-            print "Input is " + self.str_input + ". To confirm, press start. To cancel, press hash"
-            speak("Input is " + self.str_input + ". To confirm, press start. To cancel, press hash")
+            print "Input is " + self.str_input + ". To confirm, press start. To cancel, press back"
+
+            if self.en_snd:
+                speak("Input is " + self.str_input + ". To confirm, press start. To cancel, press back")
             ans = 0
             while True:
                 ans = self.poll_for_num()
@@ -81,15 +93,17 @@ class keypad(object):
                 return self.str_input
 
     def get_input_ext_num(self, prompt):
+        global chr_queue
         while True:
             print prompt
             speak(prompt)
 
+            chr_queue.clear()
             self.ext_num_input = self.poll_for_ext_num()
-            # if self.ext_num_input == -1:
-            #     return -1
-            print "Input is " + str(self.ext_num_input) + ". To confirm, press start. To cancel, press hash"
-            speak("Input is " + str(self.ext_num_input) + ". To confirm, press start. To cancel, press hash")
+
+            print "Input is " + str(self.ext_num_input) + ". To confirm, press start. To cancel, press back"
+            if self.en_snd:
+                speak("Input is " + str(self.ext_num_input) + ". To confirm, press start. To cancel, press back")
             ans = 0
             while True:
                 ans = self.poll_for_num()
@@ -99,7 +113,9 @@ class keypad(object):
                 return self.ext_num_input
 
     def get_binary_response(self):
+        global chr_queue
         while True:
+            chr_queue.clear()
             userInput = self.poll_for_num()
             if userInput == 9:
                 return False
@@ -111,13 +127,16 @@ class keypad(object):
         x = 0
         for y in range(len(self.hori)): #check input at each vert
             self.GPIO.output(self.hori[y], self.GPIO.LOW)
-
+        global chr_queue
         #Polling Loops
         while True:
             self.GPIO.output(self.hori[x], self.GPIO.HIGH) # test for closed switch by taking turns setting each hori
             num_pressed = -3 # reset num_pressed
             for y in range(len(self.vert)): #check input at each vert
                 if self.GPIO.input(self.vert[y]) == self.GPIO.HIGH: # closed switch detected
+                    if self.num_map[y][x] != 9 and self.num_map[y][x] != 11:
+                        if self.en_snd:
+                            chr_queue.append(self.num_map[y][x])
                     while GPIO.input(self.vert[y]) == GPIO.HIGH:
                         pass
                     return self.num_map[y][x] #update num_pressed
@@ -133,6 +152,7 @@ class keypad(object):
         for y in range(len(self.hori)): #check input at each vert
             self.GPIO.output(self.hori[y], self.GPIO.LOW)
 
+        global chr_queue
         #Polling Loop
         num_output = ''
         while True:
@@ -144,6 +164,17 @@ class keypad(object):
 
                     # Check hold button condition
                     hold_timer_start = time.time()
+
+                    if self.num_map[y][x] == 11:
+                        if self.en_snd:
+                            chr_queue.append("delete")
+                    elif self.num_map[y][x] != 9:
+                        if self.en_snd:
+                            if self.num_map[y][x] == 10:
+                                chr_queue.append(0)
+                            else:
+                                chr_queue.append(self.num_map[y][x] + 1)
+
                     while GPIO.input(self.vert[y]) == GPIO.HIGH:
                         if self.num_map[y][x] == 11 and time.time() - hold_timer_start >= self.HOLD_DELAY:
                             num_output = ""
@@ -159,7 +190,7 @@ class keypad(object):
                     else:
                         num_output += str(self.num_map[y][x] + 1) #update num_pressed
                     print num_output
-                    #speak(str(num_output))
+
 
             self.GPIO.output(self.hori[x], self.GPIO.LOW)
             x = (x + 1) % len(self.hori)
@@ -170,6 +201,7 @@ class keypad(object):
 # ===============================STRING POLL==========================================
     def poll_for_str(self):
         x = 0
+        self.end_flag = False
         for y in range(len(self.hori)): #check input at each vert
             self.GPIO.output(self.hori[y], self.GPIO.LOW)
         self.out_str = ""
@@ -208,7 +240,6 @@ class keypad(object):
                 self.inactive_delay_start = time.time()
 
             if self.end_flag:
-                self.end_flag = False
                 return self.out_str
 
     def string_gen(self, num_pressed):
@@ -219,10 +250,12 @@ class keypad(object):
         # [9, 10, 11]     =>       [fwd, space, del]
         ##print "np:", num_pressed
         global chr_queue
+        global stop_sema
         if num_pressed == self.VOID_PRESS:
             if self.curr_chr != '':
                 self.out_str += self.curr_chr
-                speak(str(self.curr_chr))
+                if self.en_snd:
+                    chr_queue.append(str(self.curr_chr))
             self.curr_chr = ''
             self.prev_num = -3
             self.num_count = 0
@@ -230,43 +263,49 @@ class keypad(object):
             if self.curr_chr == '':
                 if len(self.out_str)>0:
                     self.out_str = self.out_str[:len(self.out_str)-1]
-            speak("delete")
+            if self.en_snd and (self.curr_chr != '' or len(self.out_str) > 0):
+                chr_queue.append("delete")
             self.curr_chr = '' #clear curr_chr
             self.num_count = 0 #reset count on key map
             self.prev_num = -3 #update keypress history
         elif num_pressed == 9: #fwd
-            self.out_str += self.key_map[self.prev_num][self.num_count]
-            chr_queue.append(self.key_map[self.prev_num][self.num_count]) ##speak(str(self.key_map[self.prev_num][self.num_count]))
+            self.out_str += self.curr_chr
+            if self.en_snd:
+                chr_queue.append(self.curr_chr)
             self.curr_chr = '' #clear curr_chr
             self.num_count = 0 #reset count on key map
             self.prev_num = -3 #update keypress history
         elif num_pressed == 23: #clear all
             self.out_str = ""
-            speak("clear")
+            if self.en_snd:
+                chr_queue.append("clear")
             self.curr_chr = '' #clear curr_chr
             self.num_count = 0 #reset count on key map
             self.prev_num = -3 #update keypress history
         elif num_pressed == 21: #enter string
-            self.out_str += self.key_map[self.prev_num][self.num_count]
-            self.key_map[self.prev_num][self.num_count]
-            speak("enter")
+            self.out_str += self.curr_chr
             self.curr_chr = '\n' #clear curr_chr
             self.num_count = 0 #reset count on key map
             self.prev_num = 21 #update keypress history
             self.end_flag = True
+            stop_sema = True
         else:
             if num_pressed >= 12: #hold down keys
                 if self.curr_chr != '':
                     self.out_str += self.curr_chr
+                    if self.en_snd:
+                        chr_queue.append(self.curr_chr)
                 self.out_str += self.key_map[num_pressed][0]
-                speak(self.key_map[num_pressed][0])
+                if self.en_snd:
+                    chr_queue.append(self.key_map[num_pressed][0])
                 self.num_count = 0 #reset count on keymap
                 self.prev_num = -3 #update clear history
                 self.curr_chr = '' #clear curr_char
             elif num_pressed != self.prev_num: #normal keys, different num
                 if self.prev_num != -3: #first press condition
-                    self.out_str += self.key_map[self.prev_num][self.num_count]
-                    chr_queue.append(self.key_map[self.prev_num][self.num_count]) ##speak(self.key_map[self.prev_num][self.num_count])
+                    self.out_str += self.curr_chr
+                    if self.en_snd:
+                        chr_queue.append(self.curr_chr) ##speak(self.key_map[self.prev_num][self.num_count])
                 self.num_count = 0 #reset count on keymap
                 self.prev_num = num_pressed #update keypress history
                 self.curr_chr = self.key_map[self.prev_num][self.num_count] #update curr_char to new value
