@@ -4,7 +4,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 def speak(sentence) :
-    os.system('espeak -ven+f2 "{0}"'.format(sentence))
+    os.system('sudo espeak -s 185 -a 200 -ven-n+f2 "{0}"'.format(sentence))
 
 #sentence = raw_input("Enter sentence to speak: ")
 

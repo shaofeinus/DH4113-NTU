@@ -6,20 +6,16 @@ __author__ = 'Shao Fei'
 
 class Pedometer2:
 
-    G_RAW_RANGE = (-32768, 32767)
-    G_ACTUAL_RANGE = (-2.0, 2.0)
-    Z_ACC_OFFSET = 950
-
     CLOCK_MAX = 4095  # In ms
 
-    ACC_WINDOW_TIME = 1000  # In ms
+    ACC_WINDOW_TIME = 500  # In ms
     ACC_DATA_INTERVAL = 10  # In ms
 
     ACC_WINDOW_SIZE = ACC_WINDOW_TIME / ACC_DATA_INTERVAL
     SINGLE_DATA_WINDOW_SIZE = 5
 
     ACC_H_THRESHOLD = 1.2     # In G
-    ACC_L_THRESHOLD = 0.8     # In G
+    ACC_L_THRESHOLD = 0.85     # In G
     ACC_REST = 0.97
 
     HIGH_LOW_INTERVAL_MAX = 500  # In ms
@@ -36,13 +32,13 @@ class Pedometer2:
         self.yxAngle = 0.0
         self.xzAngle = 0.0
         self.zyAngle = 0.0
+        self.pitch = 0.0
+        self.roll = 0.0
 
     # Public
-    # Angle is in +/- 180 degrees, where 0 degrees is when i-axis points upwards
-    def calibrate(self, yxAngle, xzAngle, zyAngle):
-        self.yxAngle = yxAngle
-        self.xzAngle = xzAngle
-        self.zyAngle = zyAngle
+    def calibrate(self, pitch, roll):
+        self.pitch = pitch
+        self.roll = roll
 
     # Public
     def getStepCount(self):
@@ -58,8 +54,6 @@ class Pedometer2:
     # accY points forward
     # accZ points downwards
     def insertData(self, accX, accY, accZ, timeInMillis):
-
-        accX, accY, accZ = self.transformACC(accX, accY, accZ)
 
         # print str(math.sqrt(accX*accX + accY*accY + accZ*accZ))
 
@@ -119,26 +113,6 @@ class Pedometer2:
 
         self.prevUpdateTime = timeInMillis
 
-    def transformACC(self, accX, accY, accZ):
-
-        # To account for the offset in z axis
-        if accZ - self.Z_ACC_OFFSET < self.G_RAW_RANGE[0]:
-            accZ = self.G_RAW_RANGE[0]
-        else:
-            accZ -= self.Z_ACC_OFFSET
-
-        # print accX, accY, accZ
-        accX = (float(accX - self.G_RAW_RANGE[0]) / float(self.G_RAW_RANGE[1] - self.G_RAW_RANGE[0])) * \
-               (self.G_ACTUAL_RANGE[1] - self.G_ACTUAL_RANGE[0]) + \
-               (self.G_ACTUAL_RANGE[0])
-        accY = (float(accY - self.G_RAW_RANGE[0]) / float(self.G_RAW_RANGE[1] - self.G_RAW_RANGE[0])) * \
-               (self.G_ACTUAL_RANGE[1] - self.G_ACTUAL_RANGE[0]) + \
-               (self.G_ACTUAL_RANGE[0])
-        accZ = (float(accZ - self.G_RAW_RANGE[0]) / float(self.G_RAW_RANGE[1] - self.G_RAW_RANGE[0])) * \
-               (self.G_ACTUAL_RANGE[1] - self.G_ACTUAL_RANGE[0]) + \
-               (self.G_ACTUAL_RANGE[0])
-        return accX, accY, accZ
-
     def addMultipleSingleData(self, accX, accY, accZ, timeElapsed):
 
         noOfNewDataRequired = round(timeElapsed / self.ACC_DATA_INTERVAL)
@@ -195,7 +169,13 @@ class Pedometer2:
         # # print xzComp + xyComp + yxComp + yzComp + zyComp + zxComp
         # print xzComp + zxComp + yxComp + xyComp
         # return xzComp + zxComp + yxComp + xyComp
-        return newData[0]
+
+        gPitchComp = newData[0] * math.sin(self.pitch) + newData[2] * math.cos(self.pitch)
+        g = newData[1] * math.sin(self.roll) + gPitchComp * math.cos(self.roll)
+
+        # return newData[2]
+        # print gPitchComp, g
+        return g
 
     # Updates the acc data window
     def updateAccWindow(self, accG):

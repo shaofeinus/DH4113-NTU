@@ -310,7 +310,7 @@ class obstacleAvoidance (object) :
             sideIR = self.getLeftIr()
             sideSonar = self.getLeftSonar()
         else :
-            sideIr = self.getRightIr()
+            sideIR = self.getRightIr()
             sideSonar = self.getRightSonar()
 
         if((sideIR < self.SIDE_OBSTACLE_DISTANCE) or (sideSonar < self.SIDE_OBSTACLE_DISTANCE)) :
