@@ -215,7 +215,6 @@ class LocationUpdateThread(threading.Thread):
             # print "timeStamp:", self.timeInMillisPedo, "AccX:", self.accX, "AccY:", self.accY, "AccZ:", self.accZ, "time:", datetime.datetime.now()
 
     def updateCompassData(self):
-
         if len(data[2]) == 0:
             return
         elif self.totalCompData == 0:
@@ -243,7 +242,6 @@ class LocationUpdateThread(threading.Thread):
             #     "time:", datetime.datetime.now()
 
     def updateBaroData(self):
-
         if len(data[4]) == 0:
             return
         elif self.totalBaroData == 0:
@@ -300,20 +298,26 @@ class ObstacleAvoidanceThread(threading.Thread):
         global obstacleDetected
         global checkSideObstacle
         while 1:
-            irFB = data[6]
+            irFC = data[6]
             irLS = data[7]
             irRS = data[8]
+            irFL = data[9]
+            irFR = data[10]
             sonarFT = data[11]
             sonarLS = data[12]
             sonarRS = data[13]
 
             obstacleLock.acquire()
-            obstacle.updateFrontSensorData(sonarFT, irFB)
+            obstacle.updateFrontSensorData(sonarFT, irFC, irFL, irFR)
             obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
             obstacleLock.release()
             obstacleStatusLock.acquire()
             obstacleStatus = obstacleDetected
             obstacleStatusLock.release()
+            if obstacle.hasUpStep() :
+                obstacle.stepVibrateMotor(True)
+            elif obstacle.hasDownStep() :
+                obstacle.stepVibrateMotor(False)
             if obstacle.isNewObstacleDetected(obstacleStatus) is True:
                 obstacleStatusLock.acquire()
                 obstacleDetected = 1
@@ -326,7 +330,7 @@ class ObstacleAvoidanceThread(threading.Thread):
             obstacleStatusLock.release()
             if obstacleStatus == 1:
                 obstacleLock.acquire()
-                obstacle.updateFrontSensorData(sonarFT, irFB)
+                obstacle.updateFrontSensorData(sonarFT, irFC, irFL, irFR)
                 obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
                 obstacleLock.release()
                 if obstacle.isFrontObstacleDetected(obstacleStatus) is True:
@@ -349,9 +353,11 @@ class ObstacleClearedThread(threading.Thread):
     def run(self):
         global checkSideObstacle
         while 1:
-            irFB = data[6]
+            irFC = data[6]
             irLS = data[7]
             irRS = data[8]
+            irFL = data[9]
+            irFR = data[10]
             sonarFT = data[11]
             sonarLS = data[12]
             sonarRS = data[13]
@@ -360,7 +366,7 @@ class ObstacleClearedThread(threading.Thread):
             obstacleStatusLock.release()
             if toMonitorObstacle == 1:
                 obstacleLock.acquire()
-                obstacle.updateFrontSensorData(sonarFT, irFB)
+                obstacle.updateFrontSensorData(sonarFT, irFFC, irFL, irFR)
                 obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
                 obstacleLock.release()
                 if obstacle.checkObstacleCleared() == 1:

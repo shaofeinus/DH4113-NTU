@@ -10,6 +10,9 @@ class obstacleAvoidance (object) :
         self.FRONT_OBSTACLE_DISTANCE = 75
         self.SIDE_WALL_DISTANCE = 100
         self.SIDE_OBSTACLE_DISTANCE = 70
+        self.STEP_MAX_DISTANCE = 130
+        self.FLOOR_DISTANCE = 120
+        self.STEP_MIN_DISTANCE = 110
         self.VIBRATE_DURATION = 2
         self.LARGE_VALUE = 11111
 
@@ -80,10 +83,12 @@ class obstacleAvoidance (object) :
         print "Right IR: " + str(self.getRightIr())
 
 
-    def updateFrontSensorData(self, sonarFront, irFront) :
+    def updateFrontSensorData(self, sonarFront, irFC, irFL, irFR) :
         self.fHistoryIndex = (self.fHistoryIndex + 1) % self.frontNumHistory
         self.sonarFT[self.fHistoryIndex] = self.convertSonarToCm(sonarFront)
-        self.irFB[self.fHistoryIndex] = self.convertIRToCm(irFront)
+        self.irFB[self.fHistoryIndex] = self.convertIRToCm(irFC)
+        self.irFL[self.fHistoryIndex] = self.convertIRToCm(irFL)
+        self.irFR[self.fHistoryIndex] = self.convertIRToCm(irFR)
 
     def updateSideSensorData(self, sonarLeft, sonarRight, irLeft, irRight) :
         self.sHistoryIndex = (self.sHistoryIndex + 1) % self.sideNumHistory
@@ -107,7 +112,6 @@ class obstacleAvoidance (object) :
     def hasFIrObstacle(self, isAlreadyDetected) :
         if isAlreadyDetected == 0 :
             for i in self.irFB :
-                print "front ir: " + str(i),
                 if i > self.FRONT_OBSTACLE_DISTANCE :
                     return False
             return True
@@ -116,6 +120,21 @@ class obstacleAvoidance (object) :
                 if i <= self.FRONT_OBSTACLE_DISTANCE :
                     return True
             return False
+
+    def hasUpStep(self) :
+        for i in self.irFB :
+            print "front ir: " + str(i),
+            if ((i < self.STEP_MIN_DISTANCE) and (i > self.FLOOR_DISTANCE)) :
+                return False         
+        return True
+
+    def hasDownStep(self) :
+        for i in self.irFB :
+            print "front ir: " + str(i),
+            if ((i > self.STEP_MAX_DISTANCE) and (i < self.FLOOR_DISTANCE)) :
+                return False         
+        return True
+
 
     def getFrontLeftIr(self) :
         average = 0
@@ -233,7 +252,6 @@ class obstacleAvoidance (object) :
         else :
             return 2
 
-
     def vibrateMotors(self) :
         GPIO.output(self.leftPin, True)
         GPIO.output(self.rightPin, True)
@@ -245,6 +263,22 @@ class obstacleAvoidance (object) :
         print "Vibration motors turned off"
         GPIO.output(self.leftPin, False)
         GPIO.output(self.rightPin, False)
+
+    # if up step detected, vibrate right-left-right
+    # if down step detected, vibrate left-right-left
+    def stepVibrateMotor(self, hasUp) :
+        GPIO.output(self.leftPin, not hasUp)
+        GPIO.output(self.rightPin, hasUp)
+        time.sleep(0.2)
+        GPIO.output(self.leftPin, hasUp)
+        GPIO.output(self.rightPin, not hasUp)
+        time.sleep(0.2)
+        GPIO.output(self.leftPin, not hasUp)
+        GPIO.output(self.rightPin, hasUp)
+        time.sleep(0.2)
+        GPIO.output(self.leftPin, False)
+        GPIO.output(self.rightPin, False)
+                
 
     # detects new obstacles:
     # if alreadyDetected is 1, return False, else
