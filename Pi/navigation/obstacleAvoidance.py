@@ -8,9 +8,8 @@ import RPi.GPIO as GPIO
 class obstacleAvoidance (object) :
     def __init__(self) :       
         self.FRONT_OBSTACLE_DISTANCE = 75
-        self.BOTTOM_OBSTACLE_DISTANCE = 65
         self.SIDE_WALL_DISTANCE = 100
-        self.SIDE_OBSTACLE_DISTANCE = 65
+        self.SIDE_OBSTACLE_DISTANCE = 70
         self.VIBRATE_DURATION = 2
         self.LARGE_VALUE = 11111
 
@@ -24,6 +23,11 @@ class obstacleAvoidance (object) :
         self.sonarFT = [self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE]
         # front bottom IR
         self.irFB = [self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE]
+
+        # front left IR
+        self.irFL = [self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE]
+        # front right iR
+        self.irFR = [self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE]
 
         # left side sonar
         self.sonarLS = [self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE]
@@ -100,7 +104,6 @@ class obstacleAvoidance (object) :
                     return True
             return False
         
-
     def hasFIrObstacle(self, isAlreadyDetected) :
         if isAlreadyDetected == 0 :
             for i in self.irFB :
@@ -114,6 +117,26 @@ class obstacleAvoidance (object) :
                     return True
             return False
 
+    def getFrontLeftIr(self) :
+        average = 0
+        for i in self.irFL :
+            average+= i
+        average /= self.sideNumHistory
+        if (math.fabs(self.irFL[2] - average) > 10) :
+            return self.irFL[(self.sHistoryIndex-1)%self.sideNumHistory]
+        else :
+            return self.irFL[self.sHistoryIndex]
+
+    def getFrontRightIr(self) :
+        average = 0
+        for i in self.irFR :
+            average+= i
+        average /= self.sideNumHistory
+        if (math.fabs(self.irFR[2] - average) > 10) :
+            return self.irFR[(self.sHistoryIndex-1)%self.sideNumHistory]
+        else :
+            return self.irFR[self.sHistoryIndex]
+
     def getLeftSonar(self) :
         average = 0
         for i in self.sonarLS :
@@ -123,7 +146,6 @@ class obstacleAvoidance (object) :
             return self.sonarLS[(self.sHistoryIndex-1)%self.sideNumHistory]
         else :
             return self.sonarLS[self.sHistoryIndex]
-
 
     def getRightSonar(self) :
         average = 0
@@ -162,7 +184,7 @@ class obstacleAvoidance (object) :
     # indicates which side to turn via motors
     def turnFromObstacle(self) :
         print "ENTER TURN FROM OBSTACLE"
-##        self.printSideSensorValues()
+        self.printSideSensorValues()
         self.lastTurnedDirection = self.getSideToTurn(self.lastTurnedDirection)
         if self.lastTurnedDirection == 1 :
             GPIO.output(self.leftPin, False)
@@ -186,16 +208,18 @@ class obstacleAvoidance (object) :
             return 0
         # check both sides and base result on previous direction turned
         elif((self.getRightSonar() > self.SIDE_WALL_DISTANCE) and (self.getLeftSonar() > self.SIDE_WALL_DISTANCE)) :
-            elif ((lastTurned == 1) :
-                if (self.getRightIr() >= self.SIDE_OBSTACLE_DISTANCE)) :
+            if (lastTurned == 1) :
+                if (self.getRightIr() >= self.SIDE_OBSTACLE_DISTANCE) :
                     return 1
                 else :
                     return 2
-            elif((lastTurned == 2) :
-                 if (self.getLeftIr() >= self.SIDE_OBSTACLE_DISTANCE)) :
+            elif(lastTurned == 2) :
+                if (self.getLeftIr() >= self.SIDE_OBSTACLE_DISTANCE) :
                     return 2
                 else :
                     return 1
+            else :
+                return 1
         # free space on right detected
         elif(self.getRightSonar() > self.SIDE_WALL_DISTANCE) and (self.getRightIr() >= self.SIDE_OBSTACLE_DISTANCE):
             return 1            
@@ -249,11 +273,13 @@ class obstacleAvoidance (object) :
     def checkObstacleCleared(self) :
         print "ENTER CHECK OBSTACLE CLEARED"
         if(self.lastTurnedDirection == 1) :
-            sideSonar = self.getLeftIr()
+            sideIR = self.getLeftIr()
+            sideSonar = self.getLeftSonar()
         else :
-            sideSonar = self.getRightIr()
+            sideIr = self.getRightIr()
+            sideSonar = self.getRightSonar()
 
-        if(sideSonar < self.SIDE_OBSTACLE_DISTANCE) :
+        if((sideIR < self.SIDE_OBSTACLE_DISTANCE) or (sideSonar < self.SIDE_OBSTACLE_DISTANCE)) :
             return 0
         else :
             return 1

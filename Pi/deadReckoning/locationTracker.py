@@ -9,7 +9,7 @@ __author__ = 'Shao Fei'
 
 class LocationTracker:
 
-    STEP_DISTANCE = 40     # in cm
+    STEP_DISTANCE = 32.5     # in cm
 
     def __init__(self, initX, initY, northAt):
         self.currX = initX      # Points eastwards
@@ -78,8 +78,12 @@ class LocationTracker:
         self.pedometer.insertData(accX, accY, accZ, timeInMillis)
 
     # Public
-    def updateCompassData(self, magX, magY, magZ):
-        self.compass.updateReading(magX, magY, magZ)
+    def updateCompassMagData(self, magX, magY, magZ):
+        self.compass.updateMagReading(magX, magY, magZ)
+
+    # Public
+    def updateCompassAccData(self, accX, accY, accZ):
+        self.compass.updateAccReading(accX, accY, accZ)
 
     # Public
     def updateBarometerData(self, reading):

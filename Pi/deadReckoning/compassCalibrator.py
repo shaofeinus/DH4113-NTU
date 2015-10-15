@@ -1,5 +1,4 @@
 import math
-import pedometer2
 
 __author__ = 'Shao Fei'
 
@@ -12,13 +11,13 @@ class CompassCalibrator:
     MIN_DATA_NUM = 350
     ACC_TOLERANCE = 0.5  # In G
     MAG_TOLERANCE = 1000
+    DECLINATION_OFFSET = 4.072 / 1000
 
     def __init__(self):
         self.accXWindow = []
         self.accYWindow = []
         self.accZWindow = []
         self.accCaliFailed = False
-        self.pedometerTool = pedometer2.Pedometer2()
         self.magXWindow = []
         self.magYWindow = []
         self.magZWindow = []
@@ -44,9 +43,6 @@ class CompassCalibrator:
 
         # print 'raw acc', accX, accY, accZ
 
-        # Transform acc values to Gs
-        accX, accY, accZ = self.pedometerTool.transformACC(accX, accY, accZ)
-
         # Continue feeding data
         if len(self.accXWindow) < self.WINDOW_SIZE:
             self.accXWindow.append(accX)
@@ -63,6 +59,8 @@ class CompassCalibrator:
             if not self.accCaliFailed:
 
                 aR = math.sqrt(accX * accX + accY * accY + accZ * accZ)
+
+                print aR
 
                 # accXNorm points forward
                 accXNorm = accX / aR
@@ -118,31 +116,79 @@ class CompassCalibrator:
     # x points front
     # y points left
     # z points up
-    def calculateDeviceHeading(self, magX, magY, magZ):
-
-        # Hard iron correction
-        magX -= (self.magXRange[1] + self.magXRange[0]) / 2.0
-        magY -= (self.magYRange[1] + self.magYRange[0]) / 2.0
-        magZ -= (self.magZRange[1] + self.magZRange[0]) / 2.0
-
-        # print 'after hard iron correction:', magX, magY, magZ
-
-        # Soft iron correction
-        magX = float(magX - self.magXRange[0]) / float(self.magXRange[1] - self.magXRange[0]) * 2.0 - 1.0
-        magY = float(magY - self.magYRange[0]) / float(self.magYRange[1] - self.magYRange[0]) * 2.0 - 1.0
-        magZ = float(magZ - self.magZRange[0]) / float(self.magZRange[1] - self.magZRange[0]) * 2.0 - 1.0
-
-        # print 'after soft iron correction:', magX, magY, magZ
+    def calculateMovingOffset(self, accX, accY, accZ):
 
         # magX points forward
         # magXComp = magX * math.cos(self.pitch) - magZ * math.sin(self.pitch)
-        magXComp = magX*math.cos(self.pitch) - (magZ*math.cos(self.roll) + magY*math.sin(self.roll))*math.sin(self.pitch)
+        accXComp = accX*math.cos(self.pitch) - (accZ*math.cos(self.roll) + accY*math.sin(self.roll))*math.sin(self.pitch)
 
         # magY points left
         # magYComp = magX * math.sin(self.roll) * math.sin(self.pitch) + \
         #     magY * math.cos(self.roll) - \
         #     magZ * math.sin(self.roll) * math.cos(self.pitch)
-        magYComp = magY*math.cos(self.roll) - (magZ*math.cos(self.pitch) + magX*math.sin(self.pitch))*math.sin(self.roll)
+        accYComp = accY*math.cos(self.roll) - (accZ*math.cos(self.pitch) + accX*math.sin(self.pitch))*math.sin(self.roll)
+
+        heading = math.atan2(accYComp, accXComp)
+
+        if heading < 0:
+            heading += 2 * math.pi
+
+        heading = 0
+
+        return heading
+
+    # Public
+    # Returns Heading in [0, 2 * pi]
+    # x points front
+    # y points left
+    # z points up
+    def calculateDeviceHeading(self, magX, magY, magZ):
+
+        # # Hard iron correction
+        # magX -= (self.magXRange[1] + self.magXRange[0]) / 2.0
+        # magY -= (self.magYRange[1] + self.magYRange[0]) / 2.0
+        # magZ -= (self.magZRange[1] + self.magZRange[0]) / 2.0
+        #
+        # # print 'after hard iron correction:', magX, magY, magZ
+        #
+        # # Soft iron correction
+        # magX = float(magX - self.magXRange[0]) / float(self.magXRange[1] - self.magXRange[0]) * 2.0 - 1.0
+        # magY = float(magY - self.magYRange[0]) / float(self.magYRange[1] - self.magYRange[0]) * 2.0 - 1.0
+        # magZ = float(magZ - self.magZRange[0]) / float(self.magZRange[1] - self.magZRange[0]) * 2.0 - 1.0
+
+        # print 'after soft iron correction:', magX, magY, magZ
+
+        # magX points forward
+        # if self.pitch > 0:
+        #     magXComp = magX * math.cos(self.pitch) - magZ * math.sin(self.pitch)
+        # else:
+        #     magXComp = magX * math.cos(self.pitch) + magZ * math.sin(self.pitch)
+
+        # magXComp = magX*math.cos(self.pitch) - (magZ*math.cos(self.roll) + magY*math.sin(self.roll))*math.sin(self.pitch)
+
+        if self.pitch > 0:
+            magXComp = magX*math.cos(self.pitch) - magZ*math.sin(self.pitch)
+        else:
+            magXComp = magX*math.cos(self.pitch) - magZ*math.sin(self.pitch)
+
+        # magY points left
+        # if self.roll > 0:
+        #     magYComp = magX * math.sin(self.roll) * math.sin(self.pitch) + \
+        #         magY * math.cos(self.roll) - \
+        #         magZ * math.sin(self.roll) * math.cos(self.pitch)
+        # if self.roll < 0:
+        #     magYComp = magX * math.sin(self.roll) * math.sin(self.pitch) + \
+        #         magY * math.cos(self.roll) - \
+        #         magZ * math.sin(self.roll) * math.cos(self.pitch)
+
+        # magYComp = magY*math.cos(self.roll) - (- magZ*math.cos(self.pitch) + magX*math.sin(self.pitch))*math.sin(self.roll)
+
+        if self.roll > 0:
+            magYComp = magY*math.cos(self.roll) - magZ*math.sin(self.roll)
+        else:
+            magYComp = magY*math.cos(self.roll) - magZ*math.sin(self.roll)
+
+        print 'x comp', magXComp, 'y comp', magYComp
 
         # print 'after tilt correction:', magX, magY, magZ
 
@@ -150,6 +196,11 @@ class CompassCalibrator:
         # magXComp = float(magX)
 
         heading = math.atan2(magYComp, magXComp)
+
+        heading += self.DECLINATION_OFFSET
+
+        if heading > 2 * math.pi:
+            heading -= 2 * math.pi
 
         if heading < 0:
             heading += 2 * math.pi

@@ -2,8 +2,8 @@ import threading
 import time
 import math
 import datetime
-from deadReckoning import compassCalibrator
 from deadReckoning import locationTracker
+from deadReckoning import calibrationTools
 from navigation import fullNavi
 from navigation import obstacleAvoidance
 from communication import dataFeeder
@@ -52,6 +52,7 @@ class CalibrationThread(threading.Thread):
         self.threadName = threadName
 
         self.calibrator = locationTracker.compass.calibrator
+        self.calibrationTools = calibrationTools.CalibrationTools()
         self.isDone = {'tilt': False, 'nOffset': False}
 
         self.accX = 0
@@ -65,10 +66,10 @@ class CalibrationThread(threading.Thread):
 
     def run(self):
 
-        magXrange = (-4328, 5605)
-        magYRange = (-5096, 5002)
-        magZRange = (-4618, 4655)
-        self.calibrator.inputManualRange(magZRange, magYRange, magXrange)
+        # magXrange = (-4328, 5605)
+        # magYRange = (-5096, 5002)
+        # magZRange = (-4618, 4655)
+        # self.calibrator.inputManualRange(magZRange, magYRange, magXrange)
 
         dataInLock.acquire()
         validInput = False
@@ -97,6 +98,8 @@ class CalibrationThread(threading.Thread):
         while not self.isDone['nOffset']:
             self.calibrateOffset()
 
+        locationTracker.pedometer.calibrate(self.calibrator.pitch, self.calibrator.roll)
+
         dataInLock.acquire()
         raw_input('Your are ' + str(self.calibrator.getNOffsetAngle() / (2 * math.pi) * 360) + ' from N.')
         dataFeeder.serialPort.flushInput()
@@ -123,6 +126,7 @@ class CalibrationThread(threading.Thread):
             # x points to front
             # y points to left
             # z points to up
+            self.accX, self.accY, self.accZ = self.calibrationTools.transformACC(self.accX, self.accY, self.accZ)
             self.calibrator.calibrateTilt(-self.accZ, self.accY, self.accX, self.isDone)
             self.totalAccData = 0
 
@@ -147,6 +151,7 @@ class CalibrationThread(threading.Thread):
             # x points to front
             # y points to left
             # z points to up
+            self.magX, self.magY, self.magZ = self.calibrationTools.transformMag(self.magX, self.magY, self.magZ)
             self.calibrator.calibrateNOffset(-self.magZ, self.magY, self.magX, self.isDone)
             self.totalMagData = 0
 
@@ -168,7 +173,7 @@ class LocationDisplayThread(threading.Thread):
             print locationTracker.getLocation()
             print "Height:", locationTracker.getHeightInCM()
             locationTrackerLock.release()
-            time.sleep(1)
+            time.sleep(0.5)
 
 
 class LocationUpdateThread(threading.Thread):
@@ -176,70 +181,82 @@ class LocationUpdateThread(threading.Thread):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.threadName = threadName
-        self.totalPedoData = 0
-        self.totalCompData = 0
+        self.totalAccData = 0
+        self.totalMagData = 0
         self.totalBaroData = 0
         self.magX = 1
         self.magY = 1
         self.magZ = 1
-        self.timeInMillisComp = 0
+        self.timeInMillisMag = 0
         self.accX = 1
         self.accY = 1
         self.accZ = 1
-        self.timeInMillisPedo = 0
+        self.timeInMillisAcc = 0
         self.baroReading = 1
         self.timeInMillisBaro = 0
+        self.calibrationTools = calibrationTools.CalibrationTools()
 
-    def updatePedoData(self):
+    def updateAccData(self):
         if len(data[1]) == 0:
             return
-        elif self.totalPedoData == 0:
-            self.timeInMillisPedo = data[1].popleft()
-            self.totalPedoData += 1
-        elif self.totalPedoData == 1:
+        elif self.totalAccData == 0:
+            self.timeInMillisAcc = data[1].popleft()
+            self.totalAccData += 1
+        elif self.totalAccData == 1:
             self.accX = data[1].popleft()
-            self.totalPedoData += 1
-        elif self.totalPedoData == 2:
+            self.totalAccData += 1
+        elif self.totalAccData == 2:
             self.accY = data[1].popleft()
-            self.totalPedoData += 1
-        elif self.totalPedoData == 3:
+            self.totalAccData += 1
+        elif self.totalAccData == 3:
             self.accZ = data[1].popleft()
-            self.totalPedoData += 1
+            self.totalAccData += 1
 
-        if self.totalPedoData == 4:
-            locationTracker.updatePedoData(self.accX, self.accY, self.accZ, self.timeInMillisPedo)
-            self.totalPedoData = 0
+        if self.totalAccData == 4:
+
+            # print self.accX, self.accY, self.accZ
+
+            self.accX, self.accY, self.accZ = self.calibrationTools.transformACC(self.accX, self.accY, self.accZ)
+            locationTracker.updatePedoData(-self.accZ, self.accY, self.accX, self.timeInMillisAcc)
+            locationTracker.updateCompassAccData(-self.accZ, self.accY, self.accX)
+            self.totalAccData = 0
+
             # f = open('accdata.csv', 'a')
             # f.write(str(self.accX) + ',' + str(self.accY) + ',' + str(self.accZ) + '\n')
             # f.close()
-            # print "timeStamp:", self.timeInMillisPedo, "AccX:", self.accX, "AccY:", self.accY, "AccZ:", self.accZ, "time:", datetime.datetime.now()
 
-    def updateCompassData(self):
+            # print "timeStamp:", self.timeInMillisAcc, "AccX:", self.accX, "AccY:", self.accY, "AccZ:", self.accZ, "time:", datetime.datetime.now()
+
+    def updateMagData(self):
 
         if len(data[2]) == 0:
             return
-        elif self.totalCompData == 0:
-            self.timeInMillisComp = data[2].popleft()
-            self.totalCompData += 1
-        elif self.totalCompData == 1:
+        elif self.totalMagData == 0:
+            self.timeInMillisMag = data[2].popleft()
+            self.totalMagData += 1
+        elif self.totalMagData == 1:
             self.magX = data[2].popleft()
-            self.totalCompData += 1
-        elif self.totalCompData == 2:
+            self.totalMagData += 1
+        elif self.totalMagData == 2:
             self.magY = data[2].popleft()
-            self.totalCompData += 1
-        elif self.totalCompData == 3:
+            self.totalMagData += 1
+        elif self.totalMagData == 3:
             self.magZ = data[2].popleft()
-            self.totalCompData += 1
+            self.totalMagData += 1
 
-        if self.totalCompData == 4:
+        if self.totalMagData == 4:
             # Parameter xReading points left
             # Parameter yReading points forward
-            locationTracker.updateCompassData(-self.magZ, self.magY, self.magX)
-            self.totalCompData = 0
+
             # f = open('compdata.csv', 'a')
             # f.write(str(self.magX) + ',' + str(self.magY) + ',' + str(self.magZ) + '\n')
             # f.close()
-            # print "timeStamp:", self.timeInMillisComp, "MagX:", self.magX, "MagY:", self.magY, "MagZ:", self.magZ, \
+
+            self.magX, self.magY, self.magZ = self.calibrationTools.transformMag(self.magX, self.magY, self.magZ)
+            locationTracker.updateCompassMagData(-self.magZ, self.magY, self.magX)
+            self.totalMagData = 0
+
+            # print "timeStamp:", self.timeInMillisMag, "MagX:", self.magX, "MagY:", self.magY, "MagZ:", self.magZ, \
             #     "time:", datetime.datetime.now()
 
     def updateBaroData(self):
@@ -261,8 +278,8 @@ class LocationUpdateThread(threading.Thread):
     def run(self):
         while 1:
             locationTrackerLock.acquire()
-            self.updatePedoData()
-            self.updateCompassData()
+            self.updateAccData()
+            self.updateMagData()
             self.updateBaroData()
             locationTrackerLock.release()
 
@@ -387,7 +404,8 @@ NUM_SINGLE_ID = 11
 # 6 - IR (front bottom) (0)
 # 7 - IR (left side) (1)
 # 8 - IR (right side) (2)
-# 9-10 - unused 
+# 9 - IR (front left)
+# 10 - IR (front right)
 # 11 - sonar (front top) (29 trig 19 echo)
 # 12 - sonar (left side) (27 trig 18 echo)
 # 13 - sonar (right side) (25 trig  2 echo)

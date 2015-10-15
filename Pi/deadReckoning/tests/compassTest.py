@@ -20,7 +20,7 @@ def inputData(comp, shouldPrint):
         values = line.split(',')
         magX = int(values[0])
         magY = int(values[1])
-        comp.updateReading(magX, magY)
+        comp.updateMagReading(magX, magY)
         line = f.readline()
         if shouldPrint:
             print("Degrees from N:", comp.getHeadingInRad())
@@ -32,6 +32,6 @@ def inputData(comp, shouldPrint):
 def inputRandData(comp):
     magX = random.randint(-1000, 1000)
     magY = random.randint(-1000, 1000)
-    comp.updateReading(magX, magY)
+    comp.updateMagReading(magX, magY)
     return
 
