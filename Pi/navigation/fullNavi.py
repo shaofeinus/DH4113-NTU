@@ -1,3 +1,4 @@
+import math
 import distAngleCalc
 from p2pNavi import navigation
 from jsonParsing import mapParser
@@ -14,6 +15,7 @@ import time
 
 class fullNavi(object) :
     def __init__(self) :
+        self.ANGLE_TOLERANCE = 10
         self.comMap = []
         self.buildingName = None
         self.levelNumber = 0
@@ -32,6 +34,7 @@ class fullNavi(object) :
         self.nexX = 0               # cm
         self.nexY = 0               # cm
         self.nodeNavi = navigation()
+        self.angleCorrect = True
 
         self.leftPin = 9
         self.rightPin = 10
@@ -69,6 +72,8 @@ class fullNavi(object) :
         self.northAt = self.comMap[self.mapNumber].getNorthAt()
         self.updatePrevNexCoord()
         print "Path: " + str(self.pathList)
+        self.provideNexNodeDirections()
+        self.angleCorrect = False
 
     def updatePrevNexCoord(self) :
         prevNode = self.pathList[self.pathListIndex]
@@ -96,22 +101,35 @@ class fullNavi(object) :
         nexNode =  self.pathList[self.pathListIndex + 1]
         nexNodeName = self.comMap[self.mapNumber].getLocationName(nexNode)
         print "Next node is: " + nexNodeName
+
+    # before moving to next node, ensure turn in correct direction
+    # returns True if correct, False otherwise
+    def ensureTurnedCorrectDirection(self) :
         directionToHead = self.nodeNavi.getTurnAngle()
-        if directionToHead > 0 :
-            print "Turn right by " + str(directionToHead) + " degrees"
-        elif directionToHead < 0 :
-            print "Turn left by " + str(math.fabs(directionToHead)) + " degrees"
+        if (math.fabs(directionToHead) > self.ANGLE_TOLERANCE) :
+            if (directionToHead > 0) :
+                print "Turn right by " + str(directionToHead) + " degrees"
+            elif (directionToHead < 0) :
+                print "Turn left by " + str(math.fabs(directionToHead)) + " degrees"
+            return False
         else :
             print "Move straight ahead"
+            return True
 
     def fullNavigate(self) :
-        isNodeReached = self.nodeNavi.navigate()
-        if isNodeReached == 1 :
-            self.pathListIndex += 1
-            self.alertNodeReached()
-            if self.pathListIndex < (len(self.pathList) - 1) :
-                self.updatePrevNexCoord()
-                self.provideNexNodeDirections()
-            else :
-                print "NAVIGATION COMPLETE!!!"
+        if self.angleCorrect is False :
+            self.angleCorrect = self.ensureTurnedCorrectDirection()
+        else :
+            isNodeReached = self.nodeNavi.navigate()
+
+            if isNodeReached == 1 :
+                self.pathListIndex += 1
+                self.alertNodeReached()
+                if self.pathListIndex < (len(self.pathList) - 1) :
+                    self.updatePrevNexCoord()
+                    self.provideNexNodeDirections()
+                    self.angleCorrect = False
+                else :
+                    print "NAVIGATION COMPLETE!!!"
+        
         

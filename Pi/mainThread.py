@@ -401,10 +401,11 @@ NUM_SINGLE_ID = 11
 # 3 - unused
 # 4 - barometer
 # 5 - unused
-# 6 - IR (front bottom)
-# 7 - IR (left side)
-# 8 - IR (right side)
-# 9-10 - unused 
+# 6 - IR (front bottom) (0)
+# 7 - IR (left side) (1)
+# 8 - IR (right side) (2)
+# 9 - IR (front left)
+# 10 - IR (front right)
 # 11 - sonar (front top) (29 trig 19 echo)
 # 12 - sonar (left side) (27 trig 18 echo)
 # 13 - sonar (right side) (25 trig  2 echo)
@@ -442,26 +443,26 @@ dataThreads.append(ProcessDataThread(2, "data processing"))
 for thread in dataThreads:
     thread.start()
 
-# Init threads
-initThreads = []
-initThreads.append(CalibrationThread(-1, "calibrating pedometer and compass"))
-
-for thread in initThreads:
-    thread.start()
-
-for thread in initThreads:
-    thread.join()
+### Init threads
+##initThreads = []
+##initThreads.append(CalibrationThread(-1, "calibrating pedometer and compass"))
+##
+##for thread in initThreads:
+##    thread.start()
+##
+##for thread in initThreads:
+##    thread.join()
 
 # List of threads
 mainThreads = []
 
-# threads.append(ReceiveDataThread(1, "data receiving"))
-# threads.append(ProcessDataThread(2, "data processing"))
+# mainThreads.append(ReceiveDataThread(1, "data receiving"))
+# mainThreads.append(ProcessDataThread(2, "data processing"))
 mainThreads.append(LocationUpdateThread(3, "location update"))
 mainThreads.append(LocationDisplayThread(4, "location display"))
-# threads.append(NavigationThread(5, "navigation"))
-##threads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
-##threads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
+# mainThreads.append(NavigationThread(5, "navigation"))
+mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
+mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
 
 for thread in mainThreads:
     thread.start()
