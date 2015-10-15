@@ -8,9 +8,8 @@ import RPi.GPIO as GPIO
 class obstacleAvoidance (object) :
     def __init__(self) :       
         self.FRONT_OBSTACLE_DISTANCE = 75
-        self.BOTTOM_OBSTACLE_DISTANCE = 65
         self.SIDE_WALL_DISTANCE = 100
-        self.SIDE_OBSTACLE_DISTANCE = 65
+        self.SIDE_OBSTACLE_DISTANCE = 70
         self.VIBRATE_DURATION = 2
         self.LARGE_VALUE = 11111
 
