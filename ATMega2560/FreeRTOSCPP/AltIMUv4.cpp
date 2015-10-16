@@ -117,17 +117,26 @@ void lsm303_init()
 
 	// 0x57 = 0b01010111
 	// AODR = 0101 (50 Hz ODR); AZEN = AYEN = AXEN = 1 (all axes enabled)
-	lsm303_write(LSM303::CTRL1, 0x57);
+	//lsm303_write(LSM303::CTRL1, 0x57);
+	// 0x67 = 0b01100111
+	// AODR = 0110 (100 Hz ODR); AZEN = AYEN = AXEN = 1 (all axes enabled)
+	lsm303_write(LSM303::CTRL1, 0x67);
 
 	// Magnetometer
 
 	// 0x64 = 0b01100100
 	// M_RES = 11 (high resolution mode); M_ODR = 001 (6.25 Hz ODR)
-	lsm303_write(LSM303::CTRL5, 0x64);
+	//lsm303_write(LSM303::CTRL5, 0x64);
+	// 0x74 = 0b01110100
+	// M_RES = 11 (high resolution mode); M_ODR = 101 (100 Hz ODR)
+	lsm303_write(LSM303::CTRL5, 0x74);
 
 	// 0x20 = 0b00100000
 	// MFS = 01 (+/- 4 gauss full scale)
-	lsm303_write(LSM303::CTRL6, 0x20);
+	//lsm303_write(LSM303::CTRL6, 0x20);
+	// 0x00 = 0b00000000
+	// MFS = 00 (+/- 2 gauss full scale)
+	lsm303_write(LSM303::CTRL6, 0x00);
 
 	// 0x00 = 0b00000000
 	// MLP = 0 (low power mode off); MD = 00 (continuous-conversion mode)
