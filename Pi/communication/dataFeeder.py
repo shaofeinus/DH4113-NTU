@@ -9,7 +9,7 @@ class DataFeeder:
 
     # CONSTANTS
     BAUD_RATE = 115200
-    num_bytes = [1, 3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    num_bytes = [1, 3, 3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
     def __init__(self):
         self.in_queue = Queue.Queue()
@@ -85,7 +85,7 @@ class DataFeeder:
                 dataTemp = (dataTemp << 8) | data_in
 
             # If Accelerometer and Magnetometer, check for sign
-            if dev_id == 1 or dev_id == 2:
+            if dev_id == 1 or dev_id == 2 or dev_id == 3:
                 data[dev_id].append(self.my_to_signed(dataTemp))
                 data_print.append(self.my_to_signed(dataTemp))
 

@@ -117,16 +117,16 @@ class LocationTracker:
         self.currY += yCurrDistance
         self.totalDistance += currDistance
 
-        f = open('locationdata.csv', 'a')
-        if self.firstUpdate:
-            f.write('distance covered,degrees from top of map,currX,currY\n')
-            self.firstUpdate = False
-
-        f.write(str(currDistance) + ',' +
-                str(self.headingWRTMapInDeg) + ',' +
-                str(self.currX) + ',' +
-                str(self.currY) + '\n')
-        f.close()
+        # f = open('locationdata.csv', 'a')
+        # if self.firstUpdate:
+        #     f.write('distance covered,degrees from top of map,currX,currY\n')
+        #     self.firstUpdate = False
+        #
+        # f.write(str(currDistance) + ',' +
+        #         str(self.headingWRTMapInDeg) + ',' +
+        #         str(self.currX) + ',' +
+        #         str(self.currY) + '\n')
+        # f.close()
 
     # Get heading wrt y-axis of map (pointing upwards of north)
     def getHeadingWRTMap(self, headingInRad):

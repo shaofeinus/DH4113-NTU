@@ -19,11 +19,11 @@ class CalibrationTools:
     MAG_Y_RANGE = (-4365, 4465)
     MAG_Z_RANGE = (-4363, 3878)
 
-    AV_RAW_RANGE = (-1000, 1000)
-    AV_ACTUAL_RANGE = (-1.0, 1.0)
-    GY_X_OFFSET = 0.0
-    GY_Y_OFFSET = 0.0
-    GY_Z_OFFSET = 0.0
+    AV_RAW_RANGE = (-28000, 28000)
+    AV_ACTUAL_RANGE = (-245.0 / 180.0 * math.pi, 245.0 / 180.0 * math.pi)
+    GY_X_OFFSET = -80.4
+    GY_Y_OFFSET = -567.5
+    GY_Z_OFFSET = 50.7
     GY_X_SCALE_FACTOR = 1.0
     GY_Y_SCALE_FACTOR = 1.0
     GY_Z_SCALE_FACTOR = 1.0
@@ -79,7 +79,7 @@ class CalibrationTools:
     # returns in rad/s
     def transformGyro(self, gyX, gyY, gyZ):
 
-        self.adaptGyroOffset(self, gyX, gyY, gyZ)
+        # self.adaptGyroOffset(self, gyX, gyY, gyZ)
 
         gyX += self.GY_X_OFFSET
         gyY += self.GY_Y_OFFSET

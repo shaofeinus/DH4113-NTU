@@ -105,12 +105,12 @@ class CalibrationThread(threading.Thread):
         while not self.isDone['nOffset']:
             self.calibrateNOffset()
 
-        while not self.isDone['gyro']:
-            self.calibrateGyro()
-
-        self.calibrationTools.initGyroOffset(self.calibrator.initGYOffset,
-                                             self.calibrator.initGXOffset,
-                                             self.calibrator.initGZOffset)
+        # while not self.isDone['gyro']:
+        #     self.calibrateGyro()
+        #
+        # self.calibrationTools.initGyroOffset(self.calibrator.initGYOffset,
+        #                                      self.calibrator.initGXOffset,
+        #                                      self.calibrator.initGZOffset)
 
         dataInLock.acquire()
         raw_input('Your are ' + str(self.calibrator.getNOffsetAngle() / (2 * math.pi) * 360) + ' from N.')
@@ -204,19 +204,15 @@ class LocationDisplayThread(threading.Thread):
             locationTrackerLock.acquire()
             locationTracker.updateLocation()
 
-            if self.count == 3:
-                print "Total Steps:", locationTracker.getTotalSteps()
-                print "Total Distance:", locationTracker.getTotalDistance()
-                print "Deviation from N:", locationTracker.getHeadingInDeg()
-                print "Deviation from Map N:", locationTracker.getHeadingWRTMapInDeg()
-                print locationTracker.getLocation()
-                print "Height:", locationTracker.getHeightInCM()
-                self.count = 0
-            else:
-                self.count += 1
+            print "Total Steps:", locationTracker.getTotalSteps()
+            print "Total Distance:", locationTracker.getTotalDistance()
+            print "Deviation from N:", locationTracker.getHeadingInDeg()
+            print "Deviation from Map N:", locationTracker.getHeadingWRTMapInDeg()
+            print locationTracker.getLocation()
+            print "Height:", locationTracker.getHeightInCM()
 
             locationTrackerLock.release()
-            time.sleep(0.5)
+            time.sleep(1)
 
 
 class LocationUpdateThread(threading.Thread):
@@ -227,6 +223,7 @@ class LocationUpdateThread(threading.Thread):
         self.totalAccData = 0
         self.totalMagData = 0
         self.totalBaroData = 0
+        self.totalGyroData = 0
         self.magX = 1
         self.magY = 1
         self.magZ = 1
@@ -237,10 +234,10 @@ class LocationUpdateThread(threading.Thread):
         self.timeInMillisAcc = 0
         self.baroReading = 1
         self.timeInMillisBaro = 0
-        self.totalGyroData = 0
         self.gyroX = 0
         self.gyroY = 0
         self.gyroZ = 0
+        self.timeInMillisGyro = 0
         self.calibrationTools = locationTracker.calibrationTools
 
     def updateAccData(self):
@@ -271,9 +268,7 @@ class LocationUpdateThread(threading.Thread):
             # f = open('accdata.csv', 'a')
             # f.write(str(self.accX) + ',' + str(self.accY) + ',' + str(self.accZ) + '\n')
             # f.close()
-
-##    def updateCompassData(self):
-            # print "timeStamp:", self.timeInMillisAcc, "AccX:", self.accX, "AccY:", self.accY, "AccZ:", self.accZ, "time:", datetime.datetime.now()
+            print "timeStamp:", self.timeInMillisAcc, "AccX:", self.accX, "AccY:", self.accY, "AccZ:", self.accZ, "time:", datetime.datetime.now()
 
     def updateMagData(self):
         if len(data[2]) == 0:
@@ -310,7 +305,7 @@ class LocationUpdateThread(threading.Thread):
         if len(data[3]) == 0:
                 return
         elif self.totalGyroData == 0:
-            data[3].popleft()
+            self.timeInMillisGyro = data[3].popleft()
             self.totalGyroData += 1
         elif self.totalGyroData == 1:
             self.gyroX = data[3].popleft()
@@ -323,9 +318,14 @@ class LocationUpdateThread(threading.Thread):
             self.totalGyroData += 1
 
         if self.totalGyroData == 4:
-            # self.calibrationTools.adaptGyroOffset(self.gyroX, self.gyroY, self.gyroZ)
             self.gyroX, self.gyroY, self.gyroZ = self.calibrationTools.transformGyro(self.gyroX, self.gyroY, self.gyroZ)
+            # print self.gyroX, self.gyroY, self.gyroZ
+            # f = open('gyro.csv', 'a')
+            # f.write(str(self.timeInMillisGyro) + ',' + str(self.gyroX) + ',' + str(self.gyroY) + ',' + str(self.gyroZ) + '\n')
+            # f.close()
             locationTracker.compass.gyroCompass.queueGyroReadings(-self.gyroZ, self.gyroY, self.gyroX)
+            # print "timeStamp:", self.timeInMillisGyro, "GyX:", self.gyroX, "GyY:", self.gyroY, "GyZ:", self.gyroZ, \
+            #     "time:", datetime.datetime.now()
             self.totalGyroData = 0
 
     def updateBaroData(self):
@@ -349,6 +349,7 @@ class LocationUpdateThread(threading.Thread):
             self.updateAccData()
             self.updateMagData()
             self.updateBaroData()
+            # self.updateGyroData()
             locationTrackerLock.release()
 
 
@@ -521,7 +522,7 @@ dataThreads.append(ProcessDataThread(2, "data processing"))
 for thread in dataThreads:
     thread.start()
 
-### Init threads
+## Init threads
 initThreads = []
 initThreads.append(CalibrationThread(-1, "calibrating pedometer and compass"))
 
@@ -538,7 +539,7 @@ mainThreads = []
 # mainThreads.append(ProcessDataThread(2, "data processing"))
 mainThreads.append(LocationUpdateThread(3, "location update"))
 mainThreads.append(LocationDisplayThread(4, "location display"))
-mainThreads.append(NavigationThread(5, "navigation"))
+# mainThreads.append(NavigationThread(5, "navigation"))
 # mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
 # mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
 
