@@ -183,6 +183,93 @@ void lsm303_read_mag(int16_t *x, int16_t *y, int16_t *z)
 	*z = (int16_t)(zh << 8 | zl);
 }
 
+namespace L3GD20H
+{
+	enum
+	{
+		ADDR                    = 0xD6,
+		ADDRW                   = ADDR,
+		ADDRR                   = ADDR|0x01,
+		
+		WHO_AM_I       = 0x0F,
+
+		CTRL1          = 0x20, // D20H
+		CTRL2          = 0x21, // D20H
+		CTRL3          = 0x22, // D20H
+		CTRL4          = 0x23, // D20H
+		CTRL5          = 0x24, // D20H
+		REFERENCE      = 0x25,
+		OUT_TEMP       = 0x26,
+		STATUS         = 0x27, // D20H
+		
+		OUT_X_L        = 0x28,
+		OUT_X_H        = 0x29,
+		OUT_Y_L        = 0x2A,
+		OUT_Y_H        = 0x2B,
+		OUT_Z_L        = 0x2C,
+		OUT_Z_H        = 0x2D,
+
+		FIFO_CTRL      = 0x2E, // D20H
+		FIFO_SRC       = 0x2F, // D20H
+		
+		IG_CFG         = 0x30, // D20H
+		IG_SRC         = 0x31, // D20H
+		IG_THS_XH      = 0x32, // D20H
+		IG_THS_XL      = 0x33, // D20H
+		IG_THS_YH      = 0x34, // D20H
+		IG_THS_YL      = 0x35, // D20H
+		IG_THS_ZH      = 0x36, // D20H
+		IG_THS_ZL      = 0x37, // D20H
+		IG_DURATION    = 0x38, // D20H
+		
+		LOW_ODR        = 0x39  // D20H
+	};
+}
+
+void l3gd20h_write(char reg, char data)
+{
+	twi_start();
+	twi_send_address(L3GD20H::ADDRW); //write
+	twi_send_data(reg);
+	twi_send_data(data);
+	twi_stop();
+}
+
+void l3gd20h_init()
+{
+	// 0x00 = 0b00000000
+	// Low_ODR = 0 (low speed ODR disabled)
+	l3gd20h_write(L3GD20H::LOW_ODR, 0x00);
+	
+	// 0x00 = 0b00000000
+	// FS = 00 (+/- 250 dps full scale)
+	l3gd20h_write(L3GD20H::CTRL4, 0x00);
+	
+	// 0x6F = 0b01101111
+	// DR = 01 (200 Hz ODR); BW = 10 (50 Hz bandwidth); PD = 1 (normal mode); Zen = Yen = Xen = 1 (all axes enabled)
+	l3gd20h_write(L3GD20H::CTRL1, 0x6F);
+}
+
+void l3gd20h_read(int16_t *x, int16_t *y, int16_t *z)
+{
+	char xl, xh, yl, yh, zl, zh;
+	twi_start();
+	twi_send_address(L3GD20H::ADDRW);
+	twi_send_data(L3GD20H::OUT_X_L|(1<<7));
+	twi_start();
+	twi_send_address(L3GD20H::ADDRR); //read
+	twi_read_data(&xl, 1);
+	twi_read_data(&xh, 1);
+	twi_read_data(&yl, 1);
+	twi_read_data(&yh, 1);
+	twi_read_data(&zl, 1);
+	twi_read_data(&zh, 0);
+	twi_stop();
+	*x = (int16_t)(xh << 8 | xl);
+	*y = (int16_t)(yh << 8 | yl);
+	*z = (int16_t)(zh << 8 | zl);
+}
+
 namespace LPS25H
 {
 	enum
