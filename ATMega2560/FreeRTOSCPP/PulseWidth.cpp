@@ -54,6 +54,7 @@ void pulse_init()
 void pulse_read(char pin, SemaphoreHandle_t semaphore, int32_t* address)
 {
 	char pin_state;
+	
 	switch (pin)
 	{
 		case 2:
@@ -169,7 +170,7 @@ ISR(INT2_vect)
 	}
 	else
 	{
-		*(data_address4) = 0;
+		*(data_address4) = 1;
 		xSemaphoreGiveFromISR(sema4, NULL);
 		INT_DISABLE_PIN19();
 	}
@@ -197,7 +198,7 @@ ISR(INT3_vect)
 	}
 	else
 	{
-		*(data_address3) = 0;
+		*(data_address3) = 1;
 		xSemaphoreGiveFromISR(sema3, NULL);
 		INT_DISABLE_PIN18();
 	}
@@ -225,7 +226,7 @@ ISR(INT4_vect)
 	}
 	else
 	{
-		*(data_address1) = 0;
+		*(data_address1) = 1;
 		xSemaphoreGiveFromISR(sema1, NULL);
 		INT_DISABLE_PIN2();
 	}
@@ -253,7 +254,7 @@ ISR(INT5_vect)
 	}
 	else
 	{
-		*(data_address2) = 0;
+		*(data_address2) = 1;
 		xSemaphoreGiveFromISR(sema2, NULL);
 		INT_DISABLE_PIN3();
 	}
