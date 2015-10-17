@@ -6,13 +6,13 @@ Serial myPort;  // Create object from Serial class
 int[] val;      // Data received from the serial port
 int offset = 0;
 
-final int COUNT_IR = 2;
+final int COUNT_IR = 5;
 final int COUNT_US = 3;
 
 final int[] dataSize = {
-                  1, 8, 8, 1,
+                  1, 8, 8, 8,
                   5, 4, 4, 4,
-                  1, 1, 1, 4,
+                  4, 4, 4, 4,
                   4, 4, 1, 1
                 };
                   
@@ -21,8 +21,9 @@ LinkedList<Long> reset_times;
                     
 int a_time, a_x, a_y, a_z, a_packets;
 int m_time, m_x, m_y, m_z, m_packets;
+int g_time, g_x, g_y, g_z, g_packets;
 int ba_time, ba_p, ba_packets;
-float a_hz, m_hz, ba_hz;
+float a_hz, m_hz, g_hz, ba_hz;
 
 int[] ir_time, ir_dist, ir_packets;
 float[] ir_hz;
@@ -36,16 +37,16 @@ int[] additional_info;
 
 void setup() 
 {
-  size(600, 300);
-  ir_time = new int[4];
-  ir_dist = new int[4];
-  ir_packets = new int[4];
-  ir_hz = new float[4];
+  size(600, 360);
+  ir_time = new int[10];
+  ir_dist = new int[10];
+  ir_packets = new int[10];
+  ir_hz = new float[10];
   
-  us_time = new int[4];
-  us_dist = new int[4];
-  us_packets = new int[4];
-  us_hz = new float[4];
+  us_time = new int[10];
+  us_dist = new int[10];
+  us_packets = new int[10];
+  us_hz = new float[10];
   
   reset_conditions = new LinkedList<Integer>();
   reset_times = new LinkedList<Long>();
@@ -54,7 +55,14 @@ void setup()
   
   offset = 0;
   start_count = 0;
-  myPort = new Serial(this, portName, 115200);
+  try 
+  {
+    myPort = new Serial(this, portName, 115200);
+  }
+  catch (Exception e)
+  {
+    exit();
+  }
   last_start = null;
 }
 
@@ -68,7 +76,7 @@ void draw()
   if (last_start != null) {
     sec = ((new Date()).getTime() - last_start.getTime())/1000;
   }
-  text_y = 50;
+  text_y = 30;
   text("a", 20, text_y);
   text(a_time, 50, text_y);
   text(a_x, 110, text_y);
@@ -85,6 +93,15 @@ void draw()
   text(m_z, 230, text_y);
   text(m_hz + "hz", 290, text_y);
   text((float)m_packets/sec + "hz", 410, text_y);
+  
+  text_y += 20;
+  text("g", 20, text_y);
+  text(g_time, 50, text_y);
+  text(g_x, 110, text_y);
+  text(g_y, 170, text_y);
+  text(g_z, 230, text_y);
+  text(g_hz + "hz", 290, text_y);
+  text((float)g_packets/sec + "hz", 410, text_y);
   
   text_y += 20;
   text("ba", 20, text_y);
@@ -172,6 +189,20 @@ void serialEvent(Serial thisPort) {
           m_y = ((val[4]>>7 == 1)?0xFFFF0000:0)|val[4]<<8|val[5];
           m_z = ((val[6]>>7 == 1)?0xFFFF0000:0)|val[6]<<8|val[7];
           break;
+        case 3:
+          ++g_packets;
+          last = g_time;
+          time = ((val[0]&0x0F)<<8)|val[1];
+          if (time < last)
+            last = ((time|0x1000)-last);
+          else
+            last =(time-last);
+          g_hz = 1000.0/last;
+          g_time = time;
+          g_x = ((val[2]>>7 == 1)?0xFFFF0000:0)|val[2]<<8|val[3];
+          g_y = ((val[4]>>7 == 1)?0xFFFF0000:0)|val[4]<<8|val[5];
+          g_z = ((val[6]>>7 == 1)?0xFFFF0000:0)|val[6]<<8|val[7];
+          break;
         case 4:
           ++ba_packets;
           last = ba_time;
@@ -187,8 +218,8 @@ void serialEvent(Serial thisPort) {
         case 5:
           if (val[0] == 'S' && val[2] == '\r' && val[3] == '\n')
           {
-            a_packets = m_packets = ba_packets = 0;
-            for (int i = 0; i < 4; ++i)
+            a_packets = m_packets = g_packets = ba_packets = 0;
+            for (int i = 0; i < 10; ++i)
             {
               ir_packets[i] = us_packets[i] = 0;
             }
@@ -200,6 +231,9 @@ void serialEvent(Serial thisPort) {
           break;
         case 6:
         case 7:
+        case 8:
+        case 9:
+        case 10:
           device = (val[0]>>4)-6;
           ++ir_packets[device];
           last = ir_time[device];
