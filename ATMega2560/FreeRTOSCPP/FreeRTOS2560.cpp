@@ -17,15 +17,15 @@ freertos2560.c
 #include "i2c.h"
 #include "PulseWidth.h"
 
-#define COUNT_IR 2
+#define COUNT_IR 5
 #define COUNT_US 3
 
-SemaphoreHandle_t a_updated, m_updated, ba_updated, ir_updated, us1_updated, us2_updated, us3_updated;
+SemaphoreHandle_t a_updated, m_updated, ba_updated, g_updated, ir_updated, us1_updated, us2_updated, us3_updated;
 int32_t ba_p;
-int16_t a_x, a_y, a_z, m_x, m_y, m_z;
-uint16_t ir1_dist, ir2_dist;
+int16_t a_x, a_y, a_z, m_x, m_y, m_z, g_x, g_y, g_z;
+uint16_t ir1_dist, ir2_dist, ir3_dist, ir4_dist, ir5_dist;
 int32_t us1_dist, us2_dist, us3_dist;
-uint32_t a_last_update, m_last_update, ba_last_update, ir1_last_update, ir2_last_update, us1_last_update, us2_last_update, us3_last_update;
+uint32_t a_last_update, m_last_update, ba_last_update, g_last_update, ir1_last_update, ir2_last_update, ir3_last_update, ir4_last_update, ir5_last_update, us1_last_update, us2_last_update, us3_last_update;
 uint32_t ticks;
 
 //extern uint32_t countPulseASM(volatile uint8_t *port, uint8_t bit, uint8_t stateMask, unsigned long maxloops) __asm__("countPulseASM");
@@ -52,12 +52,14 @@ enum deviceId
 {
 	ACCEL		= 0x10,	// 1
 	COMPASS		= 0x20,	// 2
+	GYRO		= 0x30, // 3
 	BAROMETER	= 0x40,	// 4
 	
 	IR1			= 0x60,	// 6
 	IR2			= 0x70,	// 7
 	IR3			= 0x80,	// 8
 	IR4			= 0x90,	// 9
+	IR5			= 0xA0,	// 10
 	
 	US1			= 0xB0,	// 11
 	US2			= 0xC0,	// 12
@@ -124,6 +126,18 @@ void usart_process(void *p)
 			//debug_send('m');
 		}
 		
+		if (xSemaphoreTake(g_updated, 0) == pdTRUE)
+		{
+			data[0] = g_x>>8;
+			data[1] = g_x;
+			data[2] = g_y>>8;
+			data[3] = g_y;
+			data[4] = g_z>>8;
+			data[5] = g_z;
+			send_data(GYRO, g_last_update, data, 6);
+			//debug_send('g');
+		}
+		
 		if (xSemaphoreTake(ba_updated, 0) == pdTRUE)
 		{
 			data[0] = ba_p>>16;
@@ -141,6 +155,15 @@ void usart_process(void *p)
 			data[0] = ir2_dist>>8;
 			data[1] = ir2_dist;
 			send_data(IR2, ir2_last_update, data, 2);
+			data[0] = ir3_dist>>8;
+			data[1] = ir3_dist;
+			send_data(IR3, ir3_last_update, data, 2);
+			data[0] = ir4_dist>>8;
+			data[1] = ir4_dist;
+			send_data(IR4, ir4_last_update, data, 2);
+			data[0] = ir5_dist>>8;
+			data[1] = ir5_dist;
+			send_data(IR5, ir5_last_update, data, 2);
 			//debug_send('i');
 		}
 		
@@ -232,6 +255,7 @@ void twowire_process(void *p)
 	twi_init();
 	lsm303_init();
 	lps25h_init();
+	l3gd20h_init();
 	//start watchdog
 	//wdt_enable(WDTO_60MS);
 	while(1)
@@ -240,9 +264,15 @@ void twowire_process(void *p)
 		lsm303_read_acc(&a_x, &a_y, &a_z);
 		a_last_update = ticks;
 		xSemaphoreGive(a_updated);
+		
 		lsm303_read_mag(&m_x, &m_y, &m_z);
 		m_last_update = ticks;
 		xSemaphoreGive(m_updated);
+		
+		l3gd20h_read(&g_x, &g_y, &g_z);
+		g_last_update = ticks;
+		xSemaphoreGive(g_updated);
+		
 		//vTaskDelay(5);
 		if (ticks >= ba_last_update+80)
 		{
@@ -250,6 +280,7 @@ void twowire_process(void *p)
 			ba_last_update = ticks;
 			xSemaphoreGive(ba_updated);	
 		}
+		
 		vTaskDelay(10);
 	}
 }
@@ -261,11 +292,16 @@ void distir_process(void *p)
 	{
 		ir1_dist = analog_read(0);
 		ir1_last_update = ticks;
-		vTaskDelay(50);
 		ir2_dist = analog_read(1);
 		ir2_last_update = ticks;
+		ir3_dist = analog_read(2);
+		ir3_last_update = ticks;
+		ir4_dist = analog_read(3);
+		ir4_last_update = ticks;
+		ir5_dist = analog_read(4);
+		ir5_last_update = ticks;
 		xSemaphoreGive(ir_updated);
-		vTaskDelay(50);
+		vTaskDelay(100);
 	}
 }
 
@@ -412,6 +448,7 @@ int main()
 	
 	a_updated = xSemaphoreCreateBinary();
 	m_updated = xSemaphoreCreateBinary();
+	g_updated = xSemaphoreCreateBinary();
 	ba_updated = xSemaphoreCreateBinary();
 	ir_updated = xSemaphoreCreateBinary();
 	us1_updated = xSemaphoreCreateBinary();	
