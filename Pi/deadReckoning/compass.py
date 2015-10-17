@@ -1,6 +1,7 @@
 from collections import deque
 import math
 import compassCalibrator
+import gyroCompass
 
 __author__ = 'Shao Fei'
 
@@ -23,6 +24,7 @@ class Compass:
         self.accYWindow = deque(maxlen=self.WINDOW_SIZE)
         self.accZWindow = deque(maxlen=self.WINDOW_SIZE)
         self.calibrator = compassCalibrator.CompassCalibrator()
+        self.gyroCompass = gyroCompass.GyroCompass()
 
     def queueMagReadings(self, xReading, yReading, zReading):
         if len(self.magXWindow) == self.WINDOW_SIZE:

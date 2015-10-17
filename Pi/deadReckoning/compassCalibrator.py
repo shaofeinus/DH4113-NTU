@@ -9,8 +9,10 @@ __author__ = 'Shao Fei'
 class CompassCalibrator:
     WINDOW_SIZE = 500
     MIN_DATA_NUM = 350
-    ACC_TOLERANCE = 0.5  # In G
-    MAG_TOLERANCE = 1000
+    ACC_TOLERANCE = 0.5         # In G
+    MAG_TOLERANCE = 0.5         # In fraction of max
+    GYRO_TOLERANCE = 1000.0     # In raw
+
     DECLINATION_OFFSET = 4.072 / 1000
 
     def __init__(self):
@@ -22,19 +24,27 @@ class CompassCalibrator:
         self.magYWindow = []
         self.magZWindow = []
         self.magCaliFailed = False
+        self.gyXWindow = []
+        self.gyYWindow = []
+        self.gyZWindow = []
+        self.gyCaliFailed = False
 
         self.NOffsetAngle = 0.0
         self.pitch = 0.0
         self.roll = 0.0
-        self.magXRange = (-2300, 2300)
-        self.magYRange = (-2300, 2300)
-        self.magZRange = (-2300, 2300)
+        # self.magXRange = (-2300, 2300)
+        # self.magYRange = (-2300, 2300)
+        # self.magZRange = (-2300, 2300)
+
+        self.initGYOffset = 0.0
+        self.initGXOffset = 0.0
+        self.initGZOffset = 0.0
 
     # Public
-    def inputManualRange(self, xRange, yRange, zRange):
-        self.magXRange = xRange
-        self.magYRange = yRange
-        self.magZRange = zRange
+    # def inputManualRange(self, xRange, yRange, zRange):
+    #     self.magXRange = xRange
+    #     self.magYRange = yRange
+    #     self.magZRange = zRange
 
     # Public
     # acc values are in raw values
@@ -108,6 +118,36 @@ class CompassCalibrator:
             doneFlag['nOffset'] = True
 
     # Public
+    # doneFlag passed from main thread
+    def calibrateGyro(self, gX, gY, gZ, doneFlag):
+
+        # Continue feeding data
+        if len(self.gyXWindow) < self.WINDOW_SIZE:
+            self.gyXWindow.append(gX)
+            self.gyYWindow.append(gY)
+            self.gyZWindow.append(gZ)
+            return
+
+        # Process fully supplied data
+        else:
+            gX = self.processGyroData(self.gyXWindow)
+            gY = self.processMagData(self.gyYWindow)
+            gZ = self.processMagData(self.gyZWindow)
+
+            print 'raw gyro:', gX, gY, gZ
+
+            if not self.gyCaliFailed:
+                self.initGXOffset = gX
+                self.initGYOffset = gY
+                self.initGZOffset = gZ
+                # f = open('gyrodata.csv', 'a')
+                # f.write(str(self.xzAngle) + ',' + str(self.yxAngle) + ',' + str(self.zyAngle) + '\n')
+                # f.close()
+                print 'Gyro calibration success'
+
+            doneFlag['gyro'] = True
+
+    # Public
     def getNOffsetAngle(self):
         return self.NOffsetAngle
 
@@ -143,20 +183,6 @@ class CompassCalibrator:
     # y points left
     # z points up
     def calculateDeviceHeading(self, magX, magY, magZ):
-
-        # # Hard iron correction
-        # magX -= (self.magXRange[1] + self.magXRange[0]) / 2.0
-        # magY -= (self.magYRange[1] + self.magYRange[0]) / 2.0
-        # magZ -= (self.magZRange[1] + self.magZRange[0]) / 2.0
-        #
-        # # print 'after hard iron correction:', magX, magY, magZ
-        #
-        # # Soft iron correction
-        # magX = float(magX - self.magXRange[0]) / float(self.magXRange[1] - self.magXRange[0]) * 2.0 - 1.0
-        # magY = float(magY - self.magYRange[0]) / float(self.magYRange[1] - self.magYRange[0]) * 2.0 - 1.0
-        # magZ = float(magZ - self.magZRange[0]) / float(self.magZRange[1] - self.magZRange[0]) * 2.0 - 1.0
-
-        # print 'after soft iron correction:', magX, magY, magZ
 
         # magX points forward
         # if self.pitch > 0:
@@ -250,3 +276,25 @@ class CompassCalibrator:
         newMagAverage = sum(processedWindow) / len(processedWindow)
 
         return newMagAverage
+
+    def processGyroData(self, gyWindow):
+
+        if self.magCaliFailed:
+            return 0
+
+        gyAverage = sum(gyWindow) / len(gyWindow)
+
+        processedWindow = []
+
+        while gyWindow:
+            gyValue = gyWindow.pop()
+            if math.fabs(gyValue - gyAverage) < self.GYRO_TOLERANCE:
+                processedWindow.append(gyValue)
+
+        if len(processedWindow) < self.MIN_DATA_NUM:
+            self.gyCaliFailed = True
+            print "Gyro calibration failed, try again"
+
+        newGAverage = sum(processedWindow) / len(processedWindow)
+
+        return newGAverage

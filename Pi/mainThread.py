@@ -52,8 +52,8 @@ class CalibrationThread(threading.Thread):
         self.threadName = threadName
 
         self.calibrator = locationTracker.compass.calibrator
-        self.calibrationTools = calibrationTools.CalibrationTools()
-        self.isDone = {'tilt': False, 'nOffset': False}
+        self.calibrationTools = locationTracker.calibrationTools
+        self.isDone = {'tilt': False, 'nOffset': False, 'gyro': False}
 
         self.accX = 0
         self.accY = 0
@@ -63,6 +63,10 @@ class CalibrationThread(threading.Thread):
         self.magY = 0
         self.magZ = 0
         self.totalMagData = 0
+        self.gyroX = 0
+        self.gyroY = 0
+        self.gyroZ = 0
+        self.totalGyroData = 0
 
     def run(self):
 
@@ -95,10 +99,18 @@ class CalibrationThread(threading.Thread):
         while not self.isDone['tilt']:
             self.calibrateTilt()
 
-        while not self.isDone['nOffset']:
-            self.calibrateOffset()
-
         locationTracker.pedometer.calibrate(self.calibrator.pitch, self.calibrator.roll)
+        locationTracker.compass.gyroCompass.calibrate(self.calibrator.pitch, self.calibrator.roll)
+
+        while not self.isDone['nOffset']:
+            self.calibrateNOffset()
+
+        while not self.isDone['gyro']:
+            self.calibrateGyro()
+
+        self.calibrationTools.initGyroOffset(self.calibrator.initGYOffset,
+                                             self.calibrator.initGXOffset,
+                                             self.calibrator.initGZOffset)
 
         dataInLock.acquire()
         raw_input('Your are ' + str(self.calibrator.getNOffsetAngle() / (2 * math.pi) * 360) + ' from N.')
@@ -126,11 +138,12 @@ class CalibrationThread(threading.Thread):
             # x points to front
             # y points to left
             # z points to up
+            # Calibrated data is supplied as actual tilt is calibrated
             self.accX, self.accY, self.accZ = self.calibrationTools.transformACC(self.accX, self.accY, self.accZ)
             self.calibrator.calibrateTilt(-self.accZ, self.accY, self.accX, self.isDone)
             self.totalAccData = 0
 
-    def calibrateOffset(self):
+    def calibrateNOffset(self):
 
         if len(data[2]) == 0:
             return
@@ -151,9 +164,32 @@ class CalibrationThread(threading.Thread):
             # x points to front
             # y points to left
             # z points to up
+            # Calibrated data is supplied as actual angle is calibrated
             self.magX, self.magY, self.magZ = self.calibrationTools.transformMag(self.magX, self.magY, self.magZ)
             self.calibrator.calibrateNOffset(-self.magZ, self.magY, self.magX, self.isDone)
             self.totalMagData = 0
+
+    def calibrateGyro(self):
+
+        if len(data[3]) == 0:
+            return
+        elif self.totalGyroData == 0:
+            data[3].popleft()
+            self.totalGyroData += 1
+        elif self.totalGyroData == 1:
+            self.gyroX = data[3].popleft()
+            self.totalGyroData += 1
+        elif self.totalGyroData == 2:
+            self.gyroY = data[3].popleft()
+            self.totalGyroData += 1
+        elif self.totalGyroData == 3:
+            self.gyroZ = data[3].popleft()
+            self.totalGyroData += 1
+
+        if self.totalGyroData == 4:
+            # Raw data is supplied for raw to actual calibration
+            self.calibrator.calibrateGyro(self.gyroX, self.gyroY, self.gyroZ, self.isDone)
+            self.totalGyroData = 0
 
 
 class LocationDisplayThread(threading.Thread):
@@ -201,7 +237,11 @@ class LocationUpdateThread(threading.Thread):
         self.timeInMillisAcc = 0
         self.baroReading = 1
         self.timeInMillisBaro = 0
-        self.calibrationTools = calibrationTools.CalibrationTools()
+        self.totalGyroData = 0
+        self.gyroX = 0
+        self.gyroY = 0
+        self.gyroZ = 0
+        self.calibrationTools = locationTracker.calibrationTools
 
     def updateAccData(self):
         if len(data[1]) == 0:
@@ -265,6 +305,28 @@ class LocationUpdateThread(threading.Thread):
 
             # print "timeStamp:", self.timeInMillisMag, "MagX:", self.magX, "MagY:", self.magY, "MagZ:", self.magZ, \
             #     "time:", datetime.datetime.now()
+
+    def updateGyroData(self):
+        if len(data[3]) == 0:
+                return
+        elif self.totalGyroData == 0:
+            data[3].popleft()
+            self.totalGyroData += 1
+        elif self.totalGyroData == 1:
+            self.gyroX = data[3].popleft()
+            self.totalGyroData += 1
+        elif self.totalGyroData == 2:
+            self.gyroY = data[3].popleft()
+            self.totalGyroData += 1
+        elif self.totalGyroData == 3:
+            self.gyroZ = data[3].popleft()
+            self.totalGyroData += 1
+
+        if self.totalGyroData == 4:
+            # self.calibrationTools.adaptGyroOffset(self.gyroX, self.gyroY, self.gyroZ)
+            self.gyroX, self.gyroY, self.gyroZ = self.calibrationTools.transformGyro(self.gyroX, self.gyroY, self.gyroZ)
+            locationTracker.compass.gyroCompass.queueGyroReadings(-self.gyroZ, self.gyroY, self.gyroX)
+            self.totalGyroData = 0
 
     def updateBaroData(self):
 

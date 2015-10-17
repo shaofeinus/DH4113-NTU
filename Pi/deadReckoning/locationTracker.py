@@ -3,6 +3,7 @@ import barometer
 import compass
 import pedometer
 import pedometer2
+import calibrationTools
 
 __author__ = 'Shao Fei'
 
@@ -25,6 +26,7 @@ class LocationTracker:
         self.headingWRTMapInDeg = 0
         self.headingWRTNorthInRad = 0
         self.headingWRTNorthInDeg = 0
+        self.calibrationTools = calibrationTools.CalibrationTools()
 
     # Public
     def getLocation(self):
