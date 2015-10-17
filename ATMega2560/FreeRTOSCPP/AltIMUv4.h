@@ -17,5 +17,7 @@ void lsm303_read_mag(int16_t *x, int16_t *y, int16_t *z);
 void lps25h_init();
 int32_t lps25h_read();
 
+void l3gd20h_init();
+void l3gd20h_read(int16_t *x, int16_t *y, int16_t *z);
 
 #endif /* ALTIMUV4_H_ */
