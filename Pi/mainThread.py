@@ -9,10 +9,24 @@ from navigation import obstacleAvoidance
 from communication import dataFeeder
 from communication import dataFeederDum
 from collections import deque
-
+from UI import voiceCommands
 
 __author__ = 'Shao Fei'
 
+#to print sound just call voiceQueue.append(sentence)
+
+class voiceThread(threading.Thread):
+    def __init__(self,threadID,threadName):
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+        self.threadName = threadName
+
+    def run(self):
+        global voiceQueue
+        while True:
+            if len(voiceQueue) == 0:
+                time.sleep(0) #yield
+            voiceCommands.speak(str(voiceQueue.popleft()))
 
 class ReceiveDataThread(threading.Thread):
     def __init__(self, threadID, threadName):
@@ -494,6 +508,8 @@ NUM_SINGLE_ID = 11
 # 11 - sonar (front top) (29 trig 19 echo)
 # 12 - sonar (left side) (27 trig 18 echo)
 # 13 - sonar (right side) (25 trig  2 echo)
+
+voiceQueue = deque()
 
 data = [deque() for x in range(NUM_QUEUED_ID)]
 data_single = [0 for x in range(NUM_SINGLE_ID)]
