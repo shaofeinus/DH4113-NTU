@@ -110,6 +110,16 @@ class fullNavi(object) :
         nexNodeName = self.comMap[self.mapNumber].getLocationName(nexNode)
         print "Next node is: " + nexNodeName
 
+    # returns 1 for right (and straight ahead), 2 for left
+    def getGeneralTurnDirection(self) :
+        direction = self.nodeNavi.getTurnAngle()
+        if direction > 0 :
+            return 1
+        elif direction < 0 :
+            return 2
+        else :
+            return 0
+
     # before moving to next node, ensure turn in correct direction
     # returns True if correct, False otherwise
     def ensureTurnedCorrectDirection(self) :

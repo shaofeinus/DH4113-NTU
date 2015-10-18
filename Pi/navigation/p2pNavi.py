@@ -136,7 +136,7 @@ class navigation (object) :
 ##                    GPIO.output(self.rightPin, True)
 ##                    GPIO.output(self.leftPin, False)
                 elif turnAngle < 0 :
-                    print "Move towards the left by " + str(turnAngle)
+                    print "Move towards the left by " + str(math.fabs(turnAngle))
 ##                    GPIO.output(self.leftPin, True)
 ##                    GPIO.output(self.rightPin, False)
             else :
