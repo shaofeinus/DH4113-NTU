@@ -24,15 +24,15 @@ class GyroCompass:
     def queueGyroReadings(self, xReading, yReading, zReading):
 
         # Only appending is needed as deque object automatically releases oldest element if maxlen is reached
-        self.XMAWindow.append(xReading)
-        self.YMAWindow.append(yReading)
-        self.ZMAWindow.append(zReading)
+        # self.XMAWindow.append(xReading)
+        # self.YMAWindow.append(yReading)
+        # self.ZMAWindow.append(zReading)
 
-        x = sum(self.XMAWindow) / len(self.XMAWindow)
-        y = sum(self.YMAWindow) / len(self.YMAWindow)
-        z = sum(self.ZMAWindow) / len(self.ZMAWindow)
+        # xReading = sum(self.XMAWindow) / len(self.XMAWindow)
+        # yReading = sum(self.YMAWindow) / len(self.YMAWindow)
+        # zReading = sum(self.ZMAWindow) / len(self.ZMAWindow)
 
-        self.updateHeading(x, y, z)
+        self.updateHeading(xReading, yReading, zReading)
 
     def updateHeading(self, xReading, yReading, zReading):
 
@@ -45,7 +45,27 @@ class GyroCompass:
         if self.angleFromMapN < 0:
             self.angleFromMapN += 2 * math.pi
 
+        # print self.angleFromMapN
+
     def resolveGyro(self, xReading, yReading, zReading):
-        return zReading * math.cos(self.pitch) * math.cos(self.roll) + \
+        ans = zReading * math.cos(self.pitch) * math.cos(self.roll) + \
                xReading * math.sin(self.pitch) + \
                yReading * math.sin(self.roll)
+
+        # rollComp = zReading * math.cos(self.pitch) * math.cos(self.roll) + \
+        #            yReading * math.sin(self.roll)
+
+        # f = open('resolvedGyro.csv', 'a')
+        # f.write(str(xReading) + ',' + str(yReading) + ',' + str(zReading) + '\n')
+        # f.close()
+        # ans = zReading
+        return ans
+
+    def getAngleFromMapNinDeg(self):
+        if self.angleFromMapN < math.pi:
+            ans = self.angleFromMapN / math.pi * 180.0
+        else:
+            ans = self.angleFromMapN / math.pi * 180.0
+            ans -= 360.0
+
+        return ans

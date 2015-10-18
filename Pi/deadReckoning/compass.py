@@ -103,25 +103,28 @@ class Compass:
 
     def calculateHeadingInRad(self):
 
-        accX = float(sum(self.accXWindow))/len(self.accXWindow)
-        accY = float(sum(self.accYWindow))/len(self.accYWindow)
-        accZ = float(sum(self.accZWindow))/len(self.accZWindow)
+        # accX = float(sum(self.accXWindow))/len(self.accXWindow)
+        # accY = float(sum(self.accYWindow))/len(self.accYWindow)
+        # accZ = float(sum(self.accZWindow))/len(self.accZWindow)
 
-        magX = float(sum(self.magXWindow))/len(self.magXWindow)
-        magY = float(sum(self.magYWindow))/len(self.magYWindow)
-        magZ = float(sum(self.magZWindow))/len(self.magZWindow)
+        if not len(self.magXWindow) == 0:
+            magX = float(sum(self.magXWindow))/len(self.magXWindow)
+            magY = float(sum(self.magYWindow))/len(self.magYWindow)
+            magZ = float(sum(self.magZWindow))/len(self.magZWindow)
 
-        # Heading in [0, 2 * pi]
-        devHeading = self.calibrator.calculateDeviceHeading(float(magX), float(magY), float(magZ))
+            # Heading in [0, 2 * pi]
+            devHeading = self.calibrator.calculateDeviceHeading(float(magX), float(magY), float(magZ))
 
-        movingOffset = self.calibrator.calculateMovingOffset(accX, accY, accZ)
+            # movingOffset = self.calibrator.calculateMovingOffset(accX, accY, accZ)
 
-        if self.calibrator.NOffsetAngle + movingOffset > devHeading:
-            currHeading = 2 * math.pi - (self.calibrator.NOffsetAngle + movingOffset - devHeading)
+            if self.calibrator.NOffsetAngle > devHeading:
+                currHeading = 2 * math.pi - (self.calibrator.NOffsetAngle - devHeading)
+            else:
+                currHeading = devHeading - self.calibrator.NOffsetAngle
+
+            return currHeading
         else:
-            currHeading = devHeading - (self.calibrator.NOffsetAngle + movingOffset)
-
-        return currHeading
+            return 0.0
 
     # Public
     # Reading is in radians of [0, 2 * pi] clockwise from North

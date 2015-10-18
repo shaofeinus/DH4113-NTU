@@ -22,10 +22,10 @@ class ReceiveDataThread(threading.Thread):
 
     def run(self):
         while True:
-            dataInLock.acquire()
             # print 'receiving'
-            dataFeeder.receive_data()
-            dataInLock.release()
+            userInputLock.acquire()
+            dataFeeder.receive_data(dataInSema)
+            userInputLock.release()
 
 
 class ProcessDataThread(threading.Thread):
@@ -36,7 +36,8 @@ class ProcessDataThread(threading.Thread):
 
     def run(self):
         while True:
-            dataFeeder.process_data(data)
+            dataFeeder.process_data(data, dataInSema)
+
        # print data[6],
        # print data[7],
        # print data[8],
@@ -75,14 +76,17 @@ class CalibrationThread(threading.Thread):
         # magZRange = (-4618, 4655)
         # self.calibrator.inputManualRange(magZRange, magYRange, magXrange)
 
-        dataInLock.acquire()
+        userInputLock.acquire()
         validInput = False
         while not validInput:
             userInput = raw_input("Press enter to calibrate? y/n ")
             if userInput == 'y':
                 validInput = True
             elif userInput == 'n':
-                dataInLock.release()
+                dataFeeder.serialPort.flushInput()
+                dataFeeder.serialPort.flushOutput()
+                data
+                userInputLock.release()
                 return
             else:
                 print 'Enter y/n'
@@ -94,7 +98,7 @@ class CalibrationThread(threading.Thread):
         print 'Calibrating'
         dataFeeder.serialPort.flushInput()
         dataFeeder.serialPort.flushOutput()
-        dataInLock.release()
+        userInputLock.release()
 
         while not self.isDone['tilt']:
             self.calibrateTilt()
@@ -112,11 +116,11 @@ class CalibrationThread(threading.Thread):
         #                                      self.calibrator.initGXOffset,
         #                                      self.calibrator.initGZOffset)
 
-        dataInLock.acquire()
+        userInputLock.acquire()
         raw_input('Your are ' + str(self.calibrator.getNOffsetAngle() / (2 * math.pi) * 360) + ' from N.')
         dataFeeder.serialPort.flushInput()
         dataFeeder.serialPort.flushOutput()
-        dataInLock.release()
+        userInputLock.release()
 
     def calibrateTilt(self):
         if len(data[1]) == 0:
@@ -207,6 +211,7 @@ class LocationDisplayThread(threading.Thread):
             print "Total Steps:", locationTracker.getTotalSteps()
             print "Total Distance:", locationTracker.getTotalDistance()
             print "Deviation from N:", locationTracker.getHeadingInDeg()
+            print "Deviation from N gyro:", locationTracker.compass.gyroCompass.getAngleFromMapNinDeg()
             print "Deviation from Map N:", locationTracker.getHeadingWRTMapInDeg()
             print locationTracker.getLocation()
             print "Height:", locationTracker.getHeightInCM()
@@ -268,7 +273,7 @@ class LocationUpdateThread(threading.Thread):
             # f = open('accdata.csv', 'a')
             # f.write(str(self.accX) + ',' + str(self.accY) + ',' + str(self.accZ) + '\n')
             # f.close()
-            print "timeStamp:", self.timeInMillisAcc, "AccX:", self.accX, "AccY:", self.accY, "AccZ:", self.accZ, "time:", datetime.datetime.now()
+            # print "timeStamp:", self.timeInMillisAcc, "AccX:", self.accX, "AccY:", self.accY, "AccZ:", self.accZ, "time:", datetime.datetime.now()
 
     def updateMagData(self):
         if len(data[2]) == 0:
@@ -319,10 +324,10 @@ class LocationUpdateThread(threading.Thread):
 
         if self.totalGyroData == 4:
             self.gyroX, self.gyroY, self.gyroZ = self.calibrationTools.transformGyro(self.gyroX, self.gyroY, self.gyroZ)
-            # print self.gyroX, self.gyroY, self.gyroZ
             # f = open('gyro.csv', 'a')
             # f.write(str(self.timeInMillisGyro) + ',' + str(self.gyroX) + ',' + str(self.gyroY) + ',' + str(self.gyroZ) + '\n')
             # f.close()
+            # print self.gyroX, self.gyroY, self.gyroZ
             locationTracker.compass.gyroCompass.queueGyroReadings(-self.gyroZ, self.gyroY, self.gyroX)
             # print "timeStamp:", self.timeInMillisGyro, "GyX:", self.gyroX, "GyY:", self.gyroY, "GyZ:", self.gyroZ, \
             #     "time:", datetime.datetime.now()
@@ -351,6 +356,7 @@ class LocationUpdateThread(threading.Thread):
             self.updateBaroData()
             # self.updateGyroData()
             locationTrackerLock.release()
+            pass
 
 
 class NavigationThread(threading.Thread):
@@ -512,7 +518,8 @@ dataFeeder = dataFeeder.DataFeeder()
 locationTrackerLock = threading.Lock()
 obstacleLock = threading.Lock()
 obstacleStatusLock = threading.Lock()
-dataInLock = threading.Lock()
+dataInSema = threading.Semaphore(0)
+userInputLock = threading.Lock()
 
 # Threads to receive data from Arduino
 dataThreads = []
@@ -522,7 +529,7 @@ dataThreads.append(ProcessDataThread(2, "data processing"))
 for thread in dataThreads:
     thread.start()
 
-## Init threads
+# Init threads
 initThreads = []
 initThreads.append(CalibrationThread(-1, "calibrating pedometer and compass"))
 

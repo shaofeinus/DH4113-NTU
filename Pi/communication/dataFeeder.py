@@ -1,6 +1,8 @@
 from serial import Serial
+from collections import deque
 import Queue
 import datetime
+import time
 
 __author__ = 'Shao Fei'
 
@@ -12,7 +14,8 @@ class DataFeeder:
     num_bytes = [1, 3, 3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
     def __init__(self):
-        self.in_queue = Queue.Queue()
+        # self.in_queue = Queue.Queue()
+        self.in_queue = deque()
         self.serialPort = Serial(port="/dev/ttyAMA0", baudrate=self.BAUD_RATE, timeout=2)
         if not self.serialPort.isOpen():
             self.serialPort.open()
@@ -21,14 +24,20 @@ class DataFeeder:
         self.x = 0
         self.y = 0
 
-    def receive_data(self):
+    def receive_data(self, dataSema):
         numBytes = self.serialPort.inWaiting()
         if numBytes > 0:
-            # print numBytes
             data_input = self.serialPort.read(numBytes)
             charList = list(data_input)
+            self.in_queue.extend(charList)
+            # print 'bytes appended:', numBytes
+            # print 'queue length:', len(self.in_queue)
+
             for i in range(numBytes):
-                self.in_queue.put(int(ord(charList[i])))
+                dataSema.release()
+            # for i in range(numBytes):
+            #     self.in_queue.put(int(ord(charList[i])))
+
 
     def my_to_signed(self, num):
         if num >> 15 == 1:
@@ -46,9 +55,12 @@ class DataFeeder:
         print (data_print),
         print (datetime.datetime.now())
 
-    def process_data(self, data):
+    def process_data(self, data, dataSema):
 
-        data_in = self.in_queue.get()
+        # data_in = self.in_queue.get()
+        dataSema.acquire()
+        # print 'left in queue:', len(self.in_queue)
+        data_in = int(ord(self.in_queue.popleft()))
 
         dev_id = (data_in >> 4)
 
@@ -60,7 +72,9 @@ class DataFeeder:
         # print "num_id 1:", self.x, "num_id2:", self.y
         timeStamp = ((data_in & 0xF) << 8)
 
-        data_in = self.in_queue.get()
+        # data_in = self.in_queue.get()
+        dataSema.acquire()
+        data_in = int(ord(self.in_queue.popleft()))
 
         timeStamp = timeStamp | data_in
 
@@ -71,17 +85,22 @@ class DataFeeder:
 
         for x in range(self.num_bytes[dev_id]):
             # First byte
-            data_in = self.in_queue.get()
+            # data_in = self.in_queue.get()
+            dataSema.acquire()
+            data_in = int(ord(self.in_queue.popleft()))
             dataTemp = data_in << 8
 
             # Second byte
-            data_in = self.in_queue.get()
+            # data_in = self.in_queue.get()
+            dataSema.acquire()
+            data_in = int(ord(self.in_queue.popleft()))
             dataTemp = dataTemp | data_in
 
             # Adds third byte for barometer reading
             if dev_id == 4:
-
-                data_in = self.in_queue.get()
+                # data_in = self.in_queue.get()
+                dataSema.acquire()
+                data_in = int(ord(self.in_queue.popleft()))
                 dataTemp = (dataTemp << 8) | data_in
 
             # If Accelerometer and Magnetometer, check for sign
