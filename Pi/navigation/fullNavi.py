@@ -116,11 +116,14 @@ class fullNavi(object) :
     def updatePrevNexCoord(self) :
         prevNode = self.pathList[self.pathListIndex]
         nexNode =  self.pathList[self.pathListIndex + 1]
+        nexNodeName = self.comMap[self.mapNumber].getLocationName(nexNode)
         self.prevX = int(self.comMap[self.mapNumber].getLocationXCoord(prevNode))
         self.prevY = int(self.comMap[self.mapNumber].getLocationYCoord(prevNode))
         self.nexX = int(self.comMap[self.mapNumber].getLocationXCoord(nexNode))
         self.nexY = int(self.comMap[self.mapNumber].getLocationYCoord(nexNode))
         self.nodeNavi.setNorthAt(self.northAt)
+        self.nodeNavi.resetNearingCount()
+        self.nodeNavi.setNextNodeName(nexNodeName)
         self.nodeNavi.setPrevCoordinates(self.prevX, self.prevY)
         self.nodeNavi.setNexCoordinates(self.nexX, self.nexY)
 

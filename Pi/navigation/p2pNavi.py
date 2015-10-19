@@ -8,6 +8,8 @@ import math
 # setNexCoordinates(x, y)
 # updateCurCoord(x, y)
 # updateHeading(heading)
+# setNextNodeName(nodeName)
+# resetNearingCount()
 # navigate()
 # TODO: Change the maxTolerance, maxDeviation, angleTolerance values
 
@@ -21,15 +23,19 @@ class navigation (object) :
         self.curXCoord = 0          # cm
         self.curYCoord = 0          # cm
         self.curAngle = 0           # -180 to 180 degrees
+        self.nextNodeName = None
         self.leftPin = 9
         self.rightPin = 10
 
         # deviation tolerance
-        self.maxDeviation = 75       # cm
+        self.maxDeviation = 80       # cm
         # vicinity tolerance
-        self.maxTolerance = 60       # cm
+        self.maxTolerance = 75       # cm
         # angle tolerance
         self.angleTolerance = 17     # degrees
+        # distance from node for updates
+        self.nearingCount = 500
+
 
     def updateCurCoord(self, x, y) :
         self.curXCoord = x
@@ -40,6 +46,12 @@ class navigation (object) :
 
     def setNorthAt(self, northAt) :
         self.northAt = northAt
+
+    def setNextNodeName(self, nodeName) :
+        self.nextNodeName = nodeName
+
+    def resetNearingCount(self) :
+        self.nearingCount = 500
     
     def setPrevCoordinates(self, prevXCoord, prevYCoord) :
         self.prevXCoord = prevXCoord
@@ -118,6 +130,13 @@ class navigation (object) :
                 approxTurnAngle = self.getTurnAngle()
 
         return approxTurnAngle
+    
+
+    def alertNearingNode(self, distanceTo) :
+        if ((distanceTo <= self.nearingCount) and (distanceTo > self.maxTolerance)) :
+            print "You are now %.1f meters away from %s" %(distanceTo/100.0, self.nextNodeName)
+            while (self.nearingCount >= distanceTo) :
+                self.nearingCount -= 100
 
 
     # navigation algorithm:
@@ -125,10 +144,13 @@ class navigation (object) :
     # else return 0.  Guides the user which way to turn
     # using the vibration motors
     def navigate(self) :
-        curXDisp = math.fabs(self.nexXCoord - self.curXCoord)  
-        curYDisp = math.fabs(self.nexYCoord - self.curYCoord)
+##        curXDisp = math.fabs(self.nexXCoord - self.curXCoord)  
+##        curYDisp = math.fabs(self.nexYCoord - self.curYCoord)
+        distanceToNode = distAngleCalc.distance(self.curXCoord, self.curYCoord, self.nexXCoord, self.nexYCoord)
 
-        if ((curXDisp > self.maxTolerance) or (curYDisp > self.maxTolerance)) :
+        self.alertNearingNode(distanceToNode)
+        
+        if (distanceToNode > self.maxTolerance) :
             turnAngle = self.getApproxTurnAngle()            
             if(math.fabs(turnAngle) > self.angleTolerance) :
                 if turnAngle > 0 :
