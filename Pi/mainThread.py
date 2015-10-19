@@ -369,19 +369,26 @@ class NavigationThread(threading.Thread):
         global obstacleDetected
         global checkSideObstacle
         while 1:
+            naviCount += 1
             locationTrackerLock.acquire()
             curX = locationTracker.getXCoord()
             curY = locationTracker.getYCoord()
             heading = locationTracker.getHeadingInDeg()
             locationTrackerLock.release()
-            if obstacleDetected == 1 or checkSideObstacle == 1:
-                time.sleep(0.5)
-                continue
-            navi.updateCurLocation(curX, curY, heading)
-            isNavigationDone = navi.fullNavigate()
-            if isNavigationDone is True :
-                return
-            time.sleep(1)
+            # update location and next node direction for obstacle avoidance
+            obstacle.setNextNodeDirection(navi.getGeneralDirection())
+            obstacle.setCurrentLocation(curX, curY)
+            # every second, check navigation
+            if (naviCount%10 == 0) :
+                if obstacleDetected == 1 or checkSideObstacle == 1:
+                    time.sleep(0.1)
+                    continue
+                navi.updateCurLocation(curX, curY, heading)
+                isNavigationDone = navi.fullNavigate()
+                if isNavigationDone is True :
+                    return
+            time.sleep(0.1)
+            
 
 
 class ObstacleAvoidanceThread(threading.Thread):
@@ -403,6 +410,7 @@ class ObstacleAvoidanceThread(threading.Thread):
             sonarLS = data[12]
             sonarRS = data[13]
 
+            # update sensor data
             obstacleLock.acquire()
             obstacle.updateFrontSensorData(sonarFT, irFC, irFL, irFR)
             obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
@@ -468,8 +476,8 @@ class ObstacleClearedThread(threading.Thread):
                 obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
                 obstacleLock.release()
                 # re-route if necessary
-##                if obstacle.isRerouteNeeded() is True :
-                    ###reroute
+                if obstacle.isRerouteNeeded() is True :
+                    navi.reroutePath()
                 if obstacle.checkObstacleCleared() == 1:
                     obstacleStatusLock.acquire()
                     checkSideObstacle = 0
@@ -511,6 +519,7 @@ obstacleDetected = 0
 checkSideObstacle = 0
 
 # Navigation initialization
+naviCount = 0
 navi = fullNavi.fullNavi()
 navi.generateFullPath("com1", 2, 36, 10)
 

@@ -4,8 +4,8 @@ import distAngleCalc
 ##import RPi.GPIO as GPIO
 
 # API:
-# updateNextNodeDirection(direction)
-# updateCurrentLocation(x, y)
+# setNextNodeDirection(direction)
+# setCurrentLocation(x, y)
 # avoidObstacle()
 # TODO : rerouting based on number of times same obstacle encountered, tolerance
 class obstacleAvoidance (object) :
@@ -28,7 +28,7 @@ class obstacleAvoidance (object) :
         self.lastTurnedDirection = 0
 
         # direction of the next node wrt user heading
-        # 1 for rig ht/straight ahead, 2 for left
+        # 1 for right/straight ahead, 2 for left
         self.nextNodeDirection = 0
 
         # used to check if the same obstacle is encountered
@@ -75,10 +75,10 @@ class obstacleAvoidance (object) :
 ##        GPIO.output(self.leftPin, False)
 ##        GPIO.output(self.rightPin, False)
 
-    def updateNextNodeDirection(self, direction) :
+    def setNextNodeDirection(self, direction) :
         self.nextNodeDirection = direction
 
-    def updateCurrentLocation(self, x, y) :
+    def setCurrentLocation(self, x, y) :
         self.curX = x
         self.curY = y
 
