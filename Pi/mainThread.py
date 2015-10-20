@@ -467,7 +467,7 @@ class ObstacleAvoidanceThread(threading.Thread):
             obstacleStatus = obstacleDetected
             obstacleStatusLock.release()
             # FOR TESTING
-            obstacle.printFrontSensorValues()
+##            obstacle.printFrontSensorValues()
 ##            obstacle.printSideSensorValues()
             # up/down step
 ##            if obstacle.hasUpStep() :

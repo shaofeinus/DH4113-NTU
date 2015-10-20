@@ -11,14 +11,13 @@ import distAngleCalc
 class obstacleAvoidance (object) :
     def __init__(self) :       
         self.FRONT_OBSTACLE_DISTANCE = 75
-        self.SIDE_OBSTACLE_IR = 70
-        self.SIDE_OBSTACLE_SONAR = 75
+        self.SIDE_OBSTACLE_IR = 75
+        self.SIDE_OBSTACLE_SONAR = 70
         self.STEP_MAX_DISTANCE = 130
         self.FLOOR_DISTANCE = 120
         self.STEP_MIN_DISTANCE = 110
         self.VIBRATE_DURATION = 2
         self.OBSTACLE_RADIUS = 70
-        self.MAX_OBSTACLE_COUNT = 3
         self.LARGE_VALUE = 11111
 
         # GPIO Pins for vibration motors
@@ -36,7 +35,14 @@ class obstacleAvoidance (object) :
         self.curY = None
         self.obstacleX = None
         self.obstacleY = None
+
+        # used to check if rerouting is necessary
         self.tempObstacleCount = 0
+        self.MAX_OBSTACLE_COUNT = 3
+
+        # obstacle cleared count
+        self.obstacleClearedCount = 0
+        self.CLEARED_MAX_COUNT = 4
         
         # front top sonar
         self.sonarFC = [self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE]
@@ -340,13 +346,19 @@ class obstacleAvoidance (object) :
         if(self.tempObstacleCount == 0) :
             self.obstacleX = self.curX
             self.obstacleY = self.curY
-            self.tempObstaclecount = 1
+            self.tempObstacleCount = 1
         else :
             dist = distAngleCalc.distance(self.curX, self.curY, self.obstacleX, self.obstacleY)
-            if dist < self.STEP_MAX_DISTANCE :
+            print "distance from last obstacle is: " + str(dist)
+            print "CurX = " + str(self.curX)
+            print "CurY = " + str(self.curY)
+            print "Obstacle X = " + str(self.obstacleX)
+            print "Obstacle Y = " + str(self.obstacleY)
+            if dist <= self.OBSTACLE_RADIUS :
                 self.tempObstacleCount += 1
             else :
                 self.tempObstacleCount = 0
+        print "HEY! " + str(self.tempObstacleCount) + " is the number of times this obstacle has been encountered"
 
     # detects new obstacles:
     # if alreadyDetected is 1, return False, else
@@ -387,14 +399,22 @@ class obstacleAvoidance (object) :
             sideIR = self.getRightIr()
             sideSonar = self.getRightSonar()
 
-        if((sideIR < self.SIDE_OBSTACLE_IR) or (sideSonar < self.SIDE_OBSTACLE_SONAR)) :
-            return 0
+        if((sideIR > self.SIDE_OBSTACLE_IR) and (sideSonar > self.SIDE_OBSTACLE_SONAR)) :
+            print "count is: " + str(self.obstacleClearedCount)
+            if (self.obstacleClearedCount >= self.CLEARED_MAX_COUNT) :
+                self.obstacleClearedCount= 0
+                return 1
+            else :
+                self.obstacleClearedCount += 1
+                return 0
         else :
-            return 1
+            self.obstacleClearedCount = 0
+            return 0
 
     # If path re-routing is necessary, reset values and return True
     def isRerouteNeeded(self) :
         if (self.tempObstacleCount >= self.MAX_OBSTACLE_COUNT) :
+            print "REROUTING!"
             self.tempObstacleCount = 0
             self.obstacleX = None
             self.obstacleY = None
