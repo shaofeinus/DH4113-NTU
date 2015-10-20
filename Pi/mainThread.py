@@ -52,12 +52,12 @@ class ProcessDataThread(threading.Thread):
         while True:
             dataFeeder.process_data(data, dataInSema)
 
-       # print data[6],
-       # print data[7],
-       # print data[8],
-       # print data[11],
-       # print data[12],
-       # print data[13]
+           # print data[6],
+           # print data[7],
+           # print data[8],
+            #print data[11],
+            #print data[12],
+            #print data[13]
 
 
 class CalibrationThread(threading.Thread):
@@ -420,7 +420,7 @@ class NavigationThread(threading.Thread):
             heading = locationTracker.getHeadingInDeg()
             locationTrackerLock.release()
             # update location and next node direction for obstacle avoidance
-            obstacle.setNextNodeDirection(navi.getGeneralDirection())
+            obstacle.setNextNodeDirection(navi.getGeneralTurnDirection())
             obstacle.setCurrentLocation(curX, curY)
             # every second, check navigation
             if (naviCount%10 == 0) :

@@ -102,7 +102,7 @@ class LocationTracker:
 
         # Heading wrt to North
         self.headingWRTNorthInRad = self.compass.getHeadingInRad()
-        self.headingWRTNorthInDeg = compass.Compass.ggetHeadingInDeg(self.headingWRTNorthInRad)
+        self.headingWRTNorthInDeg = compass.Compass.getHeadingInDeg(self.headingWRTNorthInRad)
 
         # Heading wrt to y-axis of map
         # self.headingWRTMapInRad = self.getHeadingWRTMap(self.headingWRTNorthInRad)
