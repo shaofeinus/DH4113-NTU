@@ -57,7 +57,7 @@ class ProcessDataThread(threading.Thread):
        # print data[8],
        # print data[11],
        # print data[12],
-       # print data[13],
+       # print data[13]
 
 
 class CalibrationThread(threading.Thread):
@@ -380,6 +380,7 @@ class NavigationThread(threading.Thread):
         self.threadName = threadName
 
     def run(self):
+        global naviCount
         global obstacleDetected
         global checkSideObstacle
         while 1:
@@ -433,10 +434,10 @@ class ObstacleAvoidanceThread(threading.Thread):
             obstacleStatus = obstacleDetected
             obstacleStatusLock.release()
             # up/down step
-            if obstacle.hasUpStep() :
-                obstacle.stepVibrateMotor(True)
-            elif obstacle.hasDownStep() :
-                obstacle.stepVibrateMotor(False)
+##            if obstacle.hasUpStep() :
+##                obstacle.stepVibrateMotor(True)
+##            elif obstacle.hasDownStep() :
+##                obstacle.stepVibrateMotor(False)
             # new obstacle
             if obstacle.isNewObstacleDetected(obstacleStatus) is True:
                 obstacleStatusLock.acquire()
@@ -486,7 +487,7 @@ class ObstacleClearedThread(threading.Thread):
             obstacleStatusLock.release()
             if toMonitorObstacle == 1:
                 obstacleLock.acquire()
-                obstacle.updateFrontSensorData(sonarFT, irFFC, irFL, irFR)
+                obstacle.updateFrontSensorData(sonarFT, irFC, irFL, irFR)
                 obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
                 obstacleLock.release()
                 # re-route if necessary
@@ -572,13 +573,13 @@ for thread in initThreads:
 # List of threads
 mainThreads = []
 
-# mainThreads.append(ReceiveDataThread(1, "data receiving"))
-# mainThreads.append(ProcessDataThread(2, "data processing"))
+##mainThreads.append(ReceiveDataThread(1, "data receiving"))
+mainThreads.append(ProcessDataThread(2, "data processing"))
 mainThreads.append(LocationUpdateThread(3, "location update"))
 mainThreads.append(LocationDisplayThread(4, "location display"))
-# mainThreads.append(NavigationThread(5, "navigation"))
-# mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
-# mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
+mainThreads.append(NavigationThread(5, "navigation"))
+##mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
+##mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
 
 for thread in mainThreads:
     thread.start()

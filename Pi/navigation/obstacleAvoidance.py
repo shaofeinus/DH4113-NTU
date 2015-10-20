@@ -177,14 +177,14 @@ class obstacleAvoidance (object) :
 
 
     def hasUpStep(self) :
-        for i in self.irFB :
+        for i in self.irFC :
             print "front ir: " + str(i),
             if ((i < self.STEP_MIN_DISTANCE) and (i > self.FLOOR_DISTANCE)) :
                 return False         
         return True
 
     def hasDownStep(self) :
-        for i in self.irFB :
+        for i in self.irFC :
             print "front ir: " + str(i),
             if ((i > self.STEP_MAX_DISTANCE) and (i < self.FLOOR_DISTANCE)) :
                 return False         
@@ -252,12 +252,14 @@ class obstacleAvoidance (object) :
     def getSideToTurn(self) :
         # both sides blocked
         if((self.hasLeftObstacle() is True) or (self.hasRightObstacle() is True)):
+            print "LEFT and RIGHT obstacles!"
             return 0
 
         # first time turning, if no obstacle detected, choose based on 
         if(self.lastTurnedDirection == 0) :
             if((self.hasLeftObstacle() is False) or (self.hasRightObstacle() is False)):
-                return self.nexNodeDirection
+                print "NEXT NODE IS " + str(self.nextNodeDirection)
+                return self.nextNodeDirection
         # check both sides and base result on previous direction turned
         elif (self.lastTurnedDirection == 1) :
             if (self.hasRightObstacle() is False) :
@@ -290,8 +292,8 @@ class obstacleAvoidance (object) :
             print "Both side blocked! Both vibration motors activated"
 
     def vibrateMotors(self) :
-        GPIO.output(self.leftPin, True)
-        GPIO.output(self.rightPin, True)
+##        GPIO.output(self.leftPin, True)
+##        GPIO.output(self.rightPin, True)
         print "Obstacle encountered! Vibrate both sensors for " + str(self.VIBRATE_DURATION) + " seconds"
         # wait for VIBRATE_DURATION before proceeding
         time.sleep(self.VIBRATE_DURATION)
@@ -381,9 +383,9 @@ class obstacleAvoidance (object) :
             self.tempObstacleCount = 0
             self.obstacleX = None
             self.obstacleY = None
-            return true
+            return True
         else :
-            return false
+            return False
             
 
         
