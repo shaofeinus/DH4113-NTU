@@ -13,11 +13,13 @@ import time
 # updateCurLocation(x, y, heading)
 # isInitialAngleCorrect()
 # fullNavigate()
+# getGeneralTurnDirection()
+# reroutePath()
 
 class fullNavi(object) :
     def __init__(self) :
         self.ANGLE_TOLERANCE = 13
-        self.comMap = []
+
         self.buildingName = None
         self.levelNumber = 0
         self.mapNumber = 0          # index of map in comMap list
@@ -26,7 +28,10 @@ class fullNavi(object) :
         self.curX = 0               # cm
         self.curY = 0               # cm
         self.heading = 0            # -180 to 180 degrees
-        
+
+        # list of json parsing maps
+        self.comMap = []
+        # path list
         self.pathList = []
         self.pathListIndex = 0
         self.northAt = 0            # 0 to 360 degrees
@@ -82,14 +87,43 @@ class fullNavi(object) :
         self.provideNexNodeDirections()
         self.angleCorrect = False
 
+    # returns nearest node, excluding the past and current nodes
+    def getNearestNextNode(self) :
+        nearDist = 1000000
+        # if next node is already the destination       
+        if ((self.pathListIndex + 2) >= len(self.pathList)) :
+            return self.pathListIndex
+            
+        for i in xrange(self.pathListIndex+2, len(self.pathList)) :
+            nodeX = int(self.comMap[self.mapNumber].getLocationXCoord(self.pathList[i]))
+            nodeY = int(self.comMap[self.mapNumber].getLocationYCoord(self.pathList[i]))
+            distTo = distAngleCalc.distance(self.curX, self.curY, nodeX, nodeY)
+            if distTo < nearDist :
+                nearestNodeIndex = i
+                nearDist = distTo
+        return nearestNodeIndex
+
+    # re-route path to the next nearest node
+    def reroutePath(self) :
+        nextNodeIndex = self.getNearestNextNode()
+        if self.pathListIndex != nextNodeIndex :
+            self.pathListIndex = nextNodeIndex - 1
+            print "RE-ROUTING PATH!!!"
+            self.updatePrevNexCoord()
+            self.provideNexNodeDirections()
+            
+
     def updatePrevNexCoord(self) :
         prevNode = self.pathList[self.pathListIndex]
         nexNode =  self.pathList[self.pathListIndex + 1]
+        nexNodeName = self.comMap[self.mapNumber].getLocationName(nexNode)
         self.prevX = int(self.comMap[self.mapNumber].getLocationXCoord(prevNode))
         self.prevY = int(self.comMap[self.mapNumber].getLocationYCoord(prevNode))
         self.nexX = int(self.comMap[self.mapNumber].getLocationXCoord(nexNode))
         self.nexY = int(self.comMap[self.mapNumber].getLocationYCoord(nexNode))
         self.nodeNavi.setNorthAt(self.northAt)
+        self.nodeNavi.resetNearingCount()
+        self.nodeNavi.setNextNodeName(nexNodeName)
         self.nodeNavi.setPrevCoordinates(self.prevX, self.prevY)
         self.nodeNavi.setNexCoordinates(self.nexX, self.nexY)
 
@@ -105,10 +139,21 @@ class fullNavi(object) :
 ##        GPIO.output(self.leftPin, False)
 ##        GPIO.output(self.rightPin, False)      
 
+
     def provideNexNodeDirections(self) :
         nexNode =  self.pathList[self.pathListIndex + 1]
         nexNodeName = self.comMap[self.mapNumber].getLocationName(nexNode)
         print "Next node is: " + nexNodeName
+
+    # returns 1 for right (and straight ahead), 2 for left
+    def getGeneralTurnDirection(self) :
+        direction = self.nodeNavi.getTurnAngle()
+        if direction > 0 :
+            return 1
+        elif direction < 0 :
+            return 2
+        else :
+            return 0
 
     # before moving to next node, ensure turn in correct direction
     # returns True if correct, False otherwise
