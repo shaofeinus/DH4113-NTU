@@ -52,12 +52,16 @@ class ProcessDataThread(threading.Thread):
         while True:
             dataFeeder.process_data(data, dataInSema)
 
-           # print data[6],
-           # print data[7],
-           # print data[8],
-            #print data[11],
-            #print data[12],
-            #print data[13]
+##            print "ir ",
+##            print data[6],
+##            print data[7],
+##            print data[8],
+##            print data[9],
+##            print data[10],
+##            print "sonar ",
+##            print data[11],
+##            print data[12],
+##            print data[13]
 
 
 class CalibrationThread(threading.Thread):
@@ -462,6 +466,9 @@ class ObstacleAvoidanceThread(threading.Thread):
             obstacleStatusLock.acquire()
             obstacleStatus = obstacleDetected
             obstacleStatusLock.release()
+            # FOR TESTING
+            obstacle.printFrontSensorValues()
+##            obstacle.printSideSensorValues()
             # up/down step
 ##            if obstacle.hasUpStep() :
 ##                obstacle.stepVibrateMotor(True)
@@ -603,12 +610,12 @@ for thread in initThreads:
 mainThreads = []
 
 ##mainThreads.append(ReceiveDataThread(1, "data receiving"))
-mainThreads.append(ProcessDataThread(2, "data processing"))
+##mainThreads.append(ProcessDataThread(2, "data processing"))
 mainThreads.append(LocationUpdateThread(3, "location update"))
 mainThreads.append(LocationDisplayThread(4, "location display"))
 mainThreads.append(NavigationThread(5, "navigation"))
-##mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
-##mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
+mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
+mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
 
 for thread in mainThreads:
     thread.start()
