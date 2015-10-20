@@ -10,6 +10,7 @@ from communication import dataFeeder
 from communication import dataFeederDum
 from collections import deque
 from UI import voiceCommands
+from UI import search
 
 __author__ = 'Shao Fei'
 
@@ -62,7 +63,6 @@ class ProcessDataThread(threading.Thread):
 ##            print data[11],
 ##            print data[12],
 ##            print data[13]
-
 
 class CalibrationThread(threading.Thread):
     def __init__(self, threadID, threadName):
@@ -436,7 +436,7 @@ class NavigationThread(threading.Thread):
                 if isNavigationDone is True :
                     return
             time.sleep(0.1)
-            
+
 
 
 class ObstacleAvoidanceThread(threading.Thread):
@@ -536,6 +536,22 @@ class ObstacleClearedThread(threading.Thread):
                     obstacleStatusLock.release()
             time.sleep(0.5)
 
+class UIThread(threading.Thread):
+    def __init__(self, threadID, threadName):
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+        self.threadName = threadName
+
+    def run(self):
+        global startLocation
+        global endLocation
+
+        startLocation = search.locationSetting(False)
+        startLocation.run()
+
+        endLocation = search.locationSetting(True)
+        endLocation.setBuildingAndLevel(startLocation.buildingName, startLocation.levelNumber)
+        endLocation.run()
 
 # --------------------- START OF MAIN ----------------------- #
 
@@ -588,6 +604,20 @@ obstacleStatusLock = threading.Lock()
 dataInSema = threading.Semaphore(0)
 userInputLock = threading.Lock()
 
+#UI Variables
+startLocation = None
+endLocation = None
+
+# UI Threads
+UIThreads = []
+UIThreads.append(UIThread(-2, "UI thread"))
+
+for thread in UIThreads:
+    thread.start()
+
+for thread in UIThreads:
+    thread.join()
+
 # Threads to receive data from Arduino
 dataThreads = []
 dataThreads.append(ReceiveDataThread(1, "data receiving"))
@@ -616,6 +646,7 @@ mainThreads.append(LocationDisplayThread(4, "location display"))
 mainThreads.append(NavigationThread(5, "navigation"))
 mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
 mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
+mainThreads.append(voiceThread(8, "play sound notification"))
 
 for thread in mainThreads:
     thread.start()
