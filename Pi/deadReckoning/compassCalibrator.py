@@ -131,8 +131,8 @@ class CompassCalibrator:
         # Process fully supplied data
         else:
             gX = self.processGyroData(self.gyXWindow)
-            gY = self.processMagData(self.gyYWindow)
-            gZ = self.processMagData(self.gyZWindow)
+            gY = self.processGyroData(self.gyYWindow)
+            gZ = self.processGyroData(self.gyZWindow)
 
             print 'raw gyro:', gX, gY, gZ
 
@@ -279,7 +279,7 @@ class CompassCalibrator:
 
     def processGyroData(self, gyWindow):
 
-        if self.magCaliFailed:
+        if self.gyCaliFailed:
             return 0
 
         gyAverage = sum(gyWindow) / len(gyWindow)
