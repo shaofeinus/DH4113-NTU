@@ -562,14 +562,14 @@ data_single = [0 for x in range(NUM_SINGLE_ID)]
 data.extend(data_single)
 
 # Obstacle avoidance initialization
-obstacle = obstacleAvoidance.obstacleAvoidance()
+obstacle = obstacleAvoidance.obstacleAvoidance(voiceQueue)
 # 1 if an obstacle avoidance is taking place, else 0
 obstacleDetected = 0
 checkSideObstacle = 0
 
 # Navigation initialization
 naviCount = 0
-navi = fullNavi.fullNavi()
+navi = fullNavi.fullNavi(voiceQueue)
 navi.generateFullPath("com1", 2, 36, 10)
 
 # Location tracker initialisation
