@@ -46,12 +46,13 @@ class escape_thread(threading.Thread):
 
         while True:
             if self.exit_thread:
+                self.keypad.kill_voice_thread()
+
                 break
             if escape_flag:
                 time.sleep(0)
             else:
                 response = self.keypad.get_binary_response()
-                print "a\na\na\na\na\na\na\na\na", response, "\na\na\na\na\na\na\na\na\na"
                 escape_flag = not response
                 # self.num = self.keypad.poll_for_ext_num()
                 # print "IS " + str(self.num) + " < " + str(self.numElements)
@@ -273,9 +274,11 @@ class locationSetting(object) :
         if self.keypad.get_binary_response():
             self.restart()
             self.run()
-        self.keypad.kill_voice_thread
+        self.keypad.kill_voice_thread()
         global esc_thread
         esc_thread.kill_thread()
-        esc_thread.join()
+        esc_thread.join(3)
+        print "escape thread successfully stopped", (not esc_thread.isAlive())
+
 
 

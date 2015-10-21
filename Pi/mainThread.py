@@ -670,7 +670,7 @@ mainThreads.append(LocationDisplayThread(4, "location display"))
 mainThreads.append(NavigationThread(5, "navigation"))
 # mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
 # mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
-# mainThreads.append(voiceThread(8, "play sound notification"))
+mainThreads.append(voiceThread(8, "play sound notification"))
 
 for thread in mainThreads:
     thread.start()

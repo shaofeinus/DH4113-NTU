@@ -80,7 +80,7 @@ class keypad(object):
         global speakThread
         speakThread.stop_thread()
         speakThread.join(3)
-        print "speakThread successfully stopped", speakThread.isAlive()
+        print "speakThread successfully stopped", (not speakThread.isAlive())
 
     def toggle_sound(self):
         self.en_snd = not self.en_snd
