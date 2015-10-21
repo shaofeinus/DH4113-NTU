@@ -44,8 +44,8 @@ class obstacleAvoidance (object) :
         self.obstacleClearedCount = 0
         self.CLEARED_MAX_COUNT = 4
         
-        # front top sonar
-        self.sonarFC = [self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE]
+        # step detection IR
+        self.irLarge = [self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE]
         # front center IR
         self.irFC = [self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE]
         # front left IR
@@ -125,9 +125,9 @@ class obstacleAvoidance (object) :
         print "Left IR: " + str(self.getLeftIr())
         print "Right IR: " + str(self.getRightIr())
 
-    def updateFrontSensorData(self, sonarFront, irFC, irFL, irFR) :
+    def updateFrontSensorData(self, irLarge, irFC, irFL, irFR) :
         self.fHistoryIndex = (self.fHistoryIndex + 1) % self.frontNumHistory
-        self.sonarFC[self.fHistoryIndex] = self.convertSonarToCm(sonarFront)
+        self.irLarge[self.fHistoryIndex] = self.convertSonarToCm(sonarFront)
         self.irFC[self.fHistoryIndex] = self.convertIRToCm(irFC)
         self.irFL[self.fHistoryIndex] = self.convertIRToCm(irFL)
         self.irFR[self.fHistoryIndex] = self.convertIRToCm(irFR)
@@ -189,26 +189,26 @@ class obstacleAvoidance (object) :
 
 
     def hasUpStep(self) :
-        for i in self.sonarFC :
+        for i in self.irLarge :
             print "front ir: " + str(i),
             if ((i < self.STEP_MIN_DISTANCE) and (i > self.FLOOR_DISTANCE)) :
                 return False         
         return True
 
     def hasDownStep(self) :
-        for i in sonarFC :
+        for i in irLarge :
             print "front ir: " + str(i),
             if ((i > self.STEP_MAX_DISTANCE) and (i < self.FLOOR_DISTANCE)) :
                 return False         
         return True
 
 
-    def getFrontSonar(self) :
+    def getIrLarge(self) :
         average = 0
-        for i in self.sonarFC :
+        for i in self.irLarge :
             average+= i
         average /= self.sideNumHistory
-        return self.sonarLS[self.sHistoryIndex]
+        return self.irLarge[self.fHistoryIndex]
 
 
     def getLeftSonar(self) :
@@ -276,14 +276,16 @@ class obstacleAvoidance (object) :
         if((self.hasLeftObstacle() is True) and (self.hasRightObstacle() is True)):
             print "LEFT and RIGHT obstacles!"
             return 0
+        
+        print "TURN DIRECTION " + str(self.lastTurnedDirection)
 
         # first time turning, if no obstacle detected, choose based on 
         if(self.lastTurnedDirection == 0) :
             if((self.hasLeftObstacle() is False) and (self.hasRightObstacle() is False)):
-                print "NEXT NODE IS AT " + str(self.nextNodeDirection)
                 return self.nextNodeDirection
+
         # check both sides and base result on previous direction turned
-        elif (self.lastTurnedDirection == 1) :
+        if (self.lastTurnedDirection == 1) :
             if (self.hasRightObstacle() is False) :
                 return 1
             else :
@@ -309,6 +311,7 @@ class obstacleAvoidance (object) :
 ##            GPIO.output(self.rightPin, False)
             print "Turn left! Left vibrator activated"
         else :
+            print "last turned IIIISSSS: " + str(self.lastTurnedDirection)
 ##            GPIO.output(self.leftPin, True)
 ##            GPIO.output(self.rightPin, True)
             print "Both side blocked! Both vibration motors activated"

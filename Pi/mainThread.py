@@ -59,9 +59,9 @@ class ProcessDataThread(threading.Thread):
 ##            print data[8],
 ##            print data[9],
 ##            print data[10],
-##            print data[11],
+##            print data[15],
 ##            print "sonar ",
-##            print data[11],
+##            print data[12],
 ##            print data[13]
 
 class CalibrationThread(threading.Thread):
@@ -460,13 +460,13 @@ class ObstacleAvoidanceThread(threading.Thread):
             irRS = data[8]
             irFL = data[9]
             irFR = data[10]
-            sonarFT = data[11]
             sonarLS = data[12]
             sonarRS = data[13]
+            irLarge = data[15]
 
             # update sensor data
             obstacleLock.acquire()
-            obstacle.updateFrontSensorData(sonarFT, irFC, irFL, irFR)
+            obstacle.updateFrontSensorData(irLarge, irFC, irFL, irFR)
             obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
             obstacleLock.release()
             obstacleStatusLock.acquire()
@@ -490,7 +490,7 @@ class ObstacleAvoidanceThread(threading.Thread):
             obstacleStatusLock.release()
             if obstacleStatus == 1:
                 obstacleLock.acquire()
-                obstacle.updateFrontSensorData(sonarFT, irFC, irFL, irFR)
+                obstacle.updateFrontSensorData(irLarge, irFC, irFL, irFR)
                 obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
                 obstacleLock.release()
                 if obstacle.isFrontObstacleDetected(obstacleStatus) is True:
@@ -518,15 +518,17 @@ class ObstacleClearedThread(threading.Thread):
             irRS = data[8]
             irFL = data[9]
             irFR = data[10]
-            sonarFT = data[11]
+            irLarge = data[11]
             sonarLS = data[12]
             sonarRS = data[13]
+            irLarge = data[15]
+
             obstacleStatusLock.acquire()
             toMonitorObstacle = checkSideObstacle
             obstacleStatusLock.release()
             if toMonitorObstacle == 1:
                 obstacleLock.acquire()
-                obstacle.updateFrontSensorData(sonarFT, irFC, irFL, irFR)
+                obstacle.updateFrontSensorData(irLarge, irFC, irFL, irFR)
                 obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
                 obstacleLock.release()
                 # re-route if necessary
@@ -588,9 +590,10 @@ NUM_SINGLE_ID = 11
 # 8 - IR (right side) (2)
 # 9 - IR (front left)
 # 10 - IR (front right)
-# 11 - sonar (front top) (27 trig 18 echo) - to be changed to IR
-# 12 - sonar (left side) (29 trig 19 echo)
+# 11 - unused
+# 12 - sonar (left side) (27 trig 18 echo)
 # 13 - sonar (right side) (25 trig  2 echo)
+# 15 - IR (large)
 
 voiceQueue = deque()
 
