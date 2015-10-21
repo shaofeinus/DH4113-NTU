@@ -10,7 +10,7 @@ from communication import dataFeeder
 from communication import dataFeederDum
 from collections import deque
 from UI import voiceCommands
-from UI import keypad_polling
+#from UI import keypad_polling
 
 __author__ = 'Shao Fei'
 
@@ -93,14 +93,14 @@ class CalibrationThread(threading.Thread):
         # magYRange = (-5096, 5002)
         # magZRange = (-4618, 4655)
         # self.calibrator.inputManualRange(magZRange, magYRange, magXrange)
-        global keypad
+        #global keypad
         userInputLock.acquire()
         validInput = False
         while not validInput:
-            #userInput = raw_input("Press enter to calibrate? y/n ")
-            speak(str("To begin calibration, press start"))
-            userInput = keypad.get_binary_response()
-            if userInput:
+            userInput = raw_input("Press enter to calibrate? y/n ")
+            #voiceCommands.speak(str("To begin calibration, press start"))
+            #userInput = keypad.get_binary_response()
+            if userInput == 'y':
                 validInput = True
             else:
                 dataFeeder.serialPort.flushInput()
@@ -111,7 +111,7 @@ class CalibrationThread(threading.Thread):
         for i in range(0, 5):
             num =  5 - i
             print num
-            speak(str(num))
+            #speak(str(num))
             time.sleep(1)
 
         # print 'Calibrating'
@@ -139,9 +139,9 @@ class CalibrationThread(threading.Thread):
         userInputLock.acquire()
         temp = 'Your are ' + str(self.calibrator.getNOffsetAngle() / (2 * math.pi) * 360) + ' from N. To continue, press start'
         print temp
-        speak(temp)
-        while keypad.get_binary_response():
-            pass
+##        voiceCommands.speak(temp)
+##        while keypad.get_binary_response():
+##            pass
         dataFeeder.serialPort.flushInput()
         dataFeeder.serialPort.flushOutput()
         userInputLock.release()
@@ -599,7 +599,7 @@ data_single = [0 for x in range(NUM_SINGLE_ID)]
 data.extend(data_single)
 
 # Obstacle avoidance initialization
-obstacle = obstacleAvoidance.obstacleAvoidance(voiceQueue)
+obstacle = obstacleAvoidance.obstacleAvoidance()
 # 1 if an obstacle avoidance is taking place, else 0
 obstacleDetected = 0
 checkSideObstacle = 0
@@ -615,7 +615,7 @@ locationTracker = locationTracker.LocationTracker(4263.0, 609.0, 0.0)
 dataFeeder = dataFeeder.DataFeeder()
 
 # Keypad initialization
-keypad = keypad_polling.keypad()
+#keypad = keypad_polling.keypad()
 
 # Locks for various variables
 locationTrackerLock = threading.Lock()
