@@ -10,8 +10,8 @@ from communication import dataFeeder
 from communication import dataFeederDum
 from collections import deque
 from UI import voiceCommands
-from UI import search
-from UI import keypad_polling
+# from UI import search
+# from UI import keypad_polling
 # import Queue
 
 __author__ = 'Shao Fei'
@@ -98,10 +98,10 @@ class CalibrationThread(threading.Thread):
         userInputLock.acquire()
         validInput = False
         while not validInput:
-            #userInput = raw_input("Press enter to calibrate? y/n ")
-            voiceCommands.speak(str("To begin calibration, press start. To skip calibration, press back."))
-            userInput = keypad.get_binary_response()
-            if not userInput:
+            userInput = raw_input("Press enter to calibrate? y/n ")
+            # voiceCommands.speak(str("To begin calibration, press start. To skip calibration, press back."))
+            # userInput = keypad.get_binary_response()
+            if userInput == 'y':
                 validInput = True
             else:
                 dataFeeder.serialPort.flushInput()
@@ -140,9 +140,9 @@ class CalibrationThread(threading.Thread):
         userInputLock.acquire()
         temp = 'Your are ' + str(self.calibrator.getNOffsetAngle() / (2 * math.pi) * 360) + ' from N. To continue, press start'
         print temp
-        voiceCommands.speak(temp)
-        while keypad.get_binary_response():
-           pass
+        # voiceCommands.speak(temp)
+        # while keypad.get_binary_response():
+        #    pass
         dataFeeder.serialPort.flushInput()
         dataFeeder.serialPort.flushOutput()
         userInputLock.release()
@@ -543,40 +543,40 @@ class ObstacleClearedThread(threading.Thread):
                     obstacleStatusLock.release()
             time.sleep(0.5)
 
-class UIThread(threading.Thread):
-    def __init__(self, threadID, threadName):
-        threading.Thread.__init__(self)
-        self.threadID = threadID
-        self.threadName = threadName
-
-    def run(self):
-        global data
-        global keypad
-        userInputLock.acquire()
-
-        # get start location
-        startLocation = search.locationSetting(False, keypad)
-        startLocation.run()
-
-        # get end location
-        endLocation = search.locationSetting(True, keypad)
-        endLocation.setBuildingAndLevel(startLocation.buildingName, startLocation.levelNumber)
-        endLocation.run()
-
-        # kill local voice thread
-        search.kill_voice_thread()
-
-        # flush serial port
-        dataFeeder.serialPort.flushInput()
-        dataFeeder.serialPort.flushOutput()
-
-        # reset data
-        data = []
-        data = [deque() for x in range(NUM_QUEUED_ID)]
-        data_single = [0 for x in range(NUM_SINGLE_ID)]
-        data.extend(data_single)
-
-        userInputLock.release()
+# class UIThread(threading.Thread):
+#     def __init__(self, threadID, threadName):
+#         threading.Thread.__init__(self)
+#         self.threadID = threadID
+#         self.threadName = threadName
+#
+#     def run(self):
+#         global data
+#         global keypad
+#         userInputLock.acquire()
+#
+#         # get start location
+#         startLocation = search.locationSetting(False, keypad)
+#         startLocation.run()
+#
+#         # get end location
+#         endLocation = search.locationSetting(True, keypad)
+#         endLocation.setBuildingAndLevel(startLocation.buildingName, startLocation.levelNumber)
+#         endLocation.run()
+#
+#         # kill local voice thread
+#         search.kill_voice_thread()
+#
+#         # flush serial port
+#         dataFeeder.serialPort.flushInput()
+#         dataFeeder.serialPort.flushOutput()
+#
+#         # reset data
+#         data = []
+#         data = [deque() for x in range(NUM_QUEUED_ID)]
+#         data_single = [0 for x in range(NUM_SINGLE_ID)]
+#         data.extend(data_single)
+#
+#         userInputLock.release()
 
 # --------------------- START OF MAIN ----------------------- #
 
@@ -624,7 +624,7 @@ locationTracker = locationTracker.LocationTracker(4263.0, 609.0, 0.0)
 dataFeeder = dataFeeder.DataFeeder()
 
 # Keypad initialization
-keypad = keypad_polling.keypad()
+# keypad = keypad_polling.keypad()
 
 # Locks for various variables
 locationTrackerLock = threading.Lock()
@@ -662,7 +662,7 @@ for thread in initThreads:
 #    thread.join()
 
 # comment this out when re_enabling UI threads
-keypad.kill_voice_thread()
+# keypad.kill_voice_thread()
 
 # List of threads
 mainThreads = []
