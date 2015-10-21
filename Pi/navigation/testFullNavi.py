@@ -1,6 +1,8 @@
 import fullNavi
+from collections import deque
 
-navi = fullNavi.fullNavi()
+voiceQueue = deque()
+navi = fullNavi.fullNavi(voiceQueue)
 navi.generateFullPath("com1", 2, 1, 5)
 
 x = int(raw_input("Enter x: "))

@@ -14,7 +14,8 @@ import math
 # TODO: Change the maxTolerance, maxDeviation, angleTolerance values
 
 class navigation (object) :
-    def __init__(self) :
+    def __init__(self, voiceQueue) :
+        self.voiceQueue = voiceQueue
         self.prevXCoord = 0         # cm
         self.prevYCoord = 0         # cm
         self.nexXCoord = 0          # cm
@@ -114,6 +115,7 @@ class navigation (object) :
         if pathXDisp > pathYDisp :
             if yStray > self.maxDeviation :
                 print "strayed in y-direction by: " + str(yStray)
+                self.voiceQueue.append()
                 approxTurnAngle = self.getTurnAngle()     
         elif pathXDisp < pathYDisp :
             if xStray > self.maxDeviation :
@@ -134,7 +136,9 @@ class navigation (object) :
 
     def alertNearingNode(self, distanceTo) :
         if ((distanceTo <= self.nearingCount) and (distanceTo > self.maxTolerance)) :
-            print "You are now %.1f meters away from %s" %(distanceTo/100.0, self.nextNodeName)
+            sentence = "You are now %.1f meters away from %s" %(distanceTo/100.0, self.nextNodeName)
+            print sentence
+            self.voiceQueue.append(sentence)
             while (self.nearingCount >= distanceTo) :
                 self.nearingCount -= 100
 
@@ -154,15 +158,21 @@ class navigation (object) :
             turnAngle = self.getApproxTurnAngle()            
             if(math.fabs(turnAngle) > self.angleTolerance) :
                 if turnAngle > 0 :
-                    print "Move towards the right by " + str(turnAngle)
+                    sentence = "Move towards the right by " + str(turnAngle)
+                    print sentence
+                    self.voiceQueue.append(sentence)
 ##                    GPIO.output(self.rightPin, True)
 ##                    GPIO.output(self.leftPin, False)
                 elif turnAngle < 0 :
-                    print "Move towards the left by " + str(math.fabs(turnAngle))
+                    sentence = "Move towards the left by " + str(math.fabs(turnAngle))
+                    print sentence
+                    self.voiceQueue.append(sentence)
 ##                    GPIO.output(self.leftPin, True)
 ##                    GPIO.output(self.rightPin, False)
             else :
-                print "Keep going in your current direction!"
+                sentence = "Keep going in your current direction!"
+                print sentence
+                self.voiceQueue.append(sentence)
 ##                GPIO.output(self.leftPin, False)
 ##                GPIO.output(self.rightPin, False)
 

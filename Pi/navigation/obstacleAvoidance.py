@@ -298,7 +298,7 @@ class obstacleAvoidance (object) :
     # indicates which side to turn via motors
     def turnFromObstacle(self) :
         print "ENTER TURN FROM OBSTACLE"
-##        self.printSideSensorValues()
+        self.printSideSensorValues()
         self.lastTurnedDirection = self.getSideToTurn()
         if self.lastTurnedDirection == 1 :
 ##            GPIO.output(self.leftPin, False)

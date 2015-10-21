@@ -17,7 +17,8 @@ import time
 # reroutePath()
 
 class fullNavi(object) :
-    def __init__(self) :
+    def __init__(self, voiceQueue) :
+        self.voiceQueue = voiceQueue
         self.ANGLE_TOLERANCE = 13
 
         self.buildingName = None
@@ -39,7 +40,7 @@ class fullNavi(object) :
         self.prevY = 0              # cm
         self.nexX = 0               # cm
         self.nexY = 0               # cm
-        self.nodeNavi = navigation()
+        self.nodeNavi = navigation(self.voiceQueue)
         self.angleCorrect = True
 
         self.leftPin = 9
@@ -108,7 +109,9 @@ class fullNavi(object) :
         nextNodeIndex = self.getNearestNextNode()
         if self.pathListIndex != nextNodeIndex :
             self.pathListIndex = nextNodeIndex - 1
-            print "RE-ROUTING PATH!!!"
+            sentence = "RE-ROUTING PATH!!!"
+            print sentence
+            self.voiceQueue.append(sentence)
             self.updatePrevNexCoord()
             self.provideNexNodeDirections()
             
@@ -133,7 +136,9 @@ class fullNavi(object) :
 ##        GPIO.output(self.rightPin, True)
         prevNode = self.pathList[self.pathListIndex]
         curNodeName = self.comMap[self.mapNumber].getLocationName(prevNode)
-        print "You have reached " + curNodeName + "!"
+        nodeReachedSentence = "You have reached " + curNodeName + "!"
+        print nodeReachedSentence
+        self.voiceQueue.append(nodeReachedSentence)
         print "PATHLIST INDEX is: " + str(self.pathListIndex)
 ##        time.sleep(1)
 ##        GPIO.output(self.leftPin, False)
@@ -143,7 +148,9 @@ class fullNavi(object) :
     def provideNexNodeDirections(self) :
         nexNode =  self.pathList[self.pathListIndex + 1]
         nexNodeName = self.comMap[self.mapNumber].getLocationName(nexNode)
-        print "Next node is: " + nexNodeName
+        nextNodeSentence = "Next node is: " + nexNodeName
+        print nextNodeSentence
+        self.voiceQueue.append(nextNodeSentence)
 
     # returns 1 for right (and straight ahead), 2 for left
     def getGeneralTurnDirection(self) :
@@ -161,12 +168,18 @@ class fullNavi(object) :
         directionToHead = self.nodeNavi.getTurnAngle()
         if (math.fabs(directionToHead) > self.ANGLE_TOLERANCE) :
             if (directionToHead > 0) :
-                print "Turn right by " + str(directionToHead) + " degrees"
+                sentence = "Turn right by " + str(directionToHead) + " degrees"
+                print sentence
+                self.voiceQueue.append(sentence)
             elif (directionToHead < 0) :
-                print "Turn left by " + str(math.fabs(directionToHead)) + " degrees"
+                sentence = "Turn left by " + str(math.fabs(directionToHead)) + " degrees"
+                print sentence
+                self.voiceQueue.append(sentence)
             return False
         else :
-            print "Move straight ahead"
+            sentence = "Move straight ahead"
+            print sentence
+            self.voiceQueue.append(sentence)
             return True
 
     # returns true if navigation is complete
@@ -185,7 +198,9 @@ class fullNavi(object) :
                     self.provideNexNodeDirections()
                     self.angleCorrect = False
                 else :
-                    print "NAVIGATION COMPLETE!!!"
+                    sentence = "NAVIGATION COMPLETE!!!"
+                    print sentence
+                    self.voiceQueue.append(sentence)
                     return True
         return False
         
