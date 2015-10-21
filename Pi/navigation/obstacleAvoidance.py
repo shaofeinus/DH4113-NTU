@@ -33,8 +33,8 @@ class obstacleAvoidance (object) :
         # used to check if the same obstacle is encountered
         self.curX = None
         self.curY = None
-        self.obstacleX = None
-        self.obstacleY = None
+        self.obstacleX = 0
+        self.obstacleY = 0
 
         # used to check if rerouting is necessary
         self.tempObstacleCount = 0
@@ -343,22 +343,20 @@ class obstacleAvoidance (object) :
 
     # increment count if same obstacle is detected
     def updateObstacleCount(self) :
-        if(self.tempObstacleCount == 0) :
+        dist = distAngleCalc.distance(self.curX, self.curY, self.obstacleX, self.obstacleY)
+        print "distance from last obstacle is: " + str(dist)
+        print "CurX = " + str(self.curX)
+        print "CurY = " + str(self.curY)
+        print "Obstacle X = " + str(self.obstacleX)
+        print "Obstacle Y = " + str(self.obstacleY)
+        if dist <= self.OBSTACLE_RADIUS :
+            self.tempObstacleCount += 1
+        else :
             self.obstacleX = self.curX
             self.obstacleY = self.curY
             self.tempObstacleCount = 1
-        else :
-            dist = distAngleCalc.distance(self.curX, self.curY, self.obstacleX, self.obstacleY)
-            print "distance from last obstacle is: " + str(dist)
-            print "CurX = " + str(self.curX)
-            print "CurY = " + str(self.curY)
-            print "Obstacle X = " + str(self.obstacleX)
-            print "Obstacle Y = " + str(self.obstacleY)
-            if dist <= self.OBSTACLE_RADIUS :
-                self.tempObstacleCount += 1
-            else :
-                self.tempObstacleCount = 0
-        print "HEY! " + str(self.tempObstacleCount) + " is the number of times this obstacle has been encountered"
+
+        print "Number of times this obstacle was encountered: " + str(self.tempObstacleCount)
 
     # detects new obstacles:
     # if alreadyDetected is 1, return False, else
