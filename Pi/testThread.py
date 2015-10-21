@@ -7,10 +7,10 @@ from deadReckoning import calibrationTools
 from navigation import fullNavi
 from navigation import obstacleAvoidance
 from communication import dataFeeder
-# from communication import dataFeederDum
+from communication import dataFeederDum
 from collections import deque
 from UI import voiceCommands
-from UI import search
+# from UI import search
 from UI import keypad_polling
 
 __author__ = 'Shao Fei'
@@ -549,38 +549,72 @@ class ObstacleClearedThread(threading.Thread):
                     print "obstacle cleared"
                     obstacleStatusLock.release()
             time.sleep(0.5)
-
-class UIThread(threading.Thread):
+            
+class CollectIRThread(threading.Thread):
     def __init__(self, threadID, threadName):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.threadName = threadName
 
     def run(self):
-        global data
-        global keypad
-        userInputLock.acquire()
+        global irCount
+        global irSum
+        while 1:
+            if irCount == 0 :
+                print "Starting!"
+                time.sleep(2)
+            irCount += 1
+            irSum += data[15]
+            if irCount == 50 :
+                irSum /= 50
+                with open("Output.txt", "a") as text_file:
+                    text_file.write("\n")
+                    text_file.write(str(irSum))
+                    print irSum
+                irCount = 0
+                irSum = 0
+                print "NEXT VALUE PLEASE"
+                time.sleep(2)
+            time.sleep(0.1)
 
-        # get start location
-        startLocation = search.locationSetting(False, keypad)
-        startLocation.run()
+irCount = 0
+irSum = 0
 
-        # get end location
-        endLocation = search.locationSetting(True, keypad)
-        endLocation.setBuildingAndLevel(startLocation.buildingName, startLocation.levelNumber)
-        endLocation.run()
 
-        # flush serial port
-        dataFeeder.serialPort.flushInput()
-        dataFeeder.serialPort.flushOutput()
-
-        # reset data
-        data = []
-        data = [deque() for x in range(NUM_QUEUED_ID)]
-        data_single = [0 for x in range(NUM_SINGLE_ID)]
-        data.extend(data_single)
-
-        userInputLock.release()
+# class UIThread(threading.Thread):
+#     def __init__(self, threadID, threadName):
+#         threading.Thread.__init__(self)
+#         self.threadID = threadID
+#         self.threadName = threadName
+#
+#     def run(self):
+#         global data
+#         global keypad
+#         userInputLock.acquire()
+#
+#         # get start location
+#         startLocation = search.locationSetting(False, keypad)
+#         startLocation.run()
+#
+#         # get end location
+#         endLocation = search.locationSetting(True, keypad)
+#         endLocation.setBuildingAndLevel(startLocation.buildingName, startLocation.levelNumber)
+#         endLocation.run()
+#
+#         # kill local voice thread
+#         search.kill_voice_thread()
+#
+#         # flush serial port
+#         dataFeeder.serialPort.flushInput()
+#         dataFeeder.serialPort.flushOutput()
+#
+#         # reset data
+#         data = []
+#         data = [deque() for x in range(NUM_QUEUED_ID)]
+#         data_single = [0 for x in range(NUM_SINGLE_ID)]
+#         data.extend(data_single)
+#
+#         userInputLock.release()
 
 # --------------------- START OF MAIN ----------------------- #
 
@@ -626,7 +660,7 @@ locationTracker = locationTracker.LocationTracker(4263.0, 609.0, 0.0)
 dataFeeder = dataFeeder.DataFeeder()
 
 # Keypad initialization
-keypad = keypad_polling.keypad(voiceQueue, voiceSema)
+keypad = keypad_polling.keypad(voiceQueue)
 
 # Locks for various variables
 locationTrackerLock = threading.Lock()
@@ -643,7 +677,6 @@ navi = fullNavi.fullNavi(voiceQueue, voiceSema)
 navi.generateFullPath("com1", 2, 36, 10)
 
 
-
 # Threads to receive data from Arduino
 dataThreads = []
 dataThreads.append(ReceiveDataThread(1, "data receiving"))
@@ -652,32 +685,28 @@ dataThreads.append(ProcessDataThread(2, "data processing"))
 for thread in dataThreads:
     thread.start()
 
-# voice threads
-voiceThreads = []
-voiceThreads.append(voiceThread(8, "play sound notification"))
-
-for thread in voiceThreads:
-    thread.start()
-
-# Init threads
-initThreads = []
-initThreads.append(CalibrationThread(-1, "calibrating pedometer and compass"))
-
-for thread in initThreads:
-   thread.start()
-
-for thread in initThreads:
-   thread.join()
+### Init threads
+##initThreads = []
+##initThreads.append(CalibrationThread(-1, "calibrating pedometer and compass"))
+##
+##for thread in initThreads:
+##   thread.start()
+##
+##for thread in initThreads:
+##   thread.join()
 
 # UI threads
-UIThreads = []
-UIThreads.append(UIThread(-2, "Run UI"))
+# UIThreads = []
+# UIThreads.append(UIThread(-2, "Run UI"))
+#
+# for thread in UIThreads:
+#    thread.start()
+#
+# for thread in UIThreads:
+#    thread.join()
 
-for thread in UIThreads:
-   thread.start()
-
-for thread in UIThreads:
-   thread.join()
+# comment this out when re_enabling UI threads
+# keypad.kill_voice_thread()
 
 # List of threads
 mainThreads = []
@@ -685,14 +714,17 @@ mainThreads = []
 # mainThreads.append(ReceiveDataThread(1, "data receiving"))
 # mainThreads.append(ProcessDataThread(2, "data processing"))
 mainThreads.append(LocationUpdateThread(3, "location update"))
-mainThreads.append(LocationDisplayThread(4, "location display"))
-mainThreads.append(NavigationThread(5, "navigation"))
-mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
-mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
-mainThreads.append(voiceThread(8, "play sound notification"))
+##mainThreads.append(LocationDisplayThread(4, "location display"))
+##mainThreads.append(NavigationThread(5, "navigation"))
+##mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
+##mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
+##mainThreads.append(voiceThread(8, "play sound notification"))
+mainThreads.append(CollectIRThread(9, "collect data"))
 
-for thread in (mainThreads + dataThreads + voiceThreads):
+for thread in mainThreads:
+    thread.start()
+
+for thread in (mainThreads + dataThreads):
     thread.join()
-
 
 print("Exiting main thread")

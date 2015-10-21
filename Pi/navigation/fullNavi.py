@@ -172,12 +172,12 @@ class fullNavi(object) :
         directionToHead = self.nodeNavi.getTurnAngle()
         if (math.fabs(directionToHead) > self.ANGLE_TOLERANCE) :
             if (directionToHead > 0) :
-                sentence = "Turn right by " + str(directionToHead) + " degrees"
+                sentence = "Turn right by %.0f degrees" %(directionToHead)
                 print sentence
                 self.voiceQueue.append(sentence)
                 self.voiceSema.release()
             elif (directionToHead < 0) :
-                sentence = "Turn left by " + str(math.fabs(directionToHead)) + " degrees"
+                sentence = "Turn left by %.0f degrees" %(math.fabs(directionToHead))
                 print sentence
                 self.voiceQueue.append(sentence)
                 self.voiceSema.release()
