@@ -100,7 +100,7 @@ class obstacleAvoidance (object) :
 
     def convertLargeIRToCm(self, irData) :
         if irData > 0 :
-            return 14.2361 * math.pow(irData, -0.383436) 
+            return ((math.pow(irData, -2.296) * 2 * 10**8)) - 23)
         else :
             return self.LARGE_VALUE
 
