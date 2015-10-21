@@ -122,6 +122,18 @@ class keypad(object):
             elif userInput == 11:
                 return True
 
+
+    def get_confirmation_binary(self, prompt):
+        print str(prompt)
+        speak(str(prompt))
+
+        global chr_queue
+        while True:
+            chr_queue.clear()
+            userInput = self.poll_for_num()
+            if userInput == 9:
+                return
+
 # ===============================NUM POLL==========================================
     def poll_for_num(self):
         x = 0
