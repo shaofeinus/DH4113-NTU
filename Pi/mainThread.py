@@ -10,6 +10,7 @@ from communication import dataFeeder
 from communication import dataFeederDum
 from collections import deque
 from UI import voiceCommands
+from UI import keypad_polling
 
 __author__ = 'Shao Fei'
 
@@ -92,26 +93,28 @@ class CalibrationThread(threading.Thread):
         # magYRange = (-5096, 5002)
         # magZRange = (-4618, 4655)
         # self.calibrator.inputManualRange(magZRange, magYRange, magXrange)
-
+        global keypad
         userInputLock.acquire()
         validInput = False
         while not validInput:
-            userInput = raw_input("Press enter to calibrate? y/n ")
-            if userInput == 'y':
+            #userInput = raw_input("Press enter to calibrate? y/n ")
+            speak(str("To begin calibration, press start"))
+            userInput = keypad.get_binary_response()
+            if userInput:
                 validInput = True
-            elif userInput == 'n':
+            else:
                 dataFeeder.serialPort.flushInput()
                 dataFeeder.serialPort.flushOutput()
                 userInputLock.release()
                 return
-            else:
-                print 'Enter y/n'
 
         for i in range(0, 5):
-            print 5 - i
+            num =  5 - i
+            print num
+            speak(str(num))
             time.sleep(1)
 
-        print 'Calibrating'
+        # print 'Calibrating'
         dataFeeder.serialPort.flushInput()
         dataFeeder.serialPort.flushOutput()
         userInputLock.release()
@@ -134,7 +137,11 @@ class CalibrationThread(threading.Thread):
         # gyroDriftThread.start()
 
         userInputLock.acquire()
-        raw_input('Your are ' + str(self.calibrator.getNOffsetAngle() / (2 * math.pi) * 360) + ' from N.')
+        temp = 'Your are ' + str(self.calibrator.getNOffsetAngle() / (2 * math.pi) * 360) + ' from N. To continue, press start'
+        print temp
+        speak(temp)
+        while keypad.get_binary_response():
+            pass
         dataFeeder.serialPort.flushInput()
         dataFeeder.serialPort.flushOutput()
         userInputLock.release()
@@ -532,6 +539,36 @@ class ObstacleClearedThread(threading.Thread):
                     obstacleStatusLock.release()
             time.sleep(0.5)
 
+class UIThread(threading.Thread):
+    def __init__(self, threadID, threadName):
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+        self.threadName = threadName
+
+    def run(self):
+        global data
+        userInputLock.acquire()
+
+        # get start location
+        startLocation = search.locationSetting(False)
+        startLocation.run()
+
+        # get end location
+        endLocation = search.locationSetting(True)
+        endLocation.setBuildingAndLevel(startLocation.buildingName, startLocation.levelNumber)
+        endLocation.run()
+
+        # flush serial port
+        dataFeeder.serialPort.flushInput()
+        dataFeeder.serialPort.flushOutput()
+
+        # reset data
+        data = []
+        data = [deque() for x in range(NUM_QUEUED_ID)]
+        data_single = [0 for x in range(NUM_SINGLE_ID)]
+        data.extend(data_single)
+
+        userInputLock.release()
 
 # --------------------- START OF MAIN ----------------------- #
 
@@ -577,6 +614,9 @@ navi.generateFullPath("com1", 2, 36, 10)
 locationTracker = locationTracker.LocationTracker(4263.0, 609.0, 0.0)
 dataFeeder = dataFeeder.DataFeeder()
 
+# Keypad initialization
+keypad = keypad_polling.keypad()
+
 # Locks for various variables
 locationTrackerLock = threading.Lock()
 obstacleLock = threading.Lock()
@@ -601,6 +641,10 @@ for thread in initThreads:
 
 for thread in initThreads:
    thread.join()
+
+# UI threads
+UIThreads = []
+
 
 # List of threads
 mainThreads = []

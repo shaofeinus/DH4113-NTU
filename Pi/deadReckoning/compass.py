@@ -137,8 +137,9 @@ class Compass:
             self.firstTimeCount += 1
 
         else:
-            newHeading = self.calculateHeadingInRad()
 
+            # In [0, 2 * pi]
+            newHeading = self.calculateHeadingInRad()
             gyroHeading = (self.gyroCompass.angleDeviation + self.currHeading - self.gyroCompass.currDriftOffset)\
                         % (2 * math.pi)
 
@@ -147,11 +148,13 @@ class Compass:
 
             self.gyroCompass.resetRefAngle()
 
+            # Convert angle from [0, 2 pi] to [-pi, pi]
             newHeading = self.getHeadingInPMRad(newHeading)
             gyroHeading = self.getHeadingInPMRad(gyroHeading)
 
             finalHeading = (1.0 * gyroHeading + 0.0 * newHeading)
 
+            # Convert angle from [-pi, pi] to [0, 2 pi]
             self.currHeading = self.getHeadingInPRad(finalHeading)
 
         self.gyroCompass.updateOffset()
