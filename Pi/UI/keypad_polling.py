@@ -14,6 +14,11 @@ class speak_thread(threading.Thread):
         threading.Thread.__init__(self)
         self.threadName = threadName
         self.threadID = threadID
+        self.exit_thread = False
+
+    def stop_thread(self):
+        self.exit_thread = True
+
     def run(self):
         global chr_queue
         global stop_sema
@@ -23,6 +28,8 @@ class speak_thread(threading.Thread):
                 stop_sema = False
             if len(chr_queue) > 0:
                 speak(str(chr_queue.popleft()))
+            if self.exit_thread:
+                break
 
 #THREAD SETUP
 speakThread = speak_thread("speak_thread", 1)
@@ -69,6 +76,11 @@ class keypad(object):
         self.GPIO.setup(self.hori, self.GPIO.OUT, initial=self.GPIO.LOW) #clear all horizontals
         self.GPIO.setup(self.vert, self.GPIO.IN)
 
+    def kill_voice_thread(self):
+        global speakThread
+        speakThread.stop_thread()
+        speakThread.join(3)
+        print "speakThread successfully stopped", speakThread.isAlive()
 
     def toggle_sound(self):
         self.en_snd = not self.en_snd

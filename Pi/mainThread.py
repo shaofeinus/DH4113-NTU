@@ -10,7 +10,9 @@ from communication import dataFeeder
 from communication import dataFeederDum
 from collections import deque
 from UI import voiceCommands
-#from UI import keypad_polling
+from UI import search
+from UI import keypad_polling
+# import Queue
 
 __author__ = 'Shao Fei'
 
@@ -25,9 +27,8 @@ class voiceThread(threading.Thread):
     def run(self):
         global voiceQueue
         while True:
-            if len(voiceQueue) == 0:
-                time.sleep(0) #yield
-            voiceCommands.speak(str(voiceQueue.popleft()))
+            if len(voiceQueue) > 0:
+                voiceCommands.speak(str(voiceQueue.popleft()))
 
 class ReceiveDataThread(threading.Thread):
     def __init__(self, threadID, threadName):
@@ -93,14 +94,14 @@ class CalibrationThread(threading.Thread):
         # magYRange = (-5096, 5002)
         # magZRange = (-4618, 4655)
         # self.calibrator.inputManualRange(magZRange, magYRange, magXrange)
-        #global keypad
+        global keypad
         userInputLock.acquire()
         validInput = False
         while not validInput:
-            userInput = raw_input("Press enter to calibrate? y/n ")
-            #voiceCommands.speak(str("To begin calibration, press start"))
-            #userInput = keypad.get_binary_response()
-            if userInput == 'y':
+            #userInput = raw_input("Press enter to calibrate? y/n ")
+            voiceCommands.speak(str("To begin calibration, press start. To skip calibration, press back."))
+            userInput = keypad.get_binary_response()
+            if not userInput:
                 validInput = True
             else:
                 dataFeeder.serialPort.flushInput()
@@ -139,9 +140,9 @@ class CalibrationThread(threading.Thread):
         userInputLock.acquire()
         temp = 'Your are ' + str(self.calibrator.getNOffsetAngle() / (2 * math.pi) * 360) + ' from N. To continue, press start'
         print temp
-##        voiceCommands.speak(temp)
-##        while keypad.get_binary_response():
-##            pass
+        voiceCommands.speak(temp)
+        while keypad.get_binary_response():
+           pass
         dataFeeder.serialPort.flushInput()
         dataFeeder.serialPort.flushOutput()
         userInputLock.release()
@@ -549,16 +550,20 @@ class UIThread(threading.Thread):
 
     def run(self):
         global data
+        global keypad
         userInputLock.acquire()
 
         # get start location
-        startLocation = search.locationSetting(False)
+        startLocation = search.locationSetting(False, keypad)
         startLocation.run()
 
         # get end location
-        endLocation = search.locationSetting(True)
+        endLocation = search.locationSetting(True, keypad)
         endLocation.setBuildingAndLevel(startLocation.buildingName, startLocation.levelNumber)
         endLocation.run()
+
+        # kill local voice thread
+        search.kill_voice_thread()
 
         # flush serial port
         dataFeeder.serialPort.flushInput()
@@ -618,7 +623,7 @@ locationTracker = locationTracker.LocationTracker(4263.0, 609.0, 0.0)
 dataFeeder = dataFeeder.DataFeeder()
 
 # Keypad initialization
-#keypad = keypad_polling.keypad()
+keypad = keypad_polling.keypad()
 
 # Locks for various variables
 locationTrackerLock = threading.Lock()
@@ -646,8 +651,17 @@ for thread in initThreads:
    thread.join()
 
 # UI threads
-UIThreads = []
+# UIThreads = []
+# UIThreads.append(UIThread(-2, "Run UI"))
+#
+# for thread in UIThreads:
+#    thread.start()
+#
+# for thread in UIThreads:
+#    thread.join()
 
+# comment this out when re_enabling UI threads
+keypad.kill_voice_thread()
 
 # List of threads
 mainThreads = []
@@ -657,8 +671,9 @@ mainThreads = []
 mainThreads.append(LocationUpdateThread(3, "location update"))
 mainThreads.append(LocationDisplayThread(4, "location display"))
 mainThreads.append(NavigationThread(5, "navigation"))
-mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
-mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
+# mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
+# mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
+# mainThreads.append(voiceThread(8, "play sound notification"))
 
 for thread in mainThreads:
     thread.start()

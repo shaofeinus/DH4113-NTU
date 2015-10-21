@@ -21,6 +21,7 @@ class escape_thread(threading.Thread):
         self.threadName = threadName
         self.numElements = 0
         self.num = 0
+        self.exit_thread = False
 
     def set_num_elements(self, numElements):
         self.numElements = numElements
@@ -34,13 +35,18 @@ class escape_thread(threading.Thread):
     def set_num(self, num):
         self.num = num
 
+    def kill_thread(self):
+        self.exit_thread = True
+
     def run(self):
         global escape_flag
 
         self.keypad = keypad_polling.keypad()
-#        self.keypad.toggle_sound()
+        self.keypad.toggle_sound()
 
         while True:
+            if self.exit_thread:
+                break
             if escape_flag:
                 time.sleep(0)
             else:
@@ -57,13 +63,13 @@ esc_thread = escape_thread(1, "esc_thread")
 esc_thread.start()
 
 class locationSetting(object) :
-    def __init__(self, isEndLocation) :
+    def __init__(self, isEndLocation, keypad) :
         self.buildingName = None
         self.levelNumber = None
         self.locationPoint = None
         self.possibleNodes = []
         self.building = jsonParsingLite.mapParser()
-        self.keypad = keypad_polling.keypad()
+        self.keypad = keypad
         self.isEndLocation = isEndLocation
 
         self.BUILDING_PROMPT = "Enter building name or number: "
@@ -75,6 +81,10 @@ class locationSetting(object) :
         self.INVALID_ID = "Please enter a valid ID"
         self.FINAL_CONFIRMATION = "To confirm, press start. To restart, press back"
         #self.run()
+
+    def kill_voice_thread(self):
+        self.keypad.kill_voice_thread()
+
 
     def run(self) :
         self.getBuildingFromUser()
@@ -166,6 +176,9 @@ class locationSetting(object) :
             userInputNode = node.split()
 
             if node == "all" :
+                global escapeSema
+                escapeSema.release()
+
                 self.possibleNodes = []
                 for i in xrange(self.building.numElements) :
                     self.possibleNodes.append(i)
@@ -260,6 +273,9 @@ class locationSetting(object) :
         if self.keypad.get_binary_response():
             self.restart()
             self.run()
-
+        self.keypad.kill_voice_thread
+        global esc_thread
+        esc_thread.kill_thread()
+        esc_thread.join()
 
 
