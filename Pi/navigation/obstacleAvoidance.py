@@ -80,6 +80,7 @@ class obstacleAvoidance (object) :
         # initially turned off
         GPIO.output(self.leftPin, False)
         GPIO.output(self.rightPin, False)
+            
 
     def setNextNodeDirection(self, direction) :
         self.nextNodeDirection = direction
@@ -87,6 +88,7 @@ class obstacleAvoidance (object) :
     def setCurrentLocation(self, x, y) :
         self.curX = x
         self.curY = y
+        
 
     # convert raw IR data to cm
     # removes zero value, change to LARGE_VALUE        
@@ -98,7 +100,7 @@ class obstacleAvoidance (object) :
 
     def convertLargeIRToCm(self, irData) :
         if irData > 0 :
-            return -1226.7*irData**5 + 12566*irData**4 - 51327*irData**3 + 104691*irData**2 - 107020*irData + 44258
+            return 14.2361 * math.pow(irData, -0.383436) 
         else :
             return self.LARGE_VALUE
 
@@ -133,7 +135,7 @@ class obstacleAvoidance (object) :
 
     def updateFrontSensorData(self, irLarge, irFC, irFL, irFR) :
         self.fHistoryIndex = (self.fHistoryIndex + 1) % self.frontNumHistory
-        self.irLarge[self.fHistoryIndex] = self.convertSonarToCm(sonarFront)
+        self.irLarge[self.fHistoryIndex] = self.convertLargeIRToCm(irLarge)
         self.irFC[self.fHistoryIndex] = self.convertIRToCm(irFC)
         self.irFL[self.fHistoryIndex] = self.convertIRToCm(irFL)
         self.irFR[self.fHistoryIndex] = self.convertIRToCm(irFR)
