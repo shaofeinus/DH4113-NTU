@@ -640,10 +640,6 @@ obstacle = obstacleAvoidance.obstacleAvoidance()
 obstacleDetected = 0
 checkSideObstacle = 0
 
-# Navigation initialization
-naviCount = 0
-navi = fullNavi.fullNavi(voiceQueue, voiceSema)
-navi.generateFullPath("com1", 2, 36, 10)
 
 # Location tracker initialisation
 # TODO: Set initial position
@@ -659,6 +655,11 @@ obstacleLock = threading.Lock()
 obstacleStatusLock = threading.Lock()
 dataInSema = threading.Semaphore(0)
 userInputLock = threading.Lock()
+
+# Navigation initialization
+naviCount = 0
+navi = fullNavi.fullNavi(voiceQueue)
+navi.generateFullPath("com1", 2, 36, 10)
 
 # Threads to receive data from Arduino
 dataThreads = []
@@ -698,11 +699,11 @@ mainThreads = []
 # mainThreads.append(ProcessDataThread(2, "data processing"))
 mainThreads.append(LocationUpdateThread(3, "location update"))
 ##mainThreads.append(LocationDisplayThread(4, "location display"))
-mainThreads.append(CollectIRThread(9, "collect data"))
 ##mainThreads.append(NavigationThread(5, "navigation"))
 ##mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
 ##mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
 ##mainThreads.append(voiceThread(8, "play sound notification"))
+mainThreads.append(CollectIRThread(9, "collect data"))
 
 for thread in mainThreads:
     thread.start()
