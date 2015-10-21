@@ -17,8 +17,9 @@ import time
 # reroutePath()
 
 class fullNavi(object) :
-    def __init__(self, voiceQueue) :
+    def __init__(self, voiceQueue, voiceSema) :
         self.voiceQueue = voiceQueue
+        self.voiceSema = voiceSema
         self.ANGLE_TOLERANCE = 13
 
         self.buildingName = None
@@ -40,7 +41,7 @@ class fullNavi(object) :
         self.prevY = 0              # cm
         self.nexX = 0               # cm
         self.nexY = 0               # cm
-        self.nodeNavi = navigation(self.voiceQueue)
+        self.nodeNavi = navigation(self.voiceQueue, self.voiceSema)
         self.angleCorrect = True
 
         self.leftPin = 9
@@ -112,6 +113,7 @@ class fullNavi(object) :
             sentence = "RE-ROUTING PATH!!!"
             print sentence
             self.voiceQueue.append(sentence)
+            self.voiceSema.release()
             self.updatePrevNexCoord()
             self.provideNexNodeDirections()
             
@@ -139,6 +141,7 @@ class fullNavi(object) :
         nodeReachedSentence = "You have reached " + curNodeName + "!"
         print nodeReachedSentence
         self.voiceQueue.append(nodeReachedSentence)
+        self.voiceSema.release()
         print "PATHLIST INDEX is: " + str(self.pathListIndex)
 ##        time.sleep(1)
 ##        GPIO.output(self.leftPin, False)
@@ -151,6 +154,7 @@ class fullNavi(object) :
         nextNodeSentence = "Next node is: " + nexNodeName
         print nextNodeSentence
         self.voiceQueue.append(nextNodeSentence)
+        self.voiceSema.release()
 
     # returns 1 for right (and straight ahead), 2 for left
     def getGeneralTurnDirection(self) :
@@ -171,15 +175,18 @@ class fullNavi(object) :
                 sentence = "Turn right by " + str(directionToHead) + " degrees"
                 print sentence
                 self.voiceQueue.append(sentence)
+                self.voiceSema.release()
             elif (directionToHead < 0) :
                 sentence = "Turn left by " + str(math.fabs(directionToHead)) + " degrees"
                 print sentence
                 self.voiceQueue.append(sentence)
+                self.voiceSema.release()
             return False
         else :
             sentence = "Move straight ahead"
             print sentence
             self.voiceQueue.append(sentence)
+            self.voiceSema.release()
             return True
 
     # returns true if navigation is complete
@@ -201,6 +208,7 @@ class fullNavi(object) :
                     sentence = "NAVIGATION COMPLETE!!!"
                     print sentence
                     self.voiceQueue.append(sentence)
+                    self.voiceSema.release()
                     return True
         return False
         

@@ -11,8 +11,7 @@ from communication import dataFeederDum
 from collections import deque
 from UI import voiceCommands
 # from UI import search
-# from UI import keypad_polling
-# import Queue
+from UI import keypad_polling
 
 __author__ = 'Shao Fei'
 
@@ -26,9 +25,13 @@ class voiceThread(threading.Thread):
 
     def run(self):
         global voiceQueue
+        global voiceSema
         while True:
+            voiceSema.acquire()
             if len(voiceQueue) > 0:
                 voiceCommands.speak(str(voiceQueue.popleft()))
+            else:
+                print "\n\n\n\n\n\n\nMISSING\n\n\n\n\n\n\n"
 
 class ReceiveDataThread(threading.Thread):
     def __init__(self, threadID, threadName):
@@ -89,19 +92,21 @@ class CalibrationThread(threading.Thread):
         self.totalGyroData = 0
 
     def run(self):
-
         # magXrange = (-4328, 5605)
         # magYRange = (-5096, 5002)
         # magZRange = (-4618, 4655)
         # self.calibrator.inputManualRange(magZRange, magYRange, magXrange)
-        global keypad
         userInputLock.acquire()
+
+        global keypad
         validInput = False
         while not validInput:
-            userInput = raw_input("Press enter to calibrate? y/n ")
-            # voiceCommands.speak(str("To begin calibration, press start. To skip calibration, press back."))
-            # userInput = keypad.get_binary_response()
-            if userInput == 'y':
+            # userInput = raw_input("Press enter to calibrate? y/n ")
+            voiceCommands.speak(str("To begin calibration, press start. To skip calibration, press back."))
+            print "MAYBE"
+            userInput = keypad.get_binary_response()
+            print "HERE", userInput
+            if userInput:
                 validInput = True
             else:
                 dataFeeder.serialPort.flushInput()
@@ -112,7 +117,7 @@ class CalibrationThread(threading.Thread):
         for i in range(0, 5):
             num =  5 - i
             print num
-            #speak(str(num))
+            voiceCommands.speak(str(num))
             time.sleep(1)
 
         # print 'Calibrating'
@@ -140,9 +145,9 @@ class CalibrationThread(threading.Thread):
         userInputLock.acquire()
         temp = 'Your are ' + str(self.calibrator.getNOffsetAngle() / (2 * math.pi) * 360) + ' from N. To continue, press start'
         print temp
-        # voiceCommands.speak(temp)
-        # while keypad.get_binary_response():
-        #    pass
+        voiceCommands.speak(temp)
+        while keypad.get_binary_response():
+           pass
         dataFeeder.serialPort.flushInput()
         dataFeeder.serialPort.flushOutput()
         userInputLock.release()
@@ -597,8 +602,11 @@ NUM_SINGLE_ID = 11
 # 12 - sonar (left side) (29 trig 19 echo)
 # 13 - sonar (right side) (25 trig  2 echo)
 
+
+# Queue for sound
 voiceQueue = deque()
 
+# Data lists for raw data
 data = [deque() for x in range(NUM_QUEUED_ID)]
 data_single = [0 for x in range(NUM_SINGLE_ID)]
 data.extend(data_single)
@@ -609,18 +617,13 @@ obstacle = obstacleAvoidance.obstacleAvoidance()
 obstacleDetected = 0
 checkSideObstacle = 0
 
-# Navigation initialization
-naviCount = 0
-navi = fullNavi.fullNavi(voiceQueue)
-navi.generateFullPath("com1", 2, 36, 10)
-
 # Location tracker initialisation
 # TODO: Set initial position
 locationTracker = locationTracker.LocationTracker(4263.0, 609.0, 0.0)
 dataFeeder = dataFeeder.DataFeeder()
 
 # Keypad initialization
-# keypad = keypad_polling.keypad()
+keypad = keypad_polling.keypad(voiceQueue)
 
 # Locks for various variables
 locationTrackerLock = threading.Lock()
@@ -628,6 +631,14 @@ obstacleLock = threading.Lock()
 obstacleStatusLock = threading.Lock()
 dataInSema = threading.Semaphore(0)
 userInputLock = threading.Lock()
+voiceSema = threading.Semaphore(0)
+
+
+# Navigation initialization
+naviCount = 0
+navi = fullNavi.fullNavi(voiceQueue, voiceSema)
+navi.generateFullPath("com1", 2, 36, 10)
+
 
 # Threads to receive data from Arduino
 dataThreads = []

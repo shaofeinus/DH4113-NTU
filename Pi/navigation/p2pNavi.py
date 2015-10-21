@@ -14,8 +14,9 @@ import math
 # TODO: Change the maxTolerance, maxDeviation, angleTolerance values
 
 class navigation (object) :
-    def __init__(self, voiceQueue) :
+    def __init__(self, voiceQueue, voiceSema) :
         self.voiceQueue = voiceQueue
+        self.voiceSema = voiceSema
         self.prevXCoord = 0         # cm
         self.prevYCoord = 0         # cm
         self.nexXCoord = 0          # cm
@@ -115,7 +116,9 @@ class navigation (object) :
         if pathXDisp > pathYDisp :
             if yStray > self.maxDeviation :
                 print "strayed in y-direction by: " + str(yStray)
-                self.voiceQueue.append()
+                self.voiceQueue.append("strayed in y-direction by: " + str(yStray))
+                self.voiceSema.release()
+
                 approxTurnAngle = self.getTurnAngle()     
         elif pathXDisp < pathYDisp :
             if xStray > self.maxDeviation :
@@ -139,6 +142,7 @@ class navigation (object) :
             sentence = "You are now %.1f meters away from %s" %(distanceTo/100.0, self.nextNodeName)
             print sentence
             self.voiceQueue.append(sentence)
+            self.voiceSema.release()
             while (self.nearingCount >= distanceTo) :
                 self.nearingCount -= 100
 
@@ -161,18 +165,21 @@ class navigation (object) :
                     sentence = "Move towards the right by " + str(turnAngle)
                     print sentence
                     self.voiceQueue.append(sentence)
+                    self.voiceSema.release()
 ##                    GPIO.output(self.rightPin, True)
 ##                    GPIO.output(self.leftPin, False)
                 elif turnAngle < 0 :
                     sentence = "Move towards the left by " + str(math.fabs(turnAngle))
                     print sentence
                     self.voiceQueue.append(sentence)
+                    self.voiceSema.release()
 ##                    GPIO.output(self.leftPin, True)
 ##                    GPIO.output(self.rightPin, False)
             else :
                 sentence = "Keep going in your current direction!"
                 print sentence
                 self.voiceQueue.append(sentence)
+                self.voiceSema.release()
 ##                GPIO.output(self.leftPin, False)
 ##                GPIO.output(self.rightPin, False)
 
