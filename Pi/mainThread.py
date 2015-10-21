@@ -10,7 +10,6 @@ from communication import dataFeeder
 from communication import dataFeederDum
 from collections import deque
 from UI import voiceCommands
-from UI import search
 
 __author__ = 'Shao Fei'
 
@@ -436,7 +435,7 @@ class NavigationThread(threading.Thread):
                 if isNavigationDone is True :
                     return
             time.sleep(0.1)
-
+            
 
 
 class ObstacleAvoidanceThread(threading.Thread):
@@ -466,9 +465,6 @@ class ObstacleAvoidanceThread(threading.Thread):
             obstacleStatusLock.acquire()
             obstacleStatus = obstacleDetected
             obstacleStatusLock.release()
-            # FOR TESTING
-##            obstacle.printFrontSensorValues()
-##            obstacle.printSideSensorValues()
             # up/down step
 ##            if obstacle.hasUpStep() :
 ##                obstacle.stepVibrateMotor(True)
@@ -536,22 +532,6 @@ class ObstacleClearedThread(threading.Thread):
                     obstacleStatusLock.release()
             time.sleep(0.5)
 
-class UIThread(threading.Thread):
-    def __init__(self, threadID, threadName):
-        threading.Thread.__init__(self)
-        self.threadID = threadID
-        self.threadName = threadName
-
-    def run(self):
-        global startLocation
-        global endLocation
-
-        startLocation = search.locationSetting(False)
-        startLocation.run()
-
-        endLocation = search.locationSetting(True)
-        endLocation.setBuildingAndLevel(startLocation.buildingName, startLocation.levelNumber)
-        endLocation.run()
 
 # --------------------- START OF MAIN ----------------------- #
 
@@ -594,7 +574,7 @@ navi.generateFullPath("com1", 2, 36, 10)
 
 # Location tracker initialisation
 # TODO: Set initial position
-locationTracker = locationTracker.LocationTracker(0.0, 0.0, 0.0)
+locationTracker = locationTracker.LocationTracker(4263.0, 609.0, 0.0)
 dataFeeder = dataFeeder.DataFeeder()
 
 # Locks for various variables
@@ -603,20 +583,6 @@ obstacleLock = threading.Lock()
 obstacleStatusLock = threading.Lock()
 dataInSema = threading.Semaphore(0)
 userInputLock = threading.Lock()
-
-#UI Variables
-startLocation = None
-endLocation = None
-
-# UI Threads
-UIThreads = []
-UIThreads.append(UIThread(-2, "UI thread"))
-
-for thread in UIThreads:
-    thread.start()
-
-for thread in UIThreads:
-    thread.join()
 
 # Threads to receive data from Arduino
 dataThreads = []
@@ -639,14 +605,13 @@ for thread in initThreads:
 # List of threads
 mainThreads = []
 
-##mainThreads.append(ReceiveDataThread(1, "data receiving"))
-##mainThreads.append(ProcessDataThread(2, "data processing"))
+# mainThreads.append(ReceiveDataThread(1, "data receiving"))
+# mainThreads.append(ProcessDataThread(2, "data processing"))
 mainThreads.append(LocationUpdateThread(3, "location update"))
 mainThreads.append(LocationDisplayThread(4, "location display"))
 mainThreads.append(NavigationThread(5, "navigation"))
 mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
 mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
-mainThreads.append(voiceThread(8, "play sound notification"))
 
 for thread in mainThreads:
     thread.start()
