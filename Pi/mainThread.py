@@ -571,7 +571,7 @@ navi.generateFullPath("com1", 2, 36, 10)
 
 # Location tracker initialisation
 # TODO: Set initial position
-locationTracker = locationTracker.LocationTracker(0.0, 0.0, 0.0)
+locationTracker = locationTracker.LocationTracker(4263.0, 609.0, 0.0)
 dataFeeder = dataFeeder.DataFeeder()
 
 # Locks for various variables
@@ -602,13 +602,13 @@ for thread in initThreads:
 # List of threads
 mainThreads = []
 
-##mainThreads.append(ReceiveDataThread(1, "data receiving"))
-mainThreads.append(ProcessDataThread(2, "data processing"))
+# mainThreads.append(ReceiveDataThread(1, "data receiving"))
+# mainThreads.append(ProcessDataThread(2, "data processing"))
 mainThreads.append(LocationUpdateThread(3, "location update"))
 mainThreads.append(LocationDisplayThread(4, "location display"))
 mainThreads.append(NavigationThread(5, "navigation"))
-##mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
-##mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
+mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
+mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
 
 for thread in mainThreads:
     thread.start()
