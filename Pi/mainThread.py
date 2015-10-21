@@ -10,7 +10,6 @@ from communication import dataFeeder
 from communication import dataFeederDum
 from collections import deque
 from UI import voiceCommands
-from UI import keypad_polling
 
 __author__ = 'Shao Fei'
 
