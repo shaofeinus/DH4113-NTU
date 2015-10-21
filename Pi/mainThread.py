@@ -52,13 +52,16 @@ class ProcessDataThread(threading.Thread):
         while True:
             dataFeeder.process_data(data, dataInSema)
 
-           # print data[6],
-           # print data[7],
-           # print data[8],
-            #print data[11],
-            #print data[12],
-            #print data[13]
-
+##            print "ir ",
+##            print data[6],
+##            print data[7],
+##            print data[8],
+##            print data[9],
+##            print data[10],
+##            print data[11],
+##            print "sonar ",
+##            print data[11],
+##            print data[13]
 
 class CalibrationThread(threading.Thread):
     def __init__(self, threadID, threadName):
@@ -548,8 +551,8 @@ NUM_SINGLE_ID = 11
 # 8 - IR (right side) (2)
 # 9 - IR (front left)
 # 10 - IR (front right)
-# 11 - sonar (front top) (29 trig 19 echo)
-# 12 - sonar (left side) (27 trig 18 echo)
+# 11 - sonar (front top) (27 trig 18 echo) - to be changed to IR
+# 12 - sonar (left side) (29 trig 19 echo)
 # 13 - sonar (right side) (25 trig  2 echo)
 
 voiceQueue = deque()
