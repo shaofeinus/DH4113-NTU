@@ -45,6 +45,7 @@ class GyroCompass:
 
         self.angleDeviation -= resolvedAV * self.TIME_INTERVAL
 
+        # Converts angle deviation to [0, 2 * pi]
         if self.angleDeviation > 2 * math.pi:
             self.angleDeviation -= 2 * math.pi
         if self.angleDeviation < 0:
