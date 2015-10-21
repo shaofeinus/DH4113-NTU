@@ -115,7 +115,6 @@ class navigation (object) :
         if pathXDisp > pathYDisp :
             if yStray > self.maxDeviation :
                 print "strayed in y-direction by: " + str(yStray)
-                self.voiceQueue.append()
                 approxTurnAngle = self.getTurnAngle()     
         elif pathXDisp < pathYDisp :
             if xStray > self.maxDeviation :

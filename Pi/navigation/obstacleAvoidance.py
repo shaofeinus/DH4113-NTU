@@ -1,7 +1,7 @@
 import time
 import math
 import distAngleCalc
-##import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO
 
 # API:
 # setNextNodeDirection(direction)
@@ -18,7 +18,7 @@ class obstacleAvoidance (object) :
         self.STEP_MIN_DISTANCE = 110
         self.VIBRATE_DURATION = 2
         self.OBSTACLE_RADIUS = 70
-        self.LARGE_VALUE = 11111
+        self.LARGE_VALUE = 111111
 
         # GPIO Pins for vibration motors
         self.leftPin = 9
@@ -69,17 +69,17 @@ class obstacleAvoidance (object) :
         self.frontNumHistory = 5
         self.sideNumHistory = 3
 
-##        # set up GPIO using BCM numbering
-##        GPIO.setmode(GPIO.BCM)
-##        GPIO.setwarnings(False)
-##
-##        # GPIO Pins set to pull up
-##        GPIO.setup(self.leftPin, GPIO.OUT)
-##        GPIO.setup(self.rightPin, GPIO.OUT)
-##
-##        # initially turned off
-##        GPIO.output(self.leftPin, False)
-##        GPIO.output(self.rightPin, False)
+        # set up GPIO using BCM numbering
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setwarnings(False)
+
+        # GPIO Pins set to pull up
+        GPIO.setup(self.leftPin, GPIO.OUT)
+        GPIO.setup(self.rightPin, GPIO.OUT)
+
+        # initially turned off
+        GPIO.output(self.leftPin, False)
+        GPIO.output(self.rightPin, False)
 
     def setNextNodeDirection(self, direction) :
         self.nextNodeDirection = direction
@@ -93,6 +93,12 @@ class obstacleAvoidance (object) :
     def convertIRToCm(self, irData) :
         if irData > 0:
             return 10650.08 * (math.pow(irData, -0.935)) - 10
+        else :
+            return self.LARGE_VALUE
+
+    def convertLargeIRToCm(self, irData) :
+        if irData > 0 :
+            return -1226.7*irData**5 + 12566*irData**4 - 51327*irData**3 + 104691*irData**2 - 107020*irData + 44258
         else :
             return self.LARGE_VALUE
 
@@ -114,7 +120,7 @@ class obstacleAvoidance (object) :
             return 1
 
     def printFrontSensorValues(self) :
-        print "Front Center Sonar: " + str(self.getFrontSonar())
+        print "Large IR: " + str(self.getIrLarge())
         print "Front Center IR: " + str(self.irFC[self.fHistoryIndex])
 ##        print "Front Left IR: " + str(self.irFL[self.fHistoryIndex])
 ##        print "Front Right IR: " + str(self.irFR[self.fHistoryIndex])
@@ -303,30 +309,29 @@ class obstacleAvoidance (object) :
         self.printSideSensorValues()
         self.lastTurnedDirection = self.getSideToTurn()
         if self.lastTurnedDirection == 1 :
-##            GPIO.output(self.leftPin, False)
-##            GPIO.output(self.rightPin, True)
+            GPIO.output(self.leftPin, False)
+            GPIO.output(self.rightPin, True)
             print "Turn right! Right vibrator activated"
         elif self.lastTurnedDirection == 2 :
-##            GPIO.output(self.leftPin, True)
-##            GPIO.output(self.rightPin, False)
+            GPIO.output(self.leftPin, True)
+            GPIO.output(self.rightPin, False)
             print "Turn left! Left vibrator activated"
         else :
-            print "last turned IIIISSSS: " + str(self.lastTurnedDirection)
-##            GPIO.output(self.leftPin, True)
-##            GPIO.output(self.rightPin, True)
+            GPIO.output(self.leftPin, True)
+            GPIO.output(self.rightPin, True)
             print "Both side blocked! Both vibration motors activated"
 
     def vibrateMotors(self) :
-##        GPIO.output(self.leftPin, True)
-##        GPIO.output(self.rightPin, True)
+        GPIO.output(self.leftPin, True)
+        GPIO.output(self.rightPin, True)
         print "Obstacle encountered! Vibrate both sensors for " + str(self.VIBRATE_DURATION) + " seconds"
         # wait for VIBRATE_DURATION before proceeding
         time.sleep(self.VIBRATE_DURATION)
 
     def turnOffMotors(self) :
         print "Vibration motors turned off"
-##        GPIO.output(self.leftPin, False)
-##        GPIO.output(self.rightPin, False)
+        GPIO.output(self.leftPin, False)
+        GPIO.output(self.rightPin, False)
 
     # if up step detected, vibrate right-left-right
     # if down step detected, vibrate left-right-left
