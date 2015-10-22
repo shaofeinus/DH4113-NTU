@@ -473,13 +473,14 @@ class ObstacleAvoidanceThread(threading.Thread):
             irRS = data[8]
             irFL = data[9]
             irFR = data[10]
+            sonarFC = data[11]
             sonarLS = data[12]
             sonarRS = data[13]
             irLarge = data[15]
 
             # update sensor data
             obstacleLock.acquire()
-            obstacle.updateFrontSensorData(irLarge, irFC, irFL, irFR)
+            obstacle.updateFrontSensorData(irLarge, sonarFC, irFC, irFL, irFR)
             obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
             #obstacle.collectIrData(irLarge)
             obstacleLock.release()
@@ -504,7 +505,7 @@ class ObstacleAvoidanceThread(threading.Thread):
             obstacleStatusLock.release()
             if obstacleStatus == 1:
                 obstacleLock.acquire()
-                obstacle.updateFrontSensorData(irLarge, irFC, irFL, irFR)
+                obstacle.updateFrontSensorData(irLarge, sonarFC, irFC, irFL, irFR)
                 obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
                 obstacleLock.release()
                 if obstacle.isFrontObstacleDetected(obstacleStatus) is True:
@@ -532,7 +533,7 @@ class ObstacleClearedThread(threading.Thread):
             irRS = data[8]
             irFL = data[9]
             irFR = data[10]
-            irLarge = data[11]
+            sonarFC = data[11]
             sonarLS = data[12]
             sonarRS = data[13]
             irLarge = data[15]
@@ -542,7 +543,7 @@ class ObstacleClearedThread(threading.Thread):
             obstacleStatusLock.release()
             if toMonitorObstacle == 1:
                 obstacleLock.acquire()
-                obstacle.updateFrontSensorData(irLarge, irFC, irFL, irFR)
+                obstacle.updateFrontSensorData(irLarge, sonarFC, irFC, irFL, irFR)
                 obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
                 obstacleLock.release()
                 # re-route if necessary
@@ -587,6 +588,36 @@ class UIThread(threading.Thread):
         data.extend(data_single)
 
         userInputLock.release()
+
+##class CollectIRThread(threading.Thread):
+##    def __init__(self, threadID, threadName):
+##        threading.Thread.__init__(self)
+##        self.threadID = threadID
+##        self.threadName = threadName
+##
+##    def run(self):
+##        global irCount
+##        global irSum
+##        while 1:
+##            if irCount == 0 :
+##                print "Starting!"
+##                time.sleep(2)
+##            irCount += 1
+##            irSum += data[15]
+##            if irCount == 15 :
+##                irSum /= 15
+##                with open("Output.txt", "a") as text_file:
+##                    text_file.write("\n")
+##                    text_file.write(str(irSum))
+##                    print irSum
+##                irCount = 0
+##                irSum = 0
+##                print "NEXT VALUE PLEASE"
+##                time.sleep(2)
+##            time.sleep(0.1)
+##
+##irCount = 0
+##irSum = 0
 
 # --------------------- START OF MAIN ----------------------- #
 
@@ -693,9 +724,11 @@ mainThreads = []
 mainThreads.append(LocationUpdateThread(3, "location update"))
 mainThreads.append(LocationDisplayThread(4, "location display"))
 mainThreads.append(NavigationThread(5, "navigation"))
-# mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
-# mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
+mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
+mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
 mainThreads.append(voiceThread(8, "play sound notification"))
+##mainThreads.append(collectIRThread(9, "collect ir data"))
+
 
 for thread in mainThreads:
     thread.start()
