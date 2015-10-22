@@ -162,7 +162,8 @@ class navigation (object) :
 
         self.alertNearingNode(distanceToNode)
 
-        if (distanceToNode < self.maxTolerance) :
+        if (distanceToNode > self.maxTolerance) :
+            print "distance to node is: " + str(distanceToNode)
             turnAngle = self.getTurnAngle()
             ultimateAngleHeading = turnAngle + self.curAngle
             angle1 = math.fabs(ultimateAngleHeading - self.prevObstacleHeading)
