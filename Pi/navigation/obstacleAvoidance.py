@@ -146,7 +146,7 @@ class obstacleAvoidance (object) :
         self.irLarge[self.irLIndex] = self.irLarge
         
         self.fHistoryIndex = (self.fHistoryIndex + 1) % self.frontNumHistory
-        self.irSonar[self.fHistoryIndex] = self.convertIRToCm(irFC)
+        self.sonarFC[self.fHistoryIndex] = self.convertIRToCm(irFC)
         self.irFC[self.fHistoryIndex] = self.convertSonarToCm(sonarFC)
         self.irFL[self.fHistoryIndex] = self.convertIRToCm(irFL)
         self.irFR[self.fHistoryIndex] = self.convertIRToCm(irFR)
@@ -468,7 +468,7 @@ class obstacleAvoidance (object) :
     # returns True if an obstacle is detected in front
     # else return False
     def isFrontObstacleDetected(self, isAlreadyDetected) :          
-        if (self.hasFCSonarObstacle(isAlreadyDetected) is True)
+        if ((self.hasFCSonarObstacle(isAlreadyDetected) is True) or
             (self.hasFCIrObstacle(isAlreadyDetected) is True) or
             (self.hasFLIrObstacle(isAlreadyDetected) is True) or
             (self.hasFRIrObstacle(isAlreadyDetected) is True)) :
