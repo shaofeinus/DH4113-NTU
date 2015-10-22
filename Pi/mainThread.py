@@ -28,10 +28,16 @@ class voiceThread(threading.Thread):
         global voiceSema
         while True:
             voiceSema.acquire()
+            # if len(voiceQueue) > 0:
+            #     time.sleep(1.5)
+            #     print str(voiceQueue.popleft())
+            #     voiceCommands.speak("something short")
+            #     time.sleep(1.5)
             if len(voiceQueue) > 0:
+                time.sleep(1.5)
+                print "QLEN", len(voiceQueue)
                 voiceCommands.speak(str(voiceQueue.popleft()))
-            else:
-                print "\n\n\n\n\n\n\nMISSING\n\n\n\n\n\n\n"
+                time.sleep(1.5)
 
 class ReceiveDataThread(threading.Thread):
     def __init__(self, threadID, threadName):
@@ -102,18 +108,17 @@ class CalibrationThread(threading.Thread):
         validInput = False
         while not validInput:
             # userInput = raw_input("Press enter to calibrate? y/n ")
+
             voiceCommands.speak(str("To begin calibration, press start. To skip calibration, press back."))
-            print "MAYBE"
             userInput = keypad.get_binary_response()
-            print "HERE", userInput
-            if userInput:
+            print userInput
+            if not userInput:
                 validInput = True
             else:
                 dataFeeder.serialPort.flushInput()
                 dataFeeder.serialPort.flushOutput()
                 userInputLock.release()
                 return
-
         for i in range(0, 5):
             num =  5 - i
             print num
@@ -474,7 +479,7 @@ class ObstacleAvoidanceThread(threading.Thread):
             obstacleLock.acquire()
             obstacle.updateFrontSensorData(irLarge, irFC, irFL, irFR)
             obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
-            obstacle.collectIrData(irLarge)
+            #obstacle.collectIrData(irLarge)
             obstacleLock.release()
             obstacleStatusLock.acquire()
             obstacleStatus = obstacleDetected
@@ -562,11 +567,11 @@ class UIThread(threading.Thread):
         userInputLock.acquire()
 
         # get start location
-        startLocation = search.locationSetting(False, keypad)
+        startLocation = search.locationSetting(False, keypad, voiceSema)
         startLocation.run()
 
         # get end location
-        endLocation = search.locationSetting(True, keypad)
+        endLocation = search.locationSetting(True, keypad, voiceSema)
         endLocation.setBuildingAndLevel(startLocation.buildingName, startLocation.levelNumber)
         endLocation.run()
 
@@ -625,9 +630,6 @@ checkSideObstacle = 0
 locationTracker = locationTracker.LocationTracker(4263.0, 609.0, 0.0)
 dataFeeder = dataFeeder.DataFeeder()
 
-# Keypad initialization
-keypad = keypad_polling.keypad(voiceQueue, voiceSema)
-
 # Locks for various variables
 locationTrackerLock = threading.Lock()
 obstacleLock = threading.Lock()
@@ -636,13 +638,8 @@ dataInSema = threading.Semaphore(0)
 userInputLock = threading.Lock()
 voiceSema = threading.Semaphore(0)
 
-
-# Navigation initialization
-naviCount = 0
-navi = fullNavi.fullNavi(voiceQueue, voiceSema)
-navi.generateFullPath("com1", 2, 36, 10)
-
-
+# Keypad initialization
+keypad = keypad_polling.keypad(voiceQueue, voiceSema)
 
 # Threads to receive data from Arduino
 dataThreads = []
@@ -658,26 +655,31 @@ voiceThreads.append(voiceThread(8, "play sound notification"))
 
 for thread in voiceThreads:
     thread.start()
+#
+# # Init threads
+# initThreads = []
+# initThreads.append(CalibrationThread(-1, "calibrating pedometer and compass"))
+#
+# for thread in initThreads:
+#    thread.start()
+#
+# for thread in initThreads:
+#    thread.join()
+#
+# # UI threads
+# UIThreads = []
+# UIThreads.append(UIThread(-2, "Run UI"))
+#
+# for thread in UIThreads:
+#    thread.start()
+#
+# for thread in UIThreads:
+#    thread.join()
 
-# Init threads
-initThreads = []
-initThreads.append(CalibrationThread(-1, "calibrating pedometer and compass"))
-
-for thread in initThreads:
-   thread.start()
-
-for thread in initThreads:
-   thread.join()
-
-# UI threads
-UIThreads = []
-UIThreads.append(UIThread(-2, "Run UI"))
-
-for thread in UIThreads:
-   thread.start()
-
-for thread in UIThreads:
-   thread.join()
+# Navigation initialization
+naviCount = 0
+navi = fullNavi.fullNavi(voiceQueue, voiceSema)
+navi.generateFullPath("com1", 2, 36, 10)
 
 # List of threads
 mainThreads = []
@@ -687,9 +689,12 @@ mainThreads = []
 mainThreads.append(LocationUpdateThread(3, "location update"))
 mainThreads.append(LocationDisplayThread(4, "location display"))
 mainThreads.append(NavigationThread(5, "navigation"))
-mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
-mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
+# mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
+# mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
 mainThreads.append(voiceThread(8, "play sound notification"))
+
+for thread in mainThreads:
+    thread.start()
 
 for thread in (mainThreads + dataThreads + voiceThreads):
     thread.join()

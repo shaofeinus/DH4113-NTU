@@ -125,12 +125,15 @@ class keypad(object):
                 return self.ext_num_input
 
     def get_binary_response(self):
+        self.en_snd = False
         while True:
             self.chr_queue.clear()
             userInput = self.poll_for_num()
             if userInput == 9:
+                self.en_snd = True
                 return False
             elif userInput == 11:
+                self.en_snd = True
                 return True
 
 
@@ -155,10 +158,10 @@ class keypad(object):
             num_pressed = -3 # reset num_pressed
             for y in range(len(self.vert)): #check input at each vert
                 if self.GPIO.input(self.vert[y]) == self.GPIO.HIGH: # closed switch detected
-                    if self.num_map[y][x] != 9 and self.num_map[y][x] != 11:
-                        if self.en_snd:
-                            self.chr_queue.append(self.num_map[y][x])
-                            self.voiceSema.release()
+                    # if self.num_map[y][x] != 9 and self.num_map[y][x] != 11:
+                    #     if self.en_snd:
+                    #         self.chr_queue.append(self.num_map[y][x])
+                    #         self.voiceSema.release()
                     while GPIO.input(self.vert[y]) == GPIO.HIGH:
                         pass
                     return self.num_map[y][x] #update num_pressed
@@ -247,6 +250,13 @@ class keypad(object):
 
 # ===============================STRING POLL==========================================
     def poll_for_str(self):
+        # #GPIO tester
+        # self.GPIO.output(self.hori[2], self.GPIO.HIGH)
+        # while True:
+        #     for x in range(len(self.vert)):
+        #         print self.GPIO.input(self.vert[x]),
+        #     print ""
+
         x = 0
         self.end_flag = False
         for y in range(len(self.hori)): #check input at each vert
