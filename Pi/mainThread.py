@@ -447,6 +447,7 @@ class NavigationThread(threading.Thread):
             obstacle.setCurrentLocation(curX, curY)
             # every second, check navigation
             if (naviCount%10 == 0) :
+                navi.updateCurLocation(curX, curY, heading)
                 if obstacleDetected == 1 or checkSideObstacle == 1:
                     navi.updateEncounterSteps(locationTracker.getTotalSteps())
                     navi.setObstacleStartHeading(heading)
@@ -456,7 +457,6 @@ class NavigationThread(threading.Thread):
                 
                 navi.updateClearSteps(locationTracker.getTotalSteps())
                 navi.setObstacleEndHeading(heading)
-                navi.updateCurLocation(curX, curY, heading)
                 isNavigationDone = navi.fullNavigate()
                 if isNavigationDone is True :
                     return
@@ -731,7 +731,7 @@ mainThreads.append(LocationDisplayThread(4, "location display"))
 mainThreads.append(NavigationThread(5, "navigation"))
 mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
 mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
-mainThreads.append(voiceThread(8, "play sound notification"))
+##mainThreads.append(voiceThread(8, "play sound notification"))
 ##mainThreads.append(collectIRThread(9, "collect ir data"))
 
 
