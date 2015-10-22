@@ -3,12 +3,11 @@ import os
 import re
 
 class Speaker(object):
-	def __init__(self, voice = "en", speed = 150, msg = None, volume = 200):
+	def __init__(self, voice = "en", speed = 150, msg = None):
 		self.voice = voice
 		self.speed = int(speed)
 		self.msg = msg
 		self.voices = []
-		self.volume = int(volume)
 
 	def setVoiceParams(self, voice, speed):
 		self.voice = voice
@@ -20,7 +19,7 @@ class Speaker(object):
 	def speak(self, msg):
 		self.msg = msg
 		FNULL = open(os.devnull, 'w')
-		subprocess.call(["espeak", "-v%s" % self.voice, "-s%s" % self.speed, "-a%s", self.volume, "%s" % self.msg], stdout=FNULL, stderr=subprocess.STDOUT)
+		subprocess.call(["espeak", "-a 200 -v%s" % self.voice, "-s%s" % self.speed, "%s" % self.msg], stdout=FNULL, stderr=subprocess.STDOUT)
 
 
 	def listVoices(self):

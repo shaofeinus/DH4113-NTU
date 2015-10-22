@@ -31,7 +31,6 @@ class voiceThread(threading.Thread):
         while True:
             voiceSema.acquire()
             if len(voiceQueue) > 0:
-                print str(voiceQueue.popleft())
                 speaker.speak(str(voiceQueue.popleft()))
 
             # if len(voiceQueue) > 0:
@@ -663,7 +662,7 @@ locationTracker = locationTracker.LocationTracker(4263.0, 609.0, 0.0)
 dataFeeder = dataFeeder.DataFeeder()
 
 # Speaker object
-speaker = pyespeak.Speaker("en-n+m2", 170, None, 200)
+speaker = pyespeak.Speaker("en-n+m2", 170, None)
 
 # Locks for various variables
 locationTrackerLock = threading.Lock()
@@ -690,7 +689,7 @@ voiceThreads.append(voiceThread(8, "play sound notification"))
 
 for thread in voiceThreads:
     thread.start()
-#
+
 # # Init threads
 # initThreads = []
 # initThreads.append(CalibrationThread(-1, "calibrating pedometer and compass"))

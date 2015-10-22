@@ -468,7 +468,7 @@ class obstacleAvoidance (object) :
     # returns True if an obstacle is detected in front
     # else return False
     def isFrontObstacleDetected(self, isAlreadyDetected) :          
-        if (self.hasFCSonarObstacle(isAlreadyDetected) is True)
+        if ((self.hasFCSonarObstacle(isAlreadyDetected) is True) or
             (self.hasFCIrObstacle(isAlreadyDetected) is True) or
             (self.hasFLIrObstacle(isAlreadyDetected) is True) or
             (self.hasFRIrObstacle(isAlreadyDetected) is True)) :
