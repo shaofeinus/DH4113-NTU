@@ -2,7 +2,7 @@ import RPi.GPIO as GPIO
 import time
 import threading
 from collections import deque
-from voiceCommands import speak
+# from voiceCommands import speak
 
 __author__ = 'Dan'
 
@@ -36,7 +36,7 @@ __author__ = 'Dan'
 # speakThread.start()
 
 class keypad(object):
-    def __init__(self, chr_queue, voiceSema):
+    def __init__(self, chr_queue, voiceSema, speaker):
         #OUTPUT TABLES
         self.hori = [25, 8, 7] #F, E, D
         self.vert = [27, 22, 23, 24] # K, J, I, H
@@ -67,6 +67,7 @@ class keypad(object):
         self.en_snd = True
         self.chr_queue = chr_queue
         self.voiceSema = voiceSema
+        self.speaker = speaker
 
         #OTHER CONSTANTS
         self.VOID_PRESS = -3
@@ -90,13 +91,13 @@ class keypad(object):
     def get_input_str(self, prompt):
         while True:
             print prompt
-            speak(prompt)
+            self.speaker.speak(prompt)
             self.chr_queue.clear()
             self.str_input = self.poll_for_str()
             print "Input is " + self.str_input + ". To confirm, press start. To cancel, press back"
 
             if self.en_snd:
-                speak("Input is " + self.str_input + ". To confirm, press start. To cancel, press back")
+                self.speaker.speak("Input is " + self.str_input + ". To confirm, press start. To cancel, press back")
             ans = 0
             while True:
                 ans = self.poll_for_num()
@@ -108,14 +109,14 @@ class keypad(object):
     def get_input_ext_num(self, prompt):
         while True:
             print prompt
-            speak(prompt)
+            self.speaker.speak(prompt)
 
             self.chr_queue.clear()
             self.ext_num_input = self.poll_for_ext_num()
 
             print "Input is " + str(self.ext_num_input) + ". To confirm, press start. To cancel, press back"
             if self.en_snd:
-                speak("Input is " + str(self.ext_num_input) + ". To confirm, press start. To cancel, press back")
+                self.speaker.speak("Input is " + str(self.ext_num_input) + ". To confirm, press start. To cancel, press back")
             ans = 0
             while True:
                 ans = self.poll_for_num()
@@ -139,7 +140,7 @@ class keypad(object):
 
     def get_confirmation_binary(self, prompt):
         print str(prompt)
-        speak(str(prompt))
+        self.speaker.speak(str(prompt))
 
         while True:
             self.chr_queue.clear()
@@ -368,7 +369,7 @@ class keypad(object):
                 if self.prev_num != -3: #first press condition
                     self.out_str += self.curr_chr
                     if self.en_snd:
-                        self.chr_queue.append(self.curr_chr) ##speak(self.key_map[self.prev_num][self.num_count])
+                        self.chr_queue.append(self.curr_chr) ##self.speaker.speak(self.key_map[self.prev_num][self.num_count])
                         self.voiceSema.release()
                 self.num_count = 0 #reset count on keymap
                 self.prev_num = num_pressed #update keypress history

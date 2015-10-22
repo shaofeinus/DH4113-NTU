@@ -106,11 +106,12 @@ class CalibrationThread(threading.Thread):
         userInputLock.acquire()
 
         global keypad
+        global speaker
         validInput = False
         while not validInput:
             # userInput = raw_input("Press enter to calibrate? y/n ")
 
-            voiceCommands.speak(str("To begin calibration, press start. To skip calibration, press back."))
+            speaker.speak(str("To begin calibration, press start. To skip calibration, press back."))
             userInput = keypad.get_binary_response()
             print userInput
             if not userInput:
@@ -123,7 +124,7 @@ class CalibrationThread(threading.Thread):
         for i in range(0, 5):
             num =  5 - i
             print num
-            voiceCommands.speak(str(num))
+            speaker.speak(str(num))
             time.sleep(1)
 
         # print 'Calibrating'
@@ -151,7 +152,7 @@ class CalibrationThread(threading.Thread):
         userInputLock.acquire()
         temp = 'Your are ' + str(self.calibrator.getNOffsetAngle() / (2 * math.pi) * 360) + ' from N. To continue, press start'
         print temp
-        voiceCommands.speak(temp)
+        speaker.speak(temp)
         while keypad.get_binary_response():
            pass
         dataFeeder.serialPort.flushInput()
@@ -563,14 +564,15 @@ class UIThread(threading.Thread):
     def run(self):
         global data
         global keypad
+        global speaker
         userInputLock.acquire()
 
         # get start location
-        startLocation = search.locationSetting(False, keypad, voiceSema)
+        startLocation = search.locationSetting(False, keypad, voiceSema, speaker)
         startLocation.run()
 
         # get end location
-        endLocation = search.locationSetting(True, keypad, voiceSema)
+        endLocation = search.locationSetting(True, keypad, voiceSema, speaker)
         endLocation.setBuildingAndLevel(startLocation.buildingName, startLocation.levelNumber)
         endLocation.run()
 
@@ -641,7 +643,7 @@ userInputLock = threading.Lock()
 voiceSema = threading.Semaphore(0)
 
 # Keypad initialization
-keypad = keypad_polling.keypad(voiceQueue, voiceSema)
+keypad = keypad_polling.keypad(voiceQueue, voiceSema, speaker)
 
 # Threads to receive data from Arduino
 dataThreads = []
