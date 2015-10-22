@@ -1,9 +1,24 @@
 import fullNavi
+from collections import deque
 
-navi = fullNavi.fullNavi()
+voiceQueue = deque()
+navi = fullNavi.fullNavi(voiceQueue)
 navi.generateFullPath("com1", 2, 1, 5)
-navi.updateCurLocation(0, 0, 90)
-navi.fullNavigate()
 
-navi.fullNavigate()
-navi.fullNavigate()
+x = int(raw_input("Enter x: "))
+y = int(raw_input("Enter y: "))
+heading = int(raw_input("Enter heading: "))
+navi.updateCurLocation(x, y, heading)
+
+count = 0
+while(navi.fullNavigate() is False) :
+    x = int(raw_input("Enter x: "))
+
+    y = int(raw_input("Enter y: "))
+    heading = int(raw_input("Enter heading: "))
+    reroute = int(raw_input("Enter 1 to reroute: "))
+    navi.updateCurLocation(x, y, heading)
+
+    if reroute == 1 :
+        navi.reroutePath()
+

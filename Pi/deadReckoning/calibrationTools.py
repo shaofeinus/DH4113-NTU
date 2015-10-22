@@ -21,14 +21,14 @@ class CalibrationTools:
 
     AV_RAW_RANGE = (-28000, 28000)
     AV_ACTUAL_RANGE = (-245.0 / 180.0 * math.pi, 245.0 / 180.0 * math.pi)
-    GY_X_OFFSET = -80.4
-    GY_Y_OFFSET = -567.5
-    GY_Z_OFFSET = 50.7
+    GY_X_OFFSET = -76.38
+    GY_Y_OFFSET = -553.19
+    GY_Z_OFFSET = 57.45
     GY_X_SCALE_FACTOR = 1.0
     GY_Y_SCALE_FACTOR = 1.0
     GY_Z_SCALE_FACTOR = 1.0
-    GY_OFFSET_MA_WINDOW_SIZE = 25
-    GY_RECALIBRATE_THRESHOLD = 25.0
+    GY_OFFSET_MA_WINDOW_SIZE = 100
+    GY_RECALIBRATE_THRESHOLD = 10
 
     def __init__(self):
         self.gyroXOffsetWindow = deque(maxlen=self.GY_OFFSET_MA_WINDOW_SIZE)
@@ -105,31 +105,25 @@ class CalibrationTools:
 
     def adaptGyroOffset(self, gyX, gyY, gyZ):
 
-        if len(self.gyroXOffsetWindow) < self.GY_OFFSET_MA_WINDOW_SIZE:
-            self.gyroXOffsetWindow.append(gyX)
-            self.gyroYOffsetWindow.append(gyY)
-            self.gyroZOffsetWindow.append(gyZ)
-        else:
+        self.gyroXOffsetWindow.append(gyX)
+        self.gyroYOffsetWindow.append(gyY)
+        self.gyroZOffsetWindow.append(gyZ)
 
+        if len(self.gyroXOffsetWindow) < self.GY_OFFSET_MA_WINDOW_SIZE:
+            return
+        else:
             newX = float(sum(self.gyroXOffsetWindow)) / len(self.gyroXOffsetWindow)
             newY = float(sum(self.gyroYOffsetWindow)) / len(self.gyroYOffsetWindow)
             newZ = float(sum(self.gyroZOffsetWindow)) / len(self.gyroZOffsetWindow)
 
-            if math.fabs(newX - self.GY_X_OFFSET) > self.GY_RECALIBRATE_THRESHOLD:
+            if math.fabs(newX - self.GY_X_OFFSET) < self.GY_RECALIBRATE_THRESHOLD:
                 self.GY_X_OFFSET = -newX
 
-            if math.fabs(newY - self.GY_Y_OFFSET) > self.GY_RECALIBRATE_THRESHOLD:
+            if math.fabs(newY - self.GY_Y_OFFSET) < self.GY_RECALIBRATE_THRESHOLD:
                 self.GY_Y_OFFSET = -newY
 
-            if math.fabs(newZ - self.GY_Z_OFFSET) > self.GY_RECALIBRATE_THRESHOLD:
+            if math.fabs(newZ - self.GY_Z_OFFSET) < self.GY_RECALIBRATE_THRESHOLD:
                 self.GY_Z_OFFSET = -newZ
-
-            self.gyroXOffsetWindow.popleft()
-            self.gyroYOffsetWindow.popleft()
-            self.gyroZOffsetWindow.popleft()
-            self.gyroXOffsetWindow.append(gyX)
-            self.gyroYOffsetWindow.append(gyY)
-            self.gyroZOffsetWindow.append(gyZ)
 
     def initGyroOffset(self, gyX, gyY, gyZ):
         self.GY_X_OFFSET = gyX

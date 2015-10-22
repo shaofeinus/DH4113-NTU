@@ -8,11 +8,15 @@ import math
 # setNexCoordinates(x, y)
 # updateCurCoord(x, y)
 # updateHeading(heading)
+# setNextNodeName(nodeName)
+# resetNearingCount()
 # navigate()
 # TODO: Change the maxTolerance, maxDeviation, angleTolerance values
 
 class navigation (object) :
-    def __init__(self) :
+    def __init__(self, voiceQueue, voiceSema) :
+        self.voiceQueue = voiceQueue
+        self.voiceSema = voiceSema
         self.prevXCoord = 0         # cm
         self.prevYCoord = 0         # cm
         self.nexXCoord = 0          # cm
@@ -21,15 +25,19 @@ class navigation (object) :
         self.curXCoord = 0          # cm
         self.curYCoord = 0          # cm
         self.curAngle = 0           # -180 to 180 degrees
+        self.nextNodeName = None
         self.leftPin = 9
         self.rightPin = 10
 
         # deviation tolerance
-        self.maxDeviation = 75       # cm
+        self.maxDeviation = 80       # cm
         # vicinity tolerance
-        self.maxTolerance = 60       # cm
+        self.maxTolerance = 75       # cm
         # angle tolerance
         self.angleTolerance = 17     # degrees
+        # distance from node for updates
+        self.nearingCount = 500
+
 
     def updateCurCoord(self, x, y) :
         self.curXCoord = x
@@ -40,6 +48,12 @@ class navigation (object) :
 
     def setNorthAt(self, northAt) :
         self.northAt = northAt
+
+    def setNextNodeName(self, nodeName) :
+        self.nextNodeName = nodeName
+
+    def resetNearingCount(self) :
+        self.nearingCount = 500
     
     def setPrevCoordinates(self, prevXCoord, prevYCoord) :
         self.prevXCoord = prevXCoord
@@ -118,6 +132,16 @@ class navigation (object) :
                 approxTurnAngle = self.getTurnAngle()
 
         return approxTurnAngle
+    
+
+    def alertNearingNode(self, distanceTo) :
+        if ((distanceTo <= self.nearingCount) and (distanceTo > self.maxTolerance)) :
+            sentence = "You are now %.1f meters away from %s" %(distanceTo/100.0, self.nextNodeName)
+            print sentence
+            self.voiceQueue.append(sentence)
+            self.voiceSema.release()
+            while (self.nearingCount >= distanceTo) :
+                self.nearingCount -= 100
 
 
     # navigation algorithm:
@@ -125,22 +149,34 @@ class navigation (object) :
     # else return 0.  Guides the user which way to turn
     # using the vibration motors
     def navigate(self) :
-        curXDisp = math.fabs(self.nexXCoord - self.curXCoord)  
-        curYDisp = math.fabs(self.nexYCoord - self.curYCoord)
+##        curXDisp = math.fabs(self.nexXCoord - self.curXCoord)  
+##        curYDisp = math.fabs(self.nexYCoord - self.curYCoord)
+        distanceToNode = distAngleCalc.distance(self.curXCoord, self.curYCoord, self.nexXCoord, self.nexYCoord)
 
-        if ((curXDisp > self.maxTolerance) or (curYDisp > self.maxTolerance)) :
+        self.alertNearingNode(distanceToNode)
+        
+        if (distanceToNode > self.maxTolerance) :
             turnAngle = self.getApproxTurnAngle()            
             if(math.fabs(turnAngle) > self.angleTolerance) :
                 if turnAngle > 0 :
-                    print "Move towards the right by " + str(turnAngle)
+                    sentence = "Move towards the right by " + str(turnAngle)
+                    print sentence
+                    self.voiceQueue.append(sentence)
+                    self.voiceSema.release()
 ##                    GPIO.output(self.rightPin, True)
 ##                    GPIO.output(self.leftPin, False)
                 elif turnAngle < 0 :
-                    print "Move towards the left by " + str(turnAngle)
+                    sentence = "Move towards the left by " + str(math.fabs(turnAngle))
+                    print sentence
+                    self.voiceQueue.append(sentence)
+                    self.voiceSema.release()
 ##                    GPIO.output(self.leftPin, True)
 ##                    GPIO.output(self.rightPin, False)
             else :
-                print "Keep going in your current direction!"
+                sentence = "Keep going in your current direction!"
+                print sentence
+                self.voiceQueue.append(sentence)
+                self.voiceSema.release()
 ##                GPIO.output(self.leftPin, False)
 ##                GPIO.output(self.rightPin, False)
 

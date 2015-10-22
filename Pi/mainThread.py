@@ -7,9 +7,12 @@ from deadReckoning import calibrationTools
 from navigation import fullNavi
 from navigation import obstacleAvoidance
 from communication import dataFeeder
-from communication import dataFeederDum
+# from communication import dataFeederDum
 from collections import deque
 from UI import voiceCommands
+from UI import search
+from UI import keypad_polling
+from UI import pyespeak
 
 __author__ = 'Shao Fei'
 
@@ -23,10 +26,19 @@ class voiceThread(threading.Thread):
 
     def run(self):
         global voiceQueue
+        global voiceSema
+        global speaker
         while True:
-            if len(voiceQueue) == 0:
-                time.sleep(0) #yield
-            voiceCommands.speak(str(voiceQueue.popleft()))
+            voiceSema.acquire()
+            if len(voiceQueue) > 0:
+                print str(voiceQueue.popleft())
+                speaker.speak(str(voiceQueue.popleft()))
+
+            # if len(voiceQueue) > 0:
+            #     time.sleep(1.5)
+            #     print "QLEN", len(voiceQueue)
+            #     voiceCommands.speak(str(voiceQueue.popleft()))
+            #     time.sleep(1.5)
 
 class ReceiveDataThread(threading.Thread):
     def __init__(self, threadID, threadName):
@@ -52,13 +64,16 @@ class ProcessDataThread(threading.Thread):
         while True:
             dataFeeder.process_data(data, dataInSema)
 
-       # print data[6],
-       # print data[7],
-       # print data[8],
-       # print data[11],
-       # print data[12],
-       # print data[13],
-
+##            print "ir ",
+##            print data[6],
+##            print data[7],
+##            print data[8],
+##            print data[9],
+##            print data[10],
+##            print data[15],
+##            print "sonar ",
+##            print data[12],
+##            print data[13]
 
 class CalibrationThread(threading.Thread):
     def __init__(self, threadID, threadName):
@@ -84,32 +99,34 @@ class CalibrationThread(threading.Thread):
         self.totalGyroData = 0
 
     def run(self):
-
         # magXrange = (-4328, 5605)
         # magYRange = (-5096, 5002)
         # magZRange = (-4618, 4655)
         # self.calibrator.inputManualRange(magZRange, magYRange, magXrange)
-
         userInputLock.acquire()
+
+        global keypad
         validInput = False
         while not validInput:
-            userInput = raw_input("Press enter to calibrate? y/n ")
-            if userInput == 'y':
+            # userInput = raw_input("Press enter to calibrate? y/n ")
+
+            voiceCommands.speak(str("To begin calibration, press start. To skip calibration, press back."))
+            userInput = keypad.get_binary_response()
+            print userInput
+            if not userInput:
                 validInput = True
-            elif userInput == 'n':
+            else:
                 dataFeeder.serialPort.flushInput()
                 dataFeeder.serialPort.flushOutput()
-                data
                 userInputLock.release()
                 return
-            else:
-                print 'Enter y/n'
-
         for i in range(0, 5):
-            print 5 - i
+            num =  5 - i
+            print num
+            voiceCommands.speak(str(num))
             time.sleep(1)
 
-        print 'Calibrating'
+        # print 'Calibrating'
         dataFeeder.serialPort.flushInput()
         dataFeeder.serialPort.flushOutput()
         userInputLock.release()
@@ -123,15 +140,20 @@ class CalibrationThread(threading.Thread):
         while not self.isDone['nOffset']:
             self.calibrateNOffset()
 
-        # while not self.isDone['gyro']:
-        #     self.calibrateGyro()
-        #
-        # self.calibrationTools.initGyroOffset(self.calibrator.initGYOffset,
-        #                                      self.calibrator.initGXOffset,
-        #                                      self.calibrator.initGZOffset)
+        while not self.isDone['gyro']:
+            self.calibrateGyro()
+
+        self.calibrationTools.initGyroOffset(-self.calibrator.initGXOffset,
+                                             -self.calibrator.initGYOffset,
+                                             -self.calibrator.initGZOffset)
+        # gyroDriftThread.start()
 
         userInputLock.acquire()
-        raw_input('Your are ' + str(self.calibrator.getNOffsetAngle() / (2 * math.pi) * 360) + ' from N.')
+        temp = 'Your are ' + str(self.calibrator.getNOffsetAngle() / (2 * math.pi) * 360) + ' from N. To continue, press start'
+        print temp
+        voiceCommands.speak(temp)
+        while keypad.get_binary_response():
+           pass
         dataFeeder.serialPort.flushInput()
         dataFeeder.serialPort.flushOutput()
         userInputLock.release()
@@ -210,6 +232,22 @@ class CalibrationThread(threading.Thread):
             self.totalGyroData = 0
 
 
+class GyroDriftTrackingThread(threading.Thread):
+
+    RATE_OF_DRIFT = -2.0E-6     # In % change
+
+    def __init__(self, threadID, threadName):
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+        self.threadName = threadName
+        self.gyroCompass = locationTracker.compass.gyroCompass
+
+    def run(self):
+        while True:
+            self.gyroCompass.driftAngleOffset += self.RATE_OF_DRIFT
+            time.sleep(0.1)
+
+
 class LocationDisplayThread(threading.Thread):
     def __init__(self, threadID, threadName):
         threading.Thread.__init__(self)
@@ -222,16 +260,19 @@ class LocationDisplayThread(threading.Thread):
             locationTrackerLock.acquire()
             locationTracker.updateLocation()
 
-            print "Total Steps:", locationTracker.getTotalSteps()
-            print "Total Distance:", locationTracker.getTotalDistance()
-            print "Deviation from N:", locationTracker.getHeadingInDeg()
-            print "Deviation from N gyro:", locationTracker.compass.gyroCompass.getAngleFromMapNinDeg()
-            print "Deviation from Map N:", locationTracker.getHeadingWRTMapInDeg()
-            print locationTracker.getLocation()
-            print "Height:", locationTracker.getHeightInCM()
+            if self.count == 10:
+                print "Total Steps:", locationTracker.getTotalSteps()
+                print "Total Distance:", locationTracker.getTotalDistance()
+                print "Deviation from N:", locationTracker.getHeadingInDeg()
+                print "Deviation from Map N:", locationTracker.getHeadingWRTMapInDeg()
+                print locationTracker.getLocation()
+                print "Height:", locationTracker.getHeightInCM()
+                self.count = 0
+            else:
+                self.count += 1
 
             locationTrackerLock.release()
-            time.sleep(1)
+            time.sleep(0.1)
 
 
 class LocationUpdateThread(threading.Thread):
@@ -258,6 +299,7 @@ class LocationUpdateThread(threading.Thread):
         self.gyroZ = 0
         self.timeInMillisGyro = 0
         self.calibrationTools = locationTracker.calibrationTools
+        self.count = 0
 
     def updateAccData(self):
         if len(data[1]) == 0:
@@ -281,8 +323,10 @@ class LocationUpdateThread(threading.Thread):
 
             self.accX, self.accY, self.accZ = self.calibrationTools.transformACC(self.accX, self.accY, self.accZ)
             locationTracker.updatePedoData(-self.accZ, self.accY, self.accX, self.timeInMillisAcc)
-            locationTracker.updateCompassAccData(-self.accZ, self.accY, self.accX)
+            # locationTracker.updateCompassAccData(-self.accZ, self.accY, self.accX)
             self.totalAccData = 0
+
+            # print self.accX, self.accY, self.accZ
 
             # f = open('accdata.csv', 'a')
             # f.write(str(self.accX) + ',' + str(self.accY) + ',' + str(self.accZ) + '\n')
@@ -337,11 +381,18 @@ class LocationUpdateThread(threading.Thread):
             self.totalGyroData += 1
 
         if self.totalGyroData == 4:
-            self.gyroX, self.gyroY, self.gyroZ = self.calibrationTools.transformGyro(self.gyroX, self.gyroY, self.gyroZ)
-            # f = open('gyro.csv', 'a')
-            # f.write(str(self.timeInMillisGyro) + ',' + str(self.gyroX) + ',' + str(self.gyroY) + ',' + str(self.gyroZ) + '\n')
-            # f.close()
+
+            if self.count == 9:
+                # f = open('gyro.csv', 'a')
+                # f.write(str(self.timeInMillisGyro) + ',' + str(self.gyroX) + ',' + str(self.gyroY) + ',' + str(self.gyroZ) + '\n')
+                # f.close()
+                self.count = 0
+            else:
+                self.count += 1
+
             # print self.gyroX, self.gyroY, self.gyroZ
+            # self.calibrationTools.adaptGyroOffset(self.gyroX, self.gyroY, self.gyroZ)
+            self.gyroX, self.gyroY, self.gyroZ = self.calibrationTools.transformGyro(self.gyroX, self.gyroY, self.gyroZ)
             locationTracker.compass.gyroCompass.queueGyroReadings(-self.gyroZ, self.gyroY, self.gyroX)
             # print "timeStamp:", self.timeInMillisGyro, "GyX:", self.gyroX, "GyY:", self.gyroY, "GyZ:", self.gyroZ, \
             #     "time:", datetime.datetime.now()
@@ -368,7 +419,7 @@ class LocationUpdateThread(threading.Thread):
             self.updateAccData()
             self.updateMagData()
             self.updateBaroData()
-            # self.updateGyroData()
+            self.updateGyroData()
             locationTrackerLock.release()
             pass
 
@@ -380,22 +431,30 @@ class NavigationThread(threading.Thread):
         self.threadName = threadName
 
     def run(self):
+        global naviCount
         global obstacleDetected
         global checkSideObstacle
         while 1:
+            naviCount += 1
             locationTrackerLock.acquire()
             curX = locationTracker.getXCoord()
             curY = locationTracker.getYCoord()
             heading = locationTracker.getHeadingInDeg()
             locationTrackerLock.release()
-            if obstacleDetected == 1 or checkSideObstacle == 1:
-                time.sleep(0.5)
-                continue
-            navi.updateCurLocation(curX, curY, heading)
-            isNavigationDone = navi.fullNavigate()
-            if isNavigationDone is True :
-                return
-            time.sleep(1)
+            # update location and next node direction for obstacle avoidance
+            obstacle.setNextNodeDirection(navi.getGeneralTurnDirection())
+            obstacle.setCurrentLocation(curX, curY)
+            # every second, check navigation
+            if (naviCount%10 == 0) :
+                if obstacleDetected == 1 or checkSideObstacle == 1:
+                    time.sleep(0.1)
+                    continue
+                navi.updateCurLocation(curX, curY, heading)
+                isNavigationDone = navi.fullNavigate()
+                if isNavigationDone is True :
+                    return
+            time.sleep(0.1)
+            
 
 
 class ObstacleAvoidanceThread(threading.Thread):
@@ -413,34 +472,38 @@ class ObstacleAvoidanceThread(threading.Thread):
             irRS = data[8]
             irFL = data[9]
             irFR = data[10]
-            sonarFT = data[11]
             sonarLS = data[12]
             sonarRS = data[13]
+            irLarge = data[15]
 
+            # update sensor data
             obstacleLock.acquire()
-            obstacle.updateFrontSensorData(sonarFT, irFC, irFL, irFR)
+            obstacle.updateFrontSensorData(irLarge, irFC, irFL, irFR)
             obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
+            #obstacle.collectIrData(irLarge)
             obstacleLock.release()
             obstacleStatusLock.acquire()
             obstacleStatus = obstacleDetected
             obstacleStatusLock.release()
-            if obstacle.hasUpStep() :
-                obstacle.stepVibrateMotor(True)
-            elif obstacle.hasDownStep() :
-                obstacle.stepVibrateMotor(False)
+            
+            # up/down step
+##            stepType = obstacle.hasStep()
+##            if ((stepType == 1) or (stepType == 2)) :
+##                obstacle.stepVibrateMotor(stepType)
+            
             if obstacle.isNewObstacleDetected(obstacleStatus) is True:
                 obstacleStatusLock.acquire()
                 obstacleDetected = 1
                 checkSideObstacle = 0
                 obstacleStatusLock.release()
                 obstacle.vibrateMotors()
-
+            # existing obstacle
             obstacleStatusLock.acquire()
             obstacleStatus = obstacleDetected
             obstacleStatusLock.release()
             if obstacleStatus == 1:
                 obstacleLock.acquire()
-                obstacle.updateFrontSensorData(sonarFT, irFC, irFL, irFR)
+                obstacle.updateFrontSensorData(irLarge, irFC, irFL, irFR)
                 obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
                 obstacleLock.release()
                 if obstacle.isFrontObstacleDetected(obstacleStatus) is True:
@@ -468,17 +531,22 @@ class ObstacleClearedThread(threading.Thread):
             irRS = data[8]
             irFL = data[9]
             irFR = data[10]
-            sonarFT = data[11]
+            irLarge = data[11]
             sonarLS = data[12]
             sonarRS = data[13]
+            irLarge = data[15]
+
             obstacleStatusLock.acquire()
             toMonitorObstacle = checkSideObstacle
             obstacleStatusLock.release()
             if toMonitorObstacle == 1:
                 obstacleLock.acquire()
-                obstacle.updateFrontSensorData(sonarFT, irFFC, irFL, irFR)
+                obstacle.updateFrontSensorData(irLarge, irFC, irFL, irFR)
                 obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
                 obstacleLock.release()
+                # re-route if necessary
+                if obstacle.isRerouteNeeded() is True :
+                    navi.reroutePath()
                 if obstacle.checkObstacleCleared() == 1:
                     obstacleStatusLock.acquire()
                     checkSideObstacle = 0
@@ -486,6 +554,37 @@ class ObstacleClearedThread(threading.Thread):
                     obstacleStatusLock.release()
             time.sleep(0.5)
 
+class UIThread(threading.Thread):
+    def __init__(self, threadID, threadName):
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+        self.threadName = threadName
+
+    def run(self):
+        global data
+        global keypad
+        userInputLock.acquire()
+
+        # get start location
+        startLocation = search.locationSetting(False, keypad, voiceSema)
+        startLocation.run()
+
+        # get end location
+        endLocation = search.locationSetting(True, keypad, voiceSema)
+        endLocation.setBuildingAndLevel(startLocation.buildingName, startLocation.levelNumber)
+        endLocation.run()
+
+        # flush serial port
+        dataFeeder.serialPort.flushInput()
+        dataFeeder.serialPort.flushOutput()
+
+        # reset data
+        data = []
+        data = [deque() for x in range(NUM_QUEUED_ID)]
+        data_single = [0 for x in range(NUM_SINGLE_ID)]
+        data.extend(data_single)
+
+        userInputLock.release()
 
 # --------------------- START OF MAIN ----------------------- #
 
@@ -505,12 +604,16 @@ NUM_SINGLE_ID = 11
 # 8 - IR (right side) (2)
 # 9 - IR (front left)
 # 10 - IR (front right)
-# 11 - sonar (front top) (29 trig 19 echo)
+# 11 - unused
 # 12 - sonar (left side) (27 trig 18 echo)
 # 13 - sonar (right side) (25 trig  2 echo)
+# 15 - IR (large)
 
+
+# Queue for sound
 voiceQueue = deque()
 
+# Data lists for raw data
 data = [deque() for x in range(NUM_QUEUED_ID)]
 data_single = [0 for x in range(NUM_SINGLE_ID)]
 data.extend(data_single)
@@ -521,14 +624,13 @@ obstacle = obstacleAvoidance.obstacleAvoidance()
 obstacleDetected = 0
 checkSideObstacle = 0
 
-# Navigation initialization
-navi = fullNavi.fullNavi()
-navi.generateFullPath("com1", 2, 36, 10)
-
 # Location tracker initialisation
 # TODO: Set initial position
 locationTracker = locationTracker.LocationTracker(4263.0, 609.0, 0.0)
 dataFeeder = dataFeeder.DataFeeder()
+
+# Speaker object
+speaker = pyespeak.Speaker("en-n+m2", 170, None, 200)
 
 # Locks for various variables
 locationTrackerLock = threading.Lock()
@@ -536,6 +638,10 @@ obstacleLock = threading.Lock()
 obstacleStatusLock = threading.Lock()
 dataInSema = threading.Semaphore(0)
 userInputLock = threading.Lock()
+voiceSema = threading.Semaphore(0)
+
+# Keypad initialization
+keypad = keypad_polling.keypad(voiceQueue, voiceSema)
 
 # Threads to receive data from Arduino
 dataThreads = []
@@ -545,15 +651,37 @@ dataThreads.append(ProcessDataThread(2, "data processing"))
 for thread in dataThreads:
     thread.start()
 
-# Init threads
-initThreads = []
-initThreads.append(CalibrationThread(-1, "calibrating pedometer and compass"))
+# voice threads
+voiceThreads = []
+voiceThreads.append(voiceThread(8, "play sound notification"))
 
-for thread in initThreads:
-   thread.start()
+for thread in voiceThreads:
+    thread.start()
+#
+# # Init threads
+# initThreads = []
+# initThreads.append(CalibrationThread(-1, "calibrating pedometer and compass"))
+#
+# for thread in initThreads:
+#    thread.start()
+#
+# for thread in initThreads:
+#    thread.join()
+#
+# # UI threads
+# UIThreads = []
+# UIThreads.append(UIThread(-2, "Run UI"))
+#
+# for thread in UIThreads:
+#    thread.start()
+#
+# for thread in UIThreads:
+#    thread.join()
 
-for thread in initThreads:
-   thread.join()
+# Navigation initialization
+naviCount = 0
+navi = fullNavi.fullNavi(voiceQueue, voiceSema)
+navi.generateFullPath("com1", 2, 36, 10)
 
 # List of threads
 mainThreads = []
@@ -562,14 +690,16 @@ mainThreads = []
 # mainThreads.append(ProcessDataThread(2, "data processing"))
 mainThreads.append(LocationUpdateThread(3, "location update"))
 mainThreads.append(LocationDisplayThread(4, "location display"))
-# mainThreads.append(NavigationThread(5, "navigation"))
+mainThreads.append(NavigationThread(5, "navigation"))
 # mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
 # mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
+mainThreads.append(voiceThread(8, "play sound notification"))
 
 for thread in mainThreads:
     thread.start()
 
-for thread in (mainThreads + dataThreads):
+for thread in (mainThreads + dataThreads + voiceThreads):
     thread.join()
+
 
 print("Exiting main thread")

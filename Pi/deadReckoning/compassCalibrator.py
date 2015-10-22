@@ -7,8 +7,8 @@ __author__ = 'Shao Fei'
 # y points to left
 # z points to up
 class CompassCalibrator:
-    WINDOW_SIZE = 500
-    MIN_DATA_NUM = 350
+    WINDOW_SIZE = 700
+    MIN_DATA_NUM = 500
     ACC_TOLERANCE = 0.5         # In G
     MAG_TOLERANCE = 0.5         # In fraction of max
     GYRO_TOLERANCE = 1000.0     # In raw
@@ -131,8 +131,8 @@ class CompassCalibrator:
         # Process fully supplied data
         else:
             gX = self.processGyroData(self.gyXWindow)
-            gY = self.processMagData(self.gyYWindow)
-            gZ = self.processMagData(self.gyZWindow)
+            gY = self.processGyroData(self.gyYWindow)
+            gZ = self.processGyroData(self.gyZWindow)
 
             print 'raw gyro:', gX, gY, gZ
 
@@ -279,7 +279,7 @@ class CompassCalibrator:
 
     def processGyroData(self, gyWindow):
 
-        if self.magCaliFailed:
+        if self.gyCaliFailed:
             return 0
 
         gyAverage = sum(gyWindow) / len(gyWindow)

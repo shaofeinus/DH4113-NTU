@@ -102,31 +102,34 @@ class LocationTracker:
 
         # Heading wrt to North
         self.headingWRTNorthInRad = self.compass.getHeadingInRad()
-        self.headingWRTNorthInDeg = self.compass.getHeadingInDeg()
+        self.headingWRTNorthInDeg = compass.Compass.getHeadingInDeg(self.headingWRTNorthInRad)
 
         # Heading wrt to y-axis of map
-        self.headingWRTMapInRad = self.getHeadingWRTMap(self.headingWRTNorthInRad)
-        self.headingWRTMapInDeg = self.headingConvert(self.headingWRTMapInRad)
+        # self.headingWRTMapInRad = self.getHeadingWRTMap(self.headingWRTNorthInRad)
+        # self.headingWRTMapInDeg = self.headingConvert(self.headingWRTMapInRad)
+        # self.headingWRTMapInRad = self.headingWRTNorthInRad
+        # self.headingWRTMapInDeg = self.headingWRTNorthInDeg
 
         # x points to the East
-        xCurrDistance = currDistance * math.sin(self.headingWRTMapInRad)
+        xCurrDistance = currDistance * math.sin(self.headingWRTNorthInRad)
         # y points to the North
-        yCurrDistance = currDistance * math.cos(self.headingWRTMapInRad)
+        yCurrDistance = currDistance * math.cos(self.headingWRTNorthInRad)
 
         self.currX += xCurrDistance
         self.currY += yCurrDistance
         self.totalDistance += currDistance
 
-        # f = open('locationdata.csv', 'a')
-        # if self.firstUpdate:
-        #     f.write('distance covered,degrees from top of map,currX,currY\n')
-        #     self.firstUpdate = False
-        #
-        # f.write(str(currDistance) + ',' +
-        #         str(self.headingWRTMapInDeg) + ',' +
-        #         str(self.currX) + ',' +
-        #         str(self.currY) + '\n')
-        # f.close()
+        f = open('locationdata.csv', 'a')
+        if self.firstUpdate:
+            f.write('distance covered,degrees from top of map,rad,currX,currY\n')
+            self.firstUpdate = False
+
+        f.write(str(currDistance) + ',' +
+                str(self.headingWRTNorthInDeg) + ',' +
+                str(self.headingWRTNorthInRad) + ',' +
+                str(self.currX) + ',' +
+                str(self.currY) + '\n')
+        f.close()
 
     # Get heading wrt y-axis of map (pointing upwards of north)
     def getHeadingWRTMap(self, headingInRad):

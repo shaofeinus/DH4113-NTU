@@ -30,7 +30,7 @@ class mapParser (object) :
                 self.northAt = 0
                 self.numElements = 0
                 self.matrix = {}
-                self.loadedMaps = ["lab2L1.json", "com1L2.json", "com2L2.json", "com2L3.json"]
+                self.loadedMaps = ["com1L2.json", "com2L2.json", "com2L3.json"]
                 
         
         # returns the URL of the map
