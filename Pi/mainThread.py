@@ -12,6 +12,7 @@ from collections import deque
 from UI import voiceCommands
 from UI import search
 from UI import keypad_polling
+from UI import pyespeak
 
 __author__ = 'Shao Fei'
 
@@ -26,18 +27,18 @@ class voiceThread(threading.Thread):
     def run(self):
         global voiceQueue
         global voiceSema
+        global speaker
         while True:
             voiceSema.acquire()
+            if len(voiceQueue) > 0:
+                print str(voiceQueue.popleft())
+                speaker.speak(str(voiceQueue.popleft()))
+
             # if len(voiceQueue) > 0:
             #     time.sleep(1.5)
-            #     print str(voiceQueue.popleft())
-            #     voiceCommands.speak("something short")
+            #     print "QLEN", len(voiceQueue)
+            #     voiceCommands.speak(str(voiceQueue.popleft()))
             #     time.sleep(1.5)
-            if len(voiceQueue) > 0:
-                time.sleep(1.5)
-                print "QLEN", len(voiceQueue)
-                voiceCommands.speak(str(voiceQueue.popleft()))
-                time.sleep(1.5)
 
 class ReceiveDataThread(threading.Thread):
     def __init__(self, threadID, threadName):
@@ -629,6 +630,9 @@ checkSideObstacle = 0
 # TODO: Set initial position
 locationTracker = locationTracker.LocationTracker(4263.0, 609.0, 0.0)
 dataFeeder = dataFeeder.DataFeeder()
+
+# Speaker object
+speaker = pyespeak.Speaker("en-n+m2", 170, None, 200)
 
 # Locks for various variables
 locationTrackerLock = threading.Lock()
