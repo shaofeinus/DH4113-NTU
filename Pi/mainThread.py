@@ -31,8 +31,9 @@ class voiceThread(threading.Thread):
         while True:
             voiceSema.acquire()
             if len(voiceQueue) > 0:
-                speaker.speak(str(voiceQueue.popleft()))
-
+##                speaker.speak(str(voiceQueue.popleft()))
+                voiceQueue.popleft()
+                time.sleep(1)
             # if len(voiceQueue) > 0:
             #     time.sleep(1.5)
             #     print "QLEN", len(voiceQueue)
@@ -120,8 +121,8 @@ class CalibrationThread(threading.Thread):
                 dataFeeder.serialPort.flushOutput()
                 userInputLock.release()
                 return
-        for i in range(0, 5):
-            num =  5 - i
+        for i in range(0, 3):
+            num =  3 - i
             print num
             speaker.speak(str(num))
             time.sleep(1)
@@ -447,16 +448,21 @@ class NavigationThread(threading.Thread):
             # every second, check navigation
             if (naviCount%10 == 0) :
                 if obstacleDetected == 1 or checkSideObstacle == 1:
+                    navi.updateEncounterSteps(locationTracker.getTotalSteps())
+                    navi.setObstacleStartHeading(heading)
+                    navi.ignoreNodeObstacle()
                     time.sleep(0.1)
                     continue
+                
+                navi.updateClearSteps(locationTracker.getTotalSteps())
+                navi.setObstacleEndHeading(heading)
                 navi.updateCurLocation(curX, curY, heading)
                 isNavigationDone = navi.fullNavigate()
                 if isNavigationDone is True :
                     return
             time.sleep(0.1)
-            
 
-
+           
 class ObstacleAvoidanceThread(threading.Thread):
     def __init__(self, threadID, threadName):
         threading.Thread.__init__(self)
@@ -527,7 +533,7 @@ class ObstacleClearedThread(threading.Thread):
     def run(self):
         global checkSideObstacle
         while 1:
-            irFFC = data[6]
+            irFC = data[6]
             irLS = data[7]
             irRS = data[8]
             irFL = data[9]
@@ -658,7 +664,7 @@ checkSideObstacle = 0
 
 # Location tracker initialisation
 # TODO: Set initial position
-locationTracker = locationTracker.LocationTracker(4263.0, 609.0, 0.0)
+locationTracker = locationTracker.LocationTracker(7065.0, 1787.0, 0.0)
 dataFeeder = dataFeeder.DataFeeder()
 
 # Speaker object
@@ -690,15 +696,15 @@ voiceThreads.append(voiceThread(8, "play sound notification"))
 for thread in voiceThreads:
     thread.start()
 
-# # Init threads
-# initThreads = []
-# initThreads.append(CalibrationThread(-1, "calibrating pedometer and compass"))
-#
-# for thread in initThreads:
-#    thread.start()
-#
-# for thread in initThreads:
-#    thread.join()
+# Init threads
+initThreads = []
+initThreads.append(CalibrationThread(-1, "calibrating pedometer and compass"))
+
+for thread in initThreads:
+    thread.start()
+
+for thread in initThreads:
+    thread.join()
 #
 # # UI threads
 # UIThreads = []
@@ -713,7 +719,7 @@ for thread in voiceThreads:
 # Navigation initialization
 naviCount = 0
 navi = fullNavi.fullNavi(voiceQueue, voiceSema)
-navi.generateFullPath("com1", 2, 36, 10)
+navi.generateFullPath("com1", 2, 14, 26)
 
 # List of threads
 mainThreads = []

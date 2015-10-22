@@ -126,7 +126,7 @@ class LocationTracker:
 
         f.write(str(currDistance) + ',' +
                 str(self.headingWRTNorthInDeg) + ',' +
-                str(self.headingWRTNorthInRad) + ',' +
+                str(self.totalSteps) + ',' +
                 str(self.currX) + ',' +
                 str(self.currY) + '\n')
         f.close()

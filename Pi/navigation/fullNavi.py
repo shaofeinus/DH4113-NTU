@@ -11,6 +11,10 @@ import time
 # generateFullPath(building, start, end)
 # 0 for com1L2, 1 for com2L2, 2 for com2L3
 # updateCurLocation(x, y, heading)
+# updateEncounterSteps(numSteps)
+# updateClearSteps(numSteps)
+# setObstacleStartHeading(heading)
+# setObstacleEndHeading(heading)
 # isInitialAngleCorrect()
 # fullNavigate()
 # getGeneralTurnDirection()
@@ -30,6 +34,17 @@ class fullNavi(object) :
         self.curX = 0               # cm
         self.curY = 0               # cm
         self.heading = 0            # -180 to 180 degrees
+
+        # prevent going back to obstacle
+        self.obstacleEncounteredSteps = 0
+        self.obstacleClearedSteps = 0
+        self.MAX_STEPS = 2
+
+        self.obstStartHeading = 0
+        self.obstEndHeading = 0
+
+        # tolerance
+        self.maxTolerance = 200
 
         # list of json parsing maps
         self.comMap = []
@@ -65,6 +80,19 @@ class fullNavi(object) :
         self.heading = heading
         self.nodeNavi.updateCurCoord(x, y)
         self.nodeNavi.updateHeading(heading)
+
+    def updateEncounterSteps(self, numSteps) :
+        self.obstacleEncounteredSteps = numSteps
+
+    def updateClearSteps(self, numSteps) :
+        self.obstacleClearedSteps = numSteps
+
+    def setObstacleStartHeading(self, heading) :
+        self.obstStartHeading = heading
+
+    def setObstacleEndHeading(self, heading) :
+        self.obstEndHeading = heading
+
 
     # returns false if at a node, but not facing in the direction of the next node
     def isInitialAngleCorrect(self):
@@ -189,15 +217,43 @@ class fullNavi(object) :
             self.voiceSema.release()
             return True
 
+    def ignoreNodeObstacle(self) :
+        distTo = distAngleCalc.distance(self.curX, self.curY, self.nexX, self.nexY)
+        if distTo < self.maxTolerance :
+            print "PSEUDO Node reached!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            self.pathListIndex += 1
+            self.alertNodeReached()
+            if self.pathListIndex < (len(self.pathList) - 1) :
+                self.updatePrevNexCoord()
+                self.provideNexNodeDirections()
+                self.angleCorrect = False
+            else :
+                sentence = "NAVIGATION COMPLETE!!!"
+                print sentence
+                self.voiceQueue.append(sentence)
+                self.voiceSema.release()
+                return True
+        
+
     # returns true if navigation is complete
     def fullNavigate(self) :
         if self.angleCorrect is False :
             self.angleCorrect = self.ensureTurnedCorrectDirection()
             return False
         else :
+            if ((self.obstacleClearedSteps - self.obstacleEncounteredSteps) <= self.MAX_STEPS):
+                angleDisp = self.obstStartHeading - self.obstEndHeading
+                self.nodeNavi.setPrevObstacleHeading(angleDisp)
+            else :
+                self.nodeNavi.setPrevObstacleHeading(360)
+##
+            curNode =  self.pathList[self.pathListIndex + 1]
+            curNodeName = self.comMap[self.mapNumber].getLocationName(curNode)
+            print "next node name is: " + str(curNodeName)
             isNodeReached = self.nodeNavi.navigate()
 
             if isNodeReached == 1 :
+                print "NODE REACHED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
                 self.pathListIndex += 1
                 self.alertNodeReached()
                 if self.pathListIndex < (len(self.pathList) - 1) :

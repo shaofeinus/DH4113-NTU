@@ -12,8 +12,8 @@ import RPi.GPIO as GPIO
 # TODO : rerouting based on number of times same obstacle encountered, tolerance
 class obstacleAvoidance (object) :
     def __init__(self) :       
-        self.FRONT_OBSTACLE_DISTANCE = 100
-        self.FRONT_OBSTACLE_BUFFER = 120
+        self.FRONT_OBSTACLE_DISTANCE = 90
+        self.FRONT_OBSTACLE_BUFFER = 100
         self.SIDE_OBSTACLE_IR = 75
         self.SIDE_OBSTACLE_SONAR = 70
         self.UPSTEP_THRESHHOLD = 500
@@ -21,6 +21,7 @@ class obstacleAvoidance (object) :
         self.VIBRATE_DURATION = 2
         self.OBSTACLE_RADIUS = 70
         self.LARGE_VALUE = 150
+        self.SONAR_LARGE_VALUE = 350
 
         # GPIO Pins for vibration motors
         self.leftPin = 9
@@ -40,7 +41,7 @@ class obstacleAvoidance (object) :
 
         # used to check if rerouting is necessary
         self.tempObstacleCount = 0
-        self.MAX_OBSTACLE_COUNT = 3
+        self.MAX_OBSTACLE_COUNT = 10
 
         # obstacle cleared count
         self.obstacleClearedCount = 0
@@ -101,14 +102,8 @@ class obstacleAvoidance (object) :
     # convert raw IR data to cm
     # removes zero value, change to LARGE_VALUE        
     def convertIRToCm(self, irData) :
-        if irData > 0:
+        if ((irData > 100) and (irData < 614)):
             return 10650.08 * (math.pow(irData, -0.935)) - 10
-        else :
-            return self.LARGE_VALUE
-
-    def convertLargeIRToCm(self, irData) :
-        if irData > 0 :
-            return (((math.pow(irData, -2.296) * 2 * 10**8)) - 23)
         else :
             return self.LARGE_VALUE
 
@@ -116,7 +111,7 @@ class obstacleAvoidance (object) :
     # removes zero value, change to LARGE_VALUE
     def convertSonarToCm(self, sonarData) :
         if(sonarData <= 1) :
-            return self.LARGE_VALUE
+            return self.SONAR_LARGE_VALUE
         return sonarData / 29 / 2
 
     # default side to turn if both sides clear
@@ -146,8 +141,8 @@ class obstacleAvoidance (object) :
         self.irLarge[self.irLIndex] = self.irLarge
         
         self.fHistoryIndex = (self.fHistoryIndex + 1) % self.frontNumHistory
-        self.sonarFC[self.fHistoryIndex] = self.convertIRToCm(irFC)
-        self.irFC[self.fHistoryIndex] = self.convertSonarToCm(sonarFC)
+        self.sonarFC[self.fHistoryIndex] = self.convertSonarToCm(sonarFC)
+        self.irFC[self.fHistoryIndex] = self.convertIRToCm(irFC)
         self.irFL[self.fHistoryIndex] = self.convertIRToCm(irFL)
         self.irFR[self.fHistoryIndex] = self.convertIRToCm(irFR)
 
@@ -172,15 +167,19 @@ class obstacleAvoidance (object) :
 ##            return False
         sonarAverage = 0
         for i in self.sonarFC :
-            irAverage += i
+            sonarAverage += i
         sonarAverage /= self.frontNumHistory
         if isAlreadyDetected == 0 :
-            if (irAverage < self.FRONT_OBSTACLE_DISTANCE) :
+            if (sonarAverage < self.FRONT_OBSTACLE_DISTANCE) :
+                print self.sonarFC
+                print "front sonar:" + str(sonarAverage)
                 return True
             else :
                 return False
         else :
-            if (irAverage < self.FRONT_OBSTACLE_BUFFER) :
+            if (sonarAverage < self.FRONT_OBSTACLE_BUFFER) :
+                print self.sonarFC
+                print "front sonar:" + str(sonarAverage)
                 return True
             else :
                 return False
@@ -204,11 +203,15 @@ class obstacleAvoidance (object) :
         irAverage /= self.frontNumHistory
         if isAlreadyDetected == 0 :
             if (irAverage < self.FRONT_OBSTACLE_DISTANCE) :
+                print "front ir center: " + str(irAverage)
+                print self.irFC
                 return True
             else :
                 return False
         else :
             if (irAverage < self.FRONT_OBSTACLE_BUFFER) :
+                print "front ir center: " + str(irAverage)
+                print self.irFC
                 return True
             else :
                 return False
@@ -232,11 +235,15 @@ class obstacleAvoidance (object) :
         irAverage /= self.frontNumHistory
         if isAlreadyDetected == 0 :
             if (irAverage < self.FRONT_OBSTACLE_DISTANCE) :
+                print "front ir left: " + str(irAverage)
+                print self.irFL
                 return True
             else :
                 return False
         else :
             if (irAverage < self.FRONT_OBSTACLE_BUFFER) :
+                print "front ir left: " + str(irAverage)
+                print self.irFL
                 return True
             else :
                 return False
@@ -259,11 +266,15 @@ class obstacleAvoidance (object) :
         irAverage /= self.frontNumHistory
         if isAlreadyDetected == 0 :
             if (irAverage < self.FRONT_OBSTACLE_DISTANCE) :
+                print "front ir right: " + str(irAverage)
+                print self.irFR
                 return True
             else :
                 return False
         else :
             if (irAverage < self.FRONT_OBSTACLE_BUFFER) :
+                print "front ir right: " + str(irAverage)
+                print self.irFR
                 return True
             else :
                 return False
@@ -284,7 +295,7 @@ class obstacleAvoidance (object) :
         if (math.fabs(self.irLS[2] - average) > 10) :
             return self.sonarLS[(self.sHistoryIndex-1)%self.sideNumHistory]
         else :
-            return self.sonarLS[self.sHistoryIndex]
+            return average
 
     def getRightSonar(self) :
         average = 0
@@ -294,7 +305,7 @@ class obstacleAvoidance (object) :
         if (math.fabs(self.irRS[2] - average) > 10) :
             return self.sonarRS[(self.sHistoryIndex-1)%self.sideNumHistory]
         else :
-            return self.sonarRS[self.sHistoryIndex]
+            return average
 
     def getLeftIr(self) :
         average = 0
@@ -304,7 +315,7 @@ class obstacleAvoidance (object) :
         if (math.fabs(self.irLS[2] - average) > 10) :
             return self.irLS[(self.sHistoryIndex-1)%self.sideNumHistory]
         else :
-            return self.irLS[self.sHistoryIndex]
+            return average
 
     def getRightIr(self) :
         average = 0
@@ -314,7 +325,7 @@ class obstacleAvoidance (object) :
         if (math.fabs(self.irLS[2] - average) > 10) :
             return self.irRS[(self.sHistoryIndex-1)%self.sideNumHistory]
         else :
-            return self.irRS[self.sHistoryIndex]
+            return average
 
 
     def hasLeftObstacle(self) :
