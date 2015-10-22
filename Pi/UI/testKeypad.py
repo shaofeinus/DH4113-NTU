@@ -1,14 +1,15 @@
 import keypad_polling
+import threading
 from collections import deque
 
 __author__ = 'Dan'
 
 temp = deque()
-
-key_pad = keypad_polling.keypad(temp)
+sema = threading.Semaphore(0)
+key_pad = keypad_polling.keypad(temp, sema)
 
 while True:
     print temp
-    print key_pad.get_input_ext_num("ENTER EXTENDED NUMBER")
+    print key_pad.get_input_str("ENTER EXTENDED NUMBER")
     print temp
 print "exit"

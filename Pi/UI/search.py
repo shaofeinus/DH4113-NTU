@@ -12,59 +12,59 @@ from voiceCommands import speak
 # getLevelNumber()
 # getLocationPointIndex()
 
-escape_flag = True
-
-class escape_thread(threading.Thread):
-    def __init__(self, threadID, threadName):
-        threading.Thread.__init__(self)
-        self.threadID = threadID
-        self.threadName = threadName
-        self.numElements = 0
-        self.num = 0
-        self.exit_thread = False
-
-    def set_num_elements(self, numElements):
-        self.numElements = numElements
-
-    def get_num_elements(self):
-        return self.numElements
-
-    def get_num(self):
-        return self.num
-
-    def set_num(self, num):
-        self.num = num
-
-    def kill_thread(self):
-        self.exit_thread = True
-
-    def run(self):
-        global escape_flag
-
-        self.keypad = keypad_polling.keypad()
-        self.keypad.toggle_sound()
-
-        while True:
-            if self.exit_thread:
-                self.keypad.kill_voice_thread()
-
-                break
-            if escape_flag:
-                time.sleep(0)
-            else:
-                response = self.keypad.get_binary_response()
-                escape_flag = not response
-                # self.num = self.keypad.poll_for_ext_num()
-                # print "IS " + str(self.num) + " < " + str(self.numElements)
-                # if 0 < self.num < self.numElements:
-                #     escape_flag = True
-
-
-esc_thread = escape_thread(1, "esc_thread")
-esc_thread.start()
+# escape_flag = True
+#
+# class escape_thread(threading.Thread):
+#     def __init__(self, threadID, threadName):
+#         threading.Thread.__init__(self)
+#         self.threadID = threadID
+#         self.threadName = threadName
+#         self.numElements = 0
+#         self.num = 0
+#         self.exit_thread = False
+#
+#     def set_num_elements(self, numElements):
+#         self.numElements = numElements
+#
+#     def get_num_elements(self):
+#         return self.numElements
+#
+#     def get_num(self):
+#         return self.num
+#
+#     def set_num(self, num):
+#         self.num = num
+#
+#     def kill_thread(self):
+#         self.exit_thread = True
+#
+#     def run(self):
+#         global escape_flag
+#
+#         self.keypad = keypad_polling.keypad()
+#         self.keypad.toggle_sound()
+#
+#         while True:
+#             if self.exit_thread:
+#                 self.keypad.kill_voice_thread()
+#
+#                 break
+#             if escape_flag:
+#                 time.sleep(0)
+#             else:
+#                 response = self.keypad.get_binary_response()
+#                 escape_flag = not response
+#                 # self.num = self.keypad.poll_for_ext_num()
+#                 # print "IS " + str(self.num) + " < " + str(self.numElements)
+#                 # if 0 < self.num < self.numElements:
+#                 #     escape_flag = True
+#
+#
+# esc_thread = escape_thread(1, "esc_thread")
+# esc_thread.start()
 
 class locationSetting(object) :
-    def __init__(self, isEndLocation, keypad) :
+    def __init__(self, isEndLocation, keypad, voiceSema) :
         self.buildingName = None
         self.levelNumber = None
         self.locationPoint = None
@@ -72,6 +72,7 @@ class locationSetting(object) :
         self.building = jsonParsingLite.mapParser()
         self.keypad = keypad
         self.isEndLocation = isEndLocation
+        self.voiceSema = voiceSema
 
         self.BUILDING_PROMPT = "Enter building name or number: "
         self.LEVEL_PROMPT = "Enter level number: "
@@ -82,10 +83,6 @@ class locationSetting(object) :
         self.INVALID_ID = "Please enter a valid ID"
         self.FINAL_CONFIRMATION = "To confirm, press start. To restart, press back"
         #self.run()
-
-    def kill_voice_thread(self):
-        self.keypad.kill_voice_thread()
-
 
     def run(self) :
         self.getBuildingFromUser()
@@ -177,9 +174,6 @@ class locationSetting(object) :
             userInputNode = node.split()
 
             if node == "all" :
-                global escapeSema
-                escapeSema.release()
-
                 self.possibleNodes = []
                 for i in xrange(self.building.numElements) :
                     self.possibleNodes.append(i)
@@ -213,38 +207,50 @@ class locationSetting(object) :
                             self.possibleNodes.append(i)
                     if len(self.possibleNodes) > 0:
                         print "All search results will be listed. When you are ready to make your selection, press start."
-                        self("All search results will be listed. When you are ready to make your selection, press start.")
+                        speak("All search results will be listed. When you are ready to make your selection, press start.")
                     else:
                         print "No results found"
                         speak("No results found")
 
 
     def getExactLocationFromUser(self) :
-        global esc_thread
-        global escape_flag
+        # global esc_thread
+        # global escape_flag
 
         continueLoop = True
         while continueLoop:
             if len(self.possibleNodes) > 1 : #all is entered, or search query
-                esc_thread.set_num_elements(len(self.possibleNodes))
-                esc_thread.set_num(0)
-                escape_flag = False
+                # esc_thread.set_num_elements(len(self.possibleNodes))
+                # esc_thread.set_num(0)
+                # escape_flag = False
                 isNumberChosen = False
 
+                self.keypad.chr_queue.clear()
                 for i in xrange(len(self.possibleNodes)) :
                     print str(i) + ": " + str(self.building.getLocationName(self.possibleNodes[i]))
-                    speak("for " + str(self.building.getLocationName(self.possibleNodes[i])) + ", press"  + str(i))
-                    print "\n\n\n\n\n", escape_flag, "\n\n\n\n\n\n\n"
-                    if escape_flag:
-                        # self.locationPoint = self.keypad.get_input_ext_num()#esc_thread.get_num()
-                        # if 0 < self.locationPoint < len(self.possibleNodes):
-                        #     isNumberChosen = True
-                        # else:
-                        #     print self.INVALID_NUMBER
-                        #     speak(self.INVALID_NUMBER)
+                    self.keypad.chr_queue.append("for " + str(self.building.getLocationName(self.possibleNodes[i])) + ", press"  + str(i))
+                    self.voiceSema.release()
+                    # if escape_flag:
+                    #     # self.locationPoint = self.keypad.get_input_ext_num()#esc_thread.get_num()
+                    #     # if 0 < self.locationPoint < len(self.possibleNodes):
+                    #     #     isNumberChosen = True
+                    #     # else:
+                    #     #     print self.INVALID_NUMBER
+                    #     #     speak(self.INVALID_NUMBER)
+                    #     break
+                while True:
+                    num = self.keypad.poll_for_num_cond()
+                    print num
+                    if num == 9 or num == -1:
+                        self.keypad.chr_queue.clear()
                         break
+
                 # get the user to choose the point he wants from the list of suggestions
                 while isNumberChosen is False :
+                    self.keypad.chr_queue.append("")
+                    self.voiceSema.release()
+                    while len(self.keypad.chr_queue) > 0:
+                        pass
                     self.locationPoint = int(self.keypad.get_input_ext_num("Enter number of correct location: "))# int(raw_input("Enter number of correct location: "))
 
                     if self.locationPoint < len(self.possibleNodes):
@@ -274,11 +280,11 @@ class locationSetting(object) :
         if self.keypad.get_binary_response():
             self.restart()
             self.run()
-        self.keypad.kill_voice_thread()
-        global esc_thread
-        esc_thread.kill_thread()
-        esc_thread.join(3)
-        print "escape thread successfully stopped", (not esc_thread.isAlive())
+        # self.keypad.kill_voice_thread()
+        # global esc_thread
+        # esc_thread.kill_thread()
+        # esc_thread.join(3)
+        # print "escape thread successfully stopped", (not esc_thread.isAlive())
 
 
 
