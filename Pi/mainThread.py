@@ -485,13 +485,11 @@ class ObstacleAvoidanceThread(threading.Thread):
             obstacleStatusLock.acquire()
             obstacleStatus = obstacleDetected
             obstacleStatusLock.release()
+            
             # up/down step
-##            if obstacle.hasUpStep() :
-##                obstacle.stepVibrateMotor(True)
-##            elif obstacle.hasDownStep() :
-##                obstacle.stepVibrateMotor(False)
-            # new obstacle
-##            obstacle.printFrontSensorValues()
+##            stepType = obstacle.hasStep()
+##            if ((stepType == 1) or (stepType == 2)) :
+##                obstacle.stepVibrateMotor(stepType)
             
             if obstacle.isNewObstacleDetected(obstacleStatus) is True:
                 obstacleStatusLock.acquire()
