@@ -463,7 +463,7 @@ class ObstacleClearedThread(threading.Thread):
     def run(self):
         global checkSideObstacle
         while 1:
-            irFC = data[6]
+            irFFC = data[6]
             irLS = data[7]
             irRS = data[8]
             irFL = data[9]
