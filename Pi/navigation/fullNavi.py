@@ -240,7 +240,7 @@ class fullNavi(object) :
                         self.prev_message = sentence
             return False
         else :
-            sentence = "Move straight ahead"
+            sentence = "Go."
             if time.time() - self.prev_message_time_str > self.message_delay:
                 if self.prev_message != sentence:
                     self.voiceQueue.append(sentence)

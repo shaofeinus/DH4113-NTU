@@ -159,7 +159,7 @@ class navigation (object) :
             # or if not allowed to turn because already turned 90degrees
             if ((math.fabs(turnAngle) < self.angleTolerance) or
                 (self.canTurn is False)):
-                sentence = "Go straight"
+                sentence = "Go."
                 if time.time() - self.prev_message_time_str > self.message_delay:
                     self.voiceQueue.append(sentence)
                     self.voiceSema.release()
