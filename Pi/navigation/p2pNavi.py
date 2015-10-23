@@ -130,19 +130,25 @@ class navigation (object) :
         self.alertNearingNode(distanceToNode)
 
         if (distanceToNode > self.maxTolerance) :
-##            print "distance to node is: " + str(distanceToNode)
-##            turnAngle = self.getTurnAngle()
+            print "distance to node is: " + str(distanceToNode)
+            turnAngle = self.getTurnAngle()
+
+            # if angle is within tolerance, continue in current direction
+            if (math.fabs(turnAngle) < self.angleTolerance) :
+                print "keep going in your current direction"
+                return 0
+            
+##            # ensure don't turn back into an obstacle 
 ##            ultimateAngleHeading = turnAngle + self.curAngle
 ##            angle1 = math.fabs(ultimateAngleHeading - self.prevObstacleHeading)
 ##            angle2 = 360 - angle1
-##
+            
 ##            if ((self.prevObstacleHeading < 360) and (min(angle1, angle2) < self.maxAllowableAngle)) :
-##                print "WEIRDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD"
-##                if ((turnAngle < 0) and (self.prevObstacleHeading < 0)):
+##                if ((turnAngle < 0) and (self.prevObstacleHeading <= 0)):
 ##                    correctAngle = self.prevObstacleHeading - self.maxAllowableAngle
 ##                if ((turnAngle < 0) and (self.prevObstacleHeading > 0)):
 ##                    correctAngle = self.prevObstacleHeading + self.maxAllowableAngle
-##                elif ((turnAngle > 0) and (self.prevObstacleHeading < 0)):
+##                elif ((turnAngle > 0) and (self.prevObstacleHeading <= 0)):
 ##                    correctAngle = self.prevObstacleHeading + self.maxAllowableAngle
 ##                else:
 ##                    correctAngle = self.prevObstacleHeading - self.maxAllowableAngle
@@ -152,26 +158,32 @@ class navigation (object) :
 ##                elif correctAngle <= -180 :
 ##                    correctAngle += 360
 ##
-##                if correctAngle > 0 :
+##                if correctAngle > 0 and math.fabs(correctAngle) > self.angleTolerance:
 ##                    sentence = "move towards the right by: " + str(correctAngle)
-##                else :
+##                elif correctAngle < 0 and math.fabs(correctAngle) > self.angleTolerance:
 ##                    sentence = "move towards the left by: " + str(math.fabs(correctAngle))
+##                else :
+##                    sentence = "keep going straight"
 ##                print sentence
 ##            else:
-            if turnAngle > 0 :
+            if (turnAngle > 0) :
+                if ((self.prevObstacleHeading < 360) and (turnAngle > 90)) :
+                    turnAngle = 90
                 sentence = "Move towards the right by " + str(turnAngle)
                 print sentence
                 self.voiceQueue.append(sentence)
                 self.voiceSema.release()
-##                    GPIO.output(self.rightPin, True)
-##                    GPIO.output(self.leftPin, False)
-            elif turnAngle < 0 :
+    ##                    GPIO.output(self.rightPin, True)
+    ##                    GPIO.output(self.leftPin, False)
+            elif (turnAngle < 0) :
+                if ((self.prevObstacleHeading < 360) and (turnAngle < -90)) :
+                    turnAngle = -90
                 sentence = "Move towards the left by " + str(math.fabs(turnAngle))
                 print sentence
                 self.voiceQueue.append(sentence)
                 self.voiceSema.release()
-##                    GPIO.output(self.leftPin, True)
-##                    GPIO.output(self.rightPin, False)
+    ##                    GPIO.output(self.leftPin, True)
+    ##                    GPIO.output(self.rightPin, False)
             else :
                 sentence = "Keep going in your current direction!"
                 print sentence

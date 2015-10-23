@@ -244,7 +244,7 @@ class fullNavi(object) :
             return False
         else :
             if ((self.obstacleClearedSteps - self.obstacleEncounteredSteps) <= self.MAX_STEPS):
-                angleDisp = self.obstStartHeading - self.obstEndHeading
+                angleDisp = self.heading + self.obstStartHeading - self.obstEndHeading
                 self.nodeNavi.setPrevObstacleHeading(angleDisp)
             else :
                 self.nodeNavi.setPrevObstacleHeading(360)
