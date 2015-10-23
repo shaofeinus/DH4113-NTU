@@ -27,13 +27,19 @@ class voiceThread(threading.Thread):
     def run(self):
         global voiceQueue
         global voiceSema
+        global voiceStopSema
         global speaker
 
         while True:
-            voiceSema.acquire()
             if len(voiceQueue) > 0:
-                speaker.speak(str(voiceQueue.popleft()))
-            time.sleep(5)
+                temp = str(voiceQueue.popleft())
+                if temp == "-~^/CLEAR^~-":
+                    voiceQueue.clear()
+                else:
+                    speaker.speak(str(voiceQueue.popleft()))
+            else:
+                time.sleep(1)
+            # time.sleep(5)
 #             voiceSema.acquire()
 #             if len(voiceQueue) > 0:
 # ##                speaker.speak(str(voiceQueue.popleft()))
@@ -733,6 +739,7 @@ obstacleStatusLock = threading.Lock()
 dataInSema = threading.Semaphore(0)
 userInputLock = threading.Lock()
 voiceSema = threading.Semaphore(0)
+voiceStopSema = False
 
 # Keypad initialization
 keypad = keypad_polling.keypad(voiceQueue, voiceSema, speaker)
@@ -782,14 +789,11 @@ navi.generateFullPath("com1", 2, 14, 26)
 # List of threads
 mainThreads = []
 
-# mainThreads.append(ReceiveDataThread(1, "data receiving"))
-# mainThreads.append(ProcessDataThread(2, "data processing"))
 mainThreads.append(LocationUpdateThread(3, "location update"))
 mainThreads.append(LocationDisplayThread(4, "location display"))
-# mainThreads.append(NavigationThread(5, "navigation"))
-# mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
-# mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
-##mainThreads.append(voiceThread(8, "play sound notification"))
+mainThreads.append(NavigationThread(5, "navigation"))
+mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
+mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
 ##mainThreads.append(collectIRThread(9, "collect ir data"))
 
 

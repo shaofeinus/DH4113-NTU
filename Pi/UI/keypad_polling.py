@@ -308,7 +308,6 @@ class keypad(object):
         # [9, 10, 11]     =>       [fwd, space, del]
         ##print "np:", num_pressed
 
-        global stop_sema
         if num_pressed == self.VOID_PRESS:
             if self.curr_chr != '':
                 self.out_str += self.curr_chr
@@ -350,7 +349,6 @@ class keypad(object):
             self.num_count = 0 #reset count on key map
             self.prev_num = 21 #update keypress history
             self.end_flag = True
-            stop_sema = True
         else:
             if num_pressed >= 12: #hold down keys
                 if self.curr_chr != '':
