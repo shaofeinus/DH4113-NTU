@@ -119,7 +119,7 @@ class CalibrationThread(threading.Thread):
         while not validInput:
             # userInput = raw_input("Press enter to calibrate? y/n ")
 
-            speaker.speak(str("To calibrate gyroscope, press start."))
+            # speaker.speak(str("To calibrate gyroscope, press start."))
             userInput = keypad.get_binary_response()
             print userInput
             if not userInput:
@@ -127,7 +127,7 @@ class CalibrationThread(threading.Thread):
                 for i in range(0, 3):
                     num = 3 - i
                     print num
-                    speaker.speak(str(num))
+                    # speaker.speak(str(num))
                     time.sleep(1)
                 dataFeeder.serialPort.flushInput()
                 dataFeeder.serialPort.flushOutput()
@@ -145,22 +145,22 @@ class CalibrationThread(threading.Thread):
 
         userInputLock.acquire()
 
-        self.calibrationTools.initGyroOffset(-self.calibrator.initGXOffset,
-                                             -self.calibrator.initGYOffset,
-                                             -self.calibrator.initGZOffset)
+        self.calibrationTools.initGyroOffset(self.calibrator.initGXOffset,
+                                             self.calibrator.initGYOffset,
+                                             self.calibrator.initGZOffset)
 
         temp = 'Gyro calibrated' + \
                str(self.calibrator.initGXOffset) + ' ' + \
                str(self.calibrator.initGYOffset) + ' ' + \
                str(self.calibrator.initGZOffset)
         print temp
-        speaker.speak(temp)
+        # speaker.speak(temp)
 
         validInput = False
         while not validInput:
             # userInput = raw_input("Press enter to calibrate? y/n ")
 
-            speaker.speak(str("To begin compass calibration, press start. To skip calibration, press back."))
+            # speaker.speak(str("To begin compass calibration, press start. To skip calibration, press back."))
             userInput = keypad.get_binary_response()
             print userInput
             if not userInput:
@@ -179,7 +179,7 @@ class CalibrationThread(threading.Thread):
         for i in range(0, 3):
             num = 3 - i
             print num
-            speaker.speak(str(num))
+            # speaker.speak(str(num))
             time.sleep(1)
 
         # print 'Calibrating'
@@ -207,7 +207,7 @@ class CalibrationThread(threading.Thread):
         userInputLock.acquire()
         temp = 'Your are ' + str(self.calibrator.getNOffsetAngle() / (2 * math.pi) * 360) + ' from N. To continue, press start'
         print temp
-        speaker.speak(temp)
+        # speaker.speak(temp)
         while keypad.get_binary_response():
            pass
         dataFeeder.serialPort.flushInput()
