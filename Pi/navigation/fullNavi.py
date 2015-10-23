@@ -22,7 +22,8 @@ import time
 
 class fullNavi(object) :
     def __init__(self, voiceQueue, voiceSema) :
-        self.prev_message_time = 0
+        self.prev_message_time_turn = 0
+        self.prev_message_time_str = 0
         self.message_delay = 5
         self.voiceQueue = voiceQueue
         self.voiceSema = voiceSema
@@ -216,24 +217,24 @@ class fullNavi(object) :
             if (directionToHead > 0) :
                 sentence = "Right %.0f." %(directionToHead)
                 print sentence
-                if time.time() - self.prev_message_time > self.message_delay:
+                if time.time() - self.prev_message_time_turn > self.message_delay:
                     self.voiceQueue.append(sentence)
                     self.voiceSema.release()
-                    self.prev_message_time = time.time()
+                    self.prev_message_time_turn = time.time()
             elif (directionToHead < 0) :
                 sentence = "Left %.0f." %(math.fabs(directionToHead))
                 print sentence
-                if time.time() - self.prev_message_time > self.message_delay:
+                if time.time() - self.prev_message_time_turn > self.message_delay:
                     self.voiceQueue.append(sentence)
                     self.voiceSema.release()
-                    self.prev_message_time = time.time()
+                    self.prev_message_time_turn = time.time()
             return False
         else :
             sentence = "Move straight ahead"
-            if time.time() - self.prev_message_time > self.message_delay:
+            if time.time() - self.prev_message_time_str > self.message_delay:
                 self.voiceQueue.append(sentence)
                 self.voiceSema.release()
-                self.prev_message_time = time.time()
+                self.prev_message_time_str = time.time()
             return True
 
     def ignoreNodeObstacle(self) :
@@ -280,8 +281,9 @@ class fullNavi(object) :
             isNodeReached = self.nodeNavi.navigate()
 
             if isNodeReached == 1 :
-                sentence = "NODE REACHED!!!!!"
+                sentence = "Node Reached."
                 print sentence
+                self.voiceQueue.flush()
                 self.voiceQueue.append(sentence)
                 self.voiceSema.release()
                 self.pathListIndex += 1

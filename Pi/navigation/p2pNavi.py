@@ -207,7 +207,7 @@ class navigation (object) :
                 if time.time() - self.prev_message_time_turn > self.message_delay:
                     self.voiceQueue.append(sentence)
                     self.voiceSema.release()
-                    self.prev_message_time_dist = time.time()
+                    self.prev_message_time_turn = time.time()
     ##                    GPIO.output(self.rightPin, True)
     ##                    GPIO.output(self.leftPin, False)
             elif (turnAngle < 0) :
@@ -223,7 +223,7 @@ class navigation (object) :
                 if time.time() - self.prev_message_time_turn > self.message_delay:
                     self.voiceQueue.append(sentence)
                     self.voiceSema.release()
-                    self.prev_message_time_dist = time.time()
+                    self.prev_message_time_turn = time.time()
     ##                    GPIO.output(self.leftPin, True)
     ##                    GPIO.output(self.rightPin, False)
             else :
