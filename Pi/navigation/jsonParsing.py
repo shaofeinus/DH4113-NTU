@@ -61,7 +61,10 @@ class mapParser (object) :
                 if(self.isMapAlreadyLoaded(mapName) is True) :
                         self.jsonFileInput(mapName)
                 else :
-                        self.jsonServerInput(buildingName, levelNumber)
+                        try :               
+                                self.jsonServerInput(buildingName, levelNumber)
+                        except :
+                                return False
 
                 if self.buildingMap['info'] is None :
                         return False
