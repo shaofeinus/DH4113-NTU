@@ -59,6 +59,14 @@ class mapParser (object) :
         def getLocationName(self, index) : 
                return self.buildingMap['map'][index]['nodeName']
 
+        # returns the x-coordinate of the location at the index
+        def getLocationXCoord(self, index) :
+               return int(self.buildingMap['map'][index]['x'])
+
+        # returns the y-coordinate of the location at the index
+        def getLocationYCoord(self, index) :
+               return int(self.buildingMap['map'][index]['y'])
+
         def printJSONNodeData(self) :
                 print json.dumps(self.buildingMap.get('map'), indent=3)
 
