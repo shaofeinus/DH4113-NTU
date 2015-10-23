@@ -12,8 +12,8 @@ import RPi.GPIO as GPIO
 # TODO : rerouting based on number of times same obstacle encountered, tolerance
 class obstacleAvoidance (object) :
     def __init__(self) :       
-        self.FRONT_OBSTACLE_DISTANCE = 90
-        self.FRONT_OBSTACLE_BUFFER = 100
+        self.FRONT_OBSTACLE_DISTANCE = 80
+        self.FRONT_OBSTACLE_BUFFER = 90
         self.SIDE_OBSTACLE_IR = 75
         self.SIDE_OBSTACLE_SONAR = 70
         self.UPSTEP_THRESHHOLD = 500

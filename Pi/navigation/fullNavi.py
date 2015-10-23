@@ -217,7 +217,9 @@ class fullNavi(object) :
             self.voiceSema.release()
             return True
 
-    def ignoreNodeObstacle(self) :
+    # while obstacle avoidance is taking place,
+    # if a node is detected, it alerts the user
+    def ignoreNodeObstacle(self) :   
         distTo = distAngleCalc.distance(self.curX, self.curY, self.nexX, self.nexY)
         if distTo < self.maxTolerance :
             print "PSEUDO Node reached!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
@@ -242,7 +244,7 @@ class fullNavi(object) :
             return False
         else :
             if ((self.obstacleClearedSteps - self.obstacleEncounteredSteps) <= self.MAX_STEPS):
-                angleDisp = self.obstStartHeading - self.obstEndHeading
+                angleDisp = self.heading + self.obstStartHeading - self.obstEndHeading
                 self.nodeNavi.setPrevObstacleHeading(angleDisp)
             else :
                 self.nodeNavi.setPrevObstacleHeading(360)
