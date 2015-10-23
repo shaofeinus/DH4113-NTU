@@ -94,6 +94,7 @@ class locationSetting(object) :
             # get building name and level number input from user (keypad code)
             print self.INVALID_BUILDING_LEVEL
             self.speaker.speak(self.INVALID_BUILDING_LEVEL)
+            continueLoop = True
             while continueLoop:
                 if self.isEndLocation:
                     print ("Is destination in the same building as the starting location? If \"YES\", press start. If \"NO\", press back.")
