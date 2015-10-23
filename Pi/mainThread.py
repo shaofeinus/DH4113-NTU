@@ -737,9 +737,8 @@ isFirstCleared = 0
 
 # Location tracker initialisation
 # TODO: Set initial position
-locationTracker = locationTracker.LocationTracker(7065.0, 1787.0, 0.0)
-##locationTracker = locationTracker.LocationTracker(startLocation.getLocationXCoord(),
-##                                                  startLocation.getLocationYCoord(), 0.0)
+# locationTracker = locationTracker.LocationTracker(7065.0, 1787.0, 0.0)
+locationTracker = locationTracker.LocationTracker(0, 0, 0.0)
 dataFeeder = dataFeeder.DataFeeder()
 
 # Speaker object
@@ -796,13 +795,15 @@ for thread in UIThreads:
 for thread in UIThreads:
    thread.join()
 
+locationTracker.setLocation(startLocation.getLocationXCoord(), startLocation.getLocationYCoord())
+
 # Navigation initialization
 naviCount = 0
 navi = fullNavi.fullNavi(voiceQueue, voiceSema)
-navi.generateFullPath("com1", 2, 14, 26)
-##navi.generateFullPath(startLocation.getBuildingName(),
-##                      startLocation.getLevelNumber(),
-##                      startLocation.getLocationPointIndex(), endLocationgetLocationPointIndex())
+# navi.generateFullPath("com1", 2, 14, 26)
+navi.generateFullPath(startLocation.getBuildingName(),
+                     startLocation.getLevelNumber(),
+                     startLocation.getLocationPointIndex(), endLocation.getLocationPointIndex())
 
 # List of threads
 mainThreads = []
