@@ -202,7 +202,7 @@ class CalibrationThread(threading.Thread):
             self.calibrateNOffset()
 
         userInputLock.acquire()
-        temp = 'Your are ' + str(self.calibrator.getNOffsetAngle() / (2 * math.pi) * 360) + ' from N. To continue, press start'
+        temp = 'Your are ' + str(int(self.calibrator.getNOffsetAngle() / (2 * math.pi) * 360)) + ' from N. To continue, press start'
         print temp
         speaker.speak(temp)
         while keypad.get_binary_response():
