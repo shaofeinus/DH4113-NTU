@@ -14,6 +14,7 @@ from UI import voiceCommands
 from UI import search
 from UI import keypad_polling
 from UI import pyespeak
+from my_deque import my_deque
 
 __author__ = 'Shao Fei'
 
@@ -32,12 +33,8 @@ class voiceThread(threading.Thread):
         global speaker
 
         while True:
-            if len(voiceQueue) > 0:
-                temp = str(voiceQueue.popleft())
-                if temp == "-~^/CLEAR^~-":
-                    voiceQueue.clear()
-                else:
-                    speaker.speak(temp)
+            if not voiceQueue.empty():
+                speaker.speak(str(voiceQueue.popleft()))
             else:
                 time.sleep(1)
             # time.sleep(5)
@@ -206,7 +203,7 @@ class CalibrationThread(threading.Thread):
             self.calibrateNOffset()
 
         userInputLock.acquire()
-        temp = 'Your are ' + str(self.calibrator.getNOffsetAngle() / (2 * math.pi) * 360) + ' from N. To continue, press start'
+        temp = 'Your are ' + str(int(self.calibrator.getNOffsetAngle() / (2 * math.pi) * 360)) + ' from N. To continue, press start'
         print temp
         speaker.speak(temp)
         while keypad.get_binary_response():
@@ -721,7 +718,7 @@ NUM_SINGLE_ID = 11
 
 
 # Queue for sound
-voiceQueue = deque()
+voiceQueue = my_deque()
 
 # Data lists for raw data
 data = [deque() for x in range(NUM_QUEUED_ID)]
@@ -738,9 +735,8 @@ isFirstCleared = 0
 
 # Location tracker initialisation
 # TODO: Set initial position
-locationTracker = locationTracker.LocationTracker(7065.0, 1787.0, 0.0)
-##locationTracker = locationTracker.LocationTracker(startLocation.getLocationXCoord(),
-##                                                  startLocation.getLocationYCoord(), 0.0)
+# locationTracker = locationTracker.LocationTracker(7065.0, 1787.0, 0.0)
+locationTracker = locationTracker.LocationTracker(0, 0, 0.0)
 dataFeeder = dataFeeder.DataFeeder()
 
 # Speaker object
@@ -787,25 +783,25 @@ voiceThreads.append(voiceThread(8, "play sound notification"))
 for thread in voiceThreads:
     thread.start()
 
+# UI threads
+UIThreads = []
+UIThreads.append(UIThread(-2, "Run UI"))
 
-#
-# # UI threads
-# UIThreads = []
-# UIThreads.append(UIThread(-2, "Run UI"))
-#
-# for thread in UIThreads:
-#    thread.start()
-#
-# for thread in UIThreads:
-#    thread.join()
+for thread in UIThreads:
+   thread.start()
+
+for thread in UIThreads:
+   thread.join()
+
+locationTracker.setLocation(startLocation.getLocationXCoord(), startLocation.getLocationYCoord())
 
 # Navigation initialization
 naviCount = 0
 navi = fullNavi.fullNavi(voiceQueue, voiceSema)
-navi.generateFullPath("com1", 2, 14, 26)
-##navi.generateFullPath(startLocation.getBuildingName(),
-##                      startLocation.getLevelNumber(),
-##                      startLocation.getLocationPointIndex(), endLocationgetLocationPointIndex())
+# navi.generateFullPath("com1", 2, 14, 26)
+navi.generateFullPath(startLocation.getBuildingName(),
+                     startLocation.getLevelNumber(),
+                     startLocation.getLocationPointIndex(), endLocation.getLocationPointIndex())
 
 # List of threads
 mainThreads = []

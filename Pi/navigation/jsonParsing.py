@@ -1,6 +1,7 @@
 import json
 import urllib2
 import distAngleCalc
+import os
 
 # This module retrieves the map of the building (com1L2, com2L2, com2L3) in json format
 # It then stores the in an adjacency matrix the following info:
@@ -61,7 +62,8 @@ class mapParser (object) :
                 if(self.isMapAlreadyLoaded(mapName) is True) :
                         self.jsonFileInput(mapName)
                 else :
-                        try :               
+                        try :
+                                os.system("sudo ifmetric wlan0 100")
                                 self.jsonServerInput(buildingName, levelNumber)
                         except :
                                 return False
