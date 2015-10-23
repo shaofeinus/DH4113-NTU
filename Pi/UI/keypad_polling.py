@@ -271,8 +271,10 @@ class keypad(object):
                     hold_thres_met = False
                     while GPIO.input(self.vert[y]) == GPIO.HIGH:
                         if time.time() - hold_timer_start >= self.HOLD_DELAY and not hold_thres_met: #checks if button is help sufficiently long
-                            num_pressed += 12
-                            self.string_gen(num_pressed) #held button press
+                            if num_pressed < 12:
+                                num_pressed += 12
+                            if num_pressed != 21:
+                                self.string_gen(num_pressed) #held button press
                             # if num_pressed == 21:
                             #     return self.out_str
                             if num_pressed != 9 and num_pressed != 21:
@@ -340,7 +342,7 @@ class keypad(object):
             self.prev_num = -3 #update keypress history
         elif num_pressed == 21 or num_pressed == 9: #enter string (press or hold start)
             self.out_str += self.curr_chr
-            self.curr_chr = '\n' #clear curr_chr
+            self.curr_chr = '' #clear curr_chr
             self.num_count = 0 #reset count on key map
             self.prev_num = 21 #update keypress history
             self.end_flag = True

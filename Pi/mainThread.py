@@ -146,9 +146,9 @@ class CalibrationThread(threading.Thread):
 
         userInputLock.acquire()
 
-        self.calibrationTools.initGyroOffset(-self.calibrator.initGXOffset,
-                                             -self.calibrator.initGYOffset,
-                                             -self.calibrator.initGZOffset)
+        self.calibrationTools.initGyroOffset(self.calibrator.initGXOffset,
+                                             self.calibrator.initGYOffset,
+                                             self.calibrator.initGZOffset)
 
         temp = 'Gyro calibrated' + \
                str(self.calibrator.initGXOffset) + ' ' + \

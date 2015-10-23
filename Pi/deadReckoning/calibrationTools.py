@@ -99,9 +99,9 @@ class CalibrationTools:
         # self.GY_Y_OFFSET = 0.9999*self.GY_Y_OFFSET + 0.0001*gyY
         # self.GY_Z_OFFSET = 0.9999*self.GY_Z_OFFSET + 0.0001*gyZ
 
-        self.GY_X_OFFSET += 0.000001 * (gyX - self.GY_X_OFFSET)
-        self.GY_Y_OFFSET += 0.000001 * (gyY - self.GY_Y_OFFSET)
-        self.GY_Z_OFFSET += 0.000001 * (gyZ - self.GY_Z_OFFSET)
+        # self.GY_X_OFFSET += 0.000001 * (gyX - self.GY_X_OFFSET)
+        # self.GY_Y_OFFSET += 0.000001 * (gyY - self.GY_Y_OFFSET)
+        # self.GY_Z_OFFSET += 0.000001 * (gyZ - self.GY_Z_OFFSET)
 
         gyX -= self.GY_X_OFFSET
         gyY -= self.GY_Y_OFFSET
