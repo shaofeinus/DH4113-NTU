@@ -766,16 +766,15 @@ voiceThreads.append(voiceThread(8, "play sound notification"))
 for thread in voiceThreads:
     thread.start()
 
-#
-# # UI threads
-# UIThreads = []
-# UIThreads.append(UIThread(-2, "Run UI"))
-#
-# for thread in UIThreads:
-#    thread.start()
-#
-# for thread in UIThreads:
-#    thread.join()
+# UI threads
+UIThreads = []
+UIThreads.append(UIThread(-2, "Run UI"))
+
+for thread in UIThreads:
+   thread.start()
+
+for thread in UIThreads:
+   thread.join()
 
 # Navigation initialization
 naviCount = 0
