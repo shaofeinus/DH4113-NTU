@@ -28,12 +28,15 @@ class voiceThread(threading.Thread):
         global voiceQueue
         global voiceSema
         global speaker
+
         while True:
-            voiceSema.acquire()
-            if len(voiceQueue) > 0:
-##                speaker.speak(str(voiceQueue.popleft()))
-                voiceQueue.popleft()
-                time.sleep(1)
+            speaker.speak("LOLOLOLOL")
+            time.sleep(5)
+#             voiceSema.acquire()
+#             if len(voiceQueue) > 0:
+# ##                speaker.speak(str(voiceQueue.popleft()))
+#                 voiceQueue.popleft()
+#                 time.sleep(1)
             # if len(voiceQueue) > 0:
             #     time.sleep(1.5)
             #     print "QLEN", len(voiceQueue)
@@ -107,12 +110,13 @@ class CalibrationThread(threading.Thread):
 
         global keypad
         global speaker
+        global data, data_single
 
         validInput = False
         while not validInput:
             # userInput = raw_input("Press enter to calibrate? y/n ")
 
-            speaker.speak(str("To calibrate gyroscope, press start. To skip, press back."))
+            speaker.speak(str("To calibrate gyroscope, press start."))
             userInput = keypad.get_binary_response()
             print userInput
             if not userInput:
@@ -124,7 +128,14 @@ class CalibrationThread(threading.Thread):
                     time.sleep(1)
                 dataFeeder.serialPort.flushInput()
                 dataFeeder.serialPort.flushOutput()
+
+                data = [deque() for x in range(NUM_QUEUED_ID)]
+                data_single = [0 for x in range(NUM_SINGLE_ID)]
+                data.extend(data_single)
+
                 userInputLock.release()
+
+        print len(data[1])
 
         while not self.isDone['gyro']:
             self.calibrateGyro()
@@ -136,13 +147,11 @@ class CalibrationThread(threading.Thread):
                                              -self.calibrator.initGZOffset)
 
         temp = 'Gyro calibrated' + \
-               self.calibrator.initGXOffset + ' ' + \
-               self.calibrator.initGYOffset, + ' ' + \
-               self.calibrator.initGZOffset
+               str(self.calibrator.initGXOffset) + ' ' + \
+               str(self.calibrator.initGYOffset) + ' ' + \
+               str(self.calibrator.initGZOffset)
         print temp
         speaker.speak(temp)
-        while keypad.get_binary_response():
-           pass
 
         validInput = False
         while not validInput:
@@ -157,7 +166,6 @@ class CalibrationThread(threading.Thread):
                 dataFeeder.serialPort.flushInput()
                 dataFeeder.serialPort.flushOutput()
 
-                global data, data_single
                 data = [deque() for x in range(NUM_QUEUED_ID)]
                 data_single = [0 for x in range(NUM_SINGLE_ID)]
                 data.extend(data_single)
@@ -173,7 +181,7 @@ class CalibrationThread(threading.Thread):
 
         # print 'Calibrating'
 
-        global data, data_single
+
         data = [deque() for x in range(NUM_QUEUED_ID)]
         data_single = [0 for x in range(NUM_SINGLE_ID)]
         data.extend(data_single)
@@ -181,6 +189,8 @@ class CalibrationThread(threading.Thread):
         dataFeeder.serialPort.flushInput()
         dataFeeder.serialPort.flushOutput()
         userInputLock.release()
+
+        print len(data[1])
 
         while not self.isDone['tilt']:
             self.calibrateTilt()
@@ -200,12 +210,13 @@ class CalibrationThread(threading.Thread):
         dataFeeder.serialPort.flushInput()
         dataFeeder.serialPort.flushOutput()
 
-        global data, data_single
         data = [deque() for x in range(NUM_QUEUED_ID)]
         data_single = [0 for x in range(NUM_SINGLE_ID)]
         data.extend(data_single)
 
         userInputLock.release()
+
+        print len(data[1])
 
     def calibrateTilt(self):
         if len(data[1]) == 0:
@@ -716,7 +727,7 @@ locationTracker = locationTracker.LocationTracker(7065.0, 1787.0, 0.0)
 dataFeeder = dataFeeder.DataFeeder()
 
 # Speaker object
-speaker = pyespeak.Speaker("en-n+m2", 170, None)
+speaker = pyespeak.Speaker()
 
 # Locks for various variables
 locationTrackerLock = threading.Lock()
@@ -737,13 +748,6 @@ dataThreads.append(ProcessDataThread(2, "data processing"))
 for thread in dataThreads:
     thread.start()
 
-# voice threads
-voiceThreads = []
-voiceThreads.append(voiceThread(8, "play sound notification"))
-
-for thread in voiceThreads:
-    thread.start()
-
 # Init threads
 initThreads = []
 initThreads.append(CalibrationThread(-1, "calibrating pedometer and compass"))
@@ -753,6 +757,15 @@ for thread in initThreads:
 
 for thread in initThreads:
     thread.join()
+
+# voice threads
+voiceThreads = []
+voiceThreads.append(voiceThread(8, "play sound notification"))
+
+for thread in voiceThreads:
+    thread.start()
+
+
 #
 # # UI threads
 # UIThreads = []
@@ -776,9 +789,9 @@ mainThreads = []
 # mainThreads.append(ProcessDataThread(2, "data processing"))
 mainThreads.append(LocationUpdateThread(3, "location update"))
 mainThreads.append(LocationDisplayThread(4, "location display"))
-mainThreads.append(NavigationThread(5, "navigation"))
-mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
-mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
+# mainThreads.append(NavigationThread(5, "navigation"))
+# mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
+# mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
 ##mainThreads.append(voiceThread(8, "play sound notification"))
 ##mainThreads.append(collectIRThread(9, "collect ir data"))
 

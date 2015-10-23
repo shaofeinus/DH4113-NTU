@@ -22,6 +22,8 @@ import time
 
 class fullNavi(object) :
     def __init__(self, voiceQueue, voiceSema) :
+        self.prev_message_time = 0
+        self.message_delay = 5
         self.voiceQueue = voiceQueue
         self.voiceSema = voiceSema
         self.ANGLE_TOLERANCE = 13
@@ -202,24 +204,28 @@ class fullNavi(object) :
             if (directionToHead > 0) :
                 sentence = "Turn right by %.0f degrees" %(directionToHead)
                 print sentence
-                self.voiceQueue.append(sentence)
-                self.voiceSema.release()
+                if time.time() - self.prev_message_time > self.message_delay:
+                    self.voiceQueue.append(sentence)
+                    self.voiceSema.release()
+                    self.prev_message_time = time.time()
             elif (directionToHead < 0) :
                 sentence = "Turn left by %.0f degrees" %(math.fabs(directionToHead))
                 print sentence
-                self.voiceQueue.append(sentence)
-                self.voiceSema.release()
+                if time.time() - self.prev_message_time > self.message_delay:
+                    self.voiceQueue.append(sentence)
+                    self.voiceSema.release()
+                    self.prev_message_time = time.time()
             return False
         else :
             sentence = "Move straight ahead"
             print sentence
-            self.voiceQueue.append(sentence)
-            self.voiceSema.release()
+            if time.time() - self.prev_message_time > self.message_delay:
+                self.voiceQueue.append(sentence)
+                self.voiceSema.release()
+                self.prev_message_time = time.time()
             return True
 
-    # while obstacle avoidance is taking place,
-    # if a node is detected, it alerts the user
-    def ignoreNodeObstacle(self) :   
+    def ignoreNodeObstacle(self) :
         distTo = distAngleCalc.distance(self.curX, self.curY, self.nexX, self.nexY)
         if distTo < self.maxTolerance :
             print "PSEUDO Node reached!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
@@ -244,7 +250,7 @@ class fullNavi(object) :
             return False
         else :
             if ((self.obstacleClearedSteps - self.obstacleEncounteredSteps) <= self.MAX_STEPS):
-                angleDisp = self.heading + self.obstStartHeading - self.obstEndHeading
+                angleDisp = self.obstStartHeading - self.obstEndHeading
                 self.nodeNavi.setPrevObstacleHeading(angleDisp)
             else :
                 self.nodeNavi.setPrevObstacleHeading(360)
