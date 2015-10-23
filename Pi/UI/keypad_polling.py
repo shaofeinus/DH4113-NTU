@@ -254,9 +254,10 @@ class keypad(object):
                         if time.time() - hold_timer_start >= self.HOLD_DELAY and not hold_thres_met: #checks if button is help sufficiently long
                             num_pressed += 12
                             self.string_gen(num_pressed) #held button press
-                            if num_pressed == 21:
-                                return self.out_str
-                            hold_thres_met = True
+                            # if num_pressed == 21:
+                            #     return self.out_str
+                            if num_pressed != 9 and num_pressed != 21:
+                                hold_thres_met = True
 
                     if num_pressed != -3 and not hold_thres_met: #normal button press
                         self.string_gen(num_pressed)
@@ -302,14 +303,14 @@ class keypad(object):
             self.curr_chr = '' #clear curr_chr
             self.num_count = 0 #reset count on key map
             self.prev_num = -3 #update keypress history
-        elif num_pressed == 9: #fwd
-            self.out_str += self.curr_chr
-            if self.en_snd:
-                self.chr_queue.append(self.curr_chr)
-                self.voiceSema.release()
-            self.curr_chr = '' #clear curr_chr
-            self.num_count = 0 #reset count on key map
-            self.prev_num = -3 #update keypress history
+        # elif num_pressed == 9: #fwd
+        #     self.out_str += self.curr_chr
+        #     if self.en_snd:
+        #         self.chr_queue.append(self.curr_chr)
+        #         self.voiceSema.release()
+        #     self.curr_chr = '' #clear curr_chr
+        #     self.num_count = 0 #reset count on key map
+        #     self.prev_num = -3 #update keypress history
         elif num_pressed == 23: #clear all
             self.out_str = ""
             if self.en_snd:
@@ -318,7 +319,7 @@ class keypad(object):
             self.curr_chr = '' #clear curr_chr
             self.num_count = 0 #reset count on key map
             self.prev_num = -3 #update keypress history
-        elif num_pressed == 21: #enter string
+        elif num_pressed == 21 or num_pressed == 9: #enter string (press or hold start)
             self.out_str += self.curr_chr
             self.curr_chr = '\n' #clear curr_chr
             self.num_count = 0 #reset count on key map
