@@ -63,7 +63,7 @@ class keypad(object):
         while True:
             print prompt
             self.speaker.speak(prompt)
-            self.chr_queue.clear()
+            self.chr_queue.flush()
             self.str_input = self.poll_for_str()
             print "Input is " + self.str_input + ". To confirm, press start. To cancel, press back"
 
@@ -82,7 +82,7 @@ class keypad(object):
             print prompt
             self.speaker.speak(prompt)
 
-            self.chr_queue.clear()
+            self.chr_queue.flush()
             self.ext_num_input = self.poll_for_ext_num()
 
             print "Input is " + str(self.ext_num_input) + ". To confirm, press start. To cancel, press back"
@@ -99,7 +99,7 @@ class keypad(object):
     def get_binary_response(self):
         self.en_snd = False
         while True:
-            self.chr_queue.clear()
+            self.chr_queue.flush()
             userInput = self.poll_for_num()
             if userInput == 9:
                 self.en_snd = True
@@ -114,7 +114,7 @@ class keypad(object):
         self.speaker.speak(str(prompt))
 
         while True:
-            self.chr_queue.clear()
+            self.chr_queue.flush()
             userInput = self.poll_for_num()
             if userInput == 9:
                 return
@@ -320,6 +320,8 @@ class keypad(object):
             self.num_count = 0 #reset count on key map
             self.prev_num = 21 #update keypress history
             self.end_flag = True
+            self.chr_queue.flush()
+            self.chr_queue.append("")
         else:
             if num_pressed >= 12: #hold down keys
                 if self.curr_chr != '':
