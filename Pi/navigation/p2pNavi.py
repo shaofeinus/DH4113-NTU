@@ -110,7 +110,7 @@ class navigation (object) :
 
     def alertNearingNode(self, distanceTo) :
         if ((distanceTo <= self.nearingCount) and (distanceTo > self.maxTolerance)) :
-            sentence = "You are now %.1f meters away from %s" %(distanceTo/100.0, self.nextNodeName)
+            sentence = "%s in %.1f metres." %(self.nextNodeName, distanceTo/100.0)
             print sentence
             self.voiceQueue.append(sentence)
             self.voiceSema.release()
@@ -169,7 +169,7 @@ class navigation (object) :
             if (turnAngle > 0) :
                 if ((self.prevObstacleHeading < 360) and (turnAngle > 90)) :
                     turnAngle = 90
-                sentence = "Move towards the right by " + str(turnAngle)
+                sentence = "Right " + str(turnAngle) + "."
                 print sentence
                 self.voiceQueue.append(sentence)
                 self.voiceSema.release()
@@ -178,7 +178,7 @@ class navigation (object) :
             elif (turnAngle < 0) :
                 if ((self.prevObstacleHeading < 360) and (turnAngle < -90)) :
                     turnAngle = -90
-                sentence = "Move towards the left by " + str(math.fabs(turnAngle))
+                sentence = "Left " + str(math.fabs(turnAngle)) + "."
                 print sentence
                 self.voiceQueue.append(sentence)
                 self.voiceSema.release()

@@ -30,18 +30,15 @@ class voiceThread(threading.Thread):
         global speaker
 
         while True:
-            speaker.speak("LOLOLOLOL")
+            voiceSema.acquire()
+            if len(voiceQueue) > 0:
+                speaker.speak(str(voiceQueue.popleft()))
             time.sleep(5)
 #             voiceSema.acquire()
 #             if len(voiceQueue) > 0:
 # ##                speaker.speak(str(voiceQueue.popleft()))
 #                 voiceQueue.popleft()
 #                 time.sleep(1)
-            # if len(voiceQueue) > 0:
-            #     time.sleep(1.5)
-            #     print "QLEN", len(voiceQueue)
-            #     voiceCommands.speak(str(voiceQueue.popleft()))
-            #     time.sleep(1.5)
 
 class ReceiveDataThread(threading.Thread):
     def __init__(self, threadID, threadName):
