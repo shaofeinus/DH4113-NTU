@@ -19,6 +19,10 @@ __author__ = 'Shao Fei'
 
 #to print sound just call voiceQueue.append(sentence)
 
+skip_pad = keypad_polling.keypad()
+
+skip_init = skip_pad.poll_for_num_timed()
+
 class voiceThread(threading.Thread):
     def __init__(self,threadID,threadName):
         threading.Thread.__init__(self)
@@ -782,25 +786,32 @@ voiceThreads.append(voiceThread(8, "play sound notification"))
 for thread in voiceThreads:
     thread.start()
 
-# UI threads
-UIThreads = []
-UIThreads.append(UIThread(-2, "Run UI"))
+if not skip_pad:
+    # UI threads
+    UIThreads = []
+    UIThreads.append(UIThread(-2, "Run UI"))
 
-for thread in UIThreads:
-   thread.start()
+    for thread in UIThreads:
+       thread.start()
 
-for thread in UIThreads:
-   thread.join()
+    for thread in UIThreads:
+       thread.join()
 
-locationTracker.setLocation(startLocation.getLocationXCoord(), startLocation.getLocationYCoord())
+    locationTracker.setLocation(startLocation.getLocationXCoord(), startLocation.getLocationYCoord())
+else:
+    locationTracker.setLocation(0,0)
 
 # Navigation initialization
 naviCount = 0
 navi = fullNavi.fullNavi(voiceQueue, voiceSema)
 # navi.generateFullPath("com1", 2, 14, 26)
-navi.generateFullPath(startLocation.getBuildingName(),
-                     startLocation.getLevelNumber(),
-                     startLocation.getLocationPointIndex(), endLocation.getLocationPointIndex())
+
+if not skip_pad:
+    navi.generateFullPath("com1", 2, 1, 10)
+else:
+    navi.generateFullPath(startLocation.getBuildingName(),
+                         startLocation.getLevelNumber(),
+                         startLocation.getLocationPointIndex(), endLocation.getLocationPointIndex())
 
 # List of threads
 mainThreads = []

@@ -123,6 +123,25 @@ class keypad(object):
             if userInput == 9:
                 return
 
+    def poll_for_num_timed(self):
+        timer_start = time.time()
+        while True:
+            self.GPIO.output(self.hori[x], self.GPIO.HIGH) # test for closed switch by taking turns setting each hori
+            num_pressed = -3 # reset num_pressed
+            for y in range(len(self.vert)): #check input at each vert
+                if self.GPIO.input(self.vert[y]) == self.GPIO.HIGH: # closed switch detected
+
+                    hold_timer_start = time.time()
+                    while GPIO.input(self.vert[y]) == GPIO.HIGH and self.num_map[y][x] == 10:
+                        if time.time() - hold_timer_start >= self.HOLD_DELAY: #checks if button is help sufficiently long
+                            return true
+
+            self.GPIO.output(self.hori[x], self.GPIO.LOW)
+            x = (x + 1) % len(self.hori)
+            if time.time() - timer_start > 5:
+                return False
+            time.sleep(self.SLEEP_DELAY)
+
 # ===============================NUM POLL==========================================
     def poll_for_num(self):
         x = 0
