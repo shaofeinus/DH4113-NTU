@@ -7,8 +7,8 @@ __author__ = 'Shao Fei'
 # y points to left
 # z points to up
 class CompassCalibrator:
-    WINDOW_SIZE = 700
-    MIN_DATA_NUM = 500
+    WINDOW_SIZE = 300
+    MIN_DATA_NUM = 200
     ACC_TOLERANCE = 0.5         # In G
     MAG_TOLERANCE = 0.5         # In fraction of max
     GYRO_TOLERANCE = 1000.0     # In raw

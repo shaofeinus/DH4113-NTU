@@ -1,4 +1,5 @@
 import distAngleCalc
+import time
 import math
 ##import RPi.GPIO as GPIO
 
@@ -18,6 +19,7 @@ class navigation (object) :
     def __init__(self, voiceQueue, voiceSema) :
         self.prev_message_time_dist = 0
         self.prev_message_time_turn = 0
+        self.prev_message_time_str = 0
         self.message_delay = 5
         self.voiceQueue = voiceQueue
         self.voiceSema = voiceSema
@@ -61,7 +63,7 @@ class navigation (object) :
         self.prevObstacleHeading = angle
 
     def setObstacleClearedHeading(self, angle) :
-        elf.obstacleClearedHeading = angle
+        self.obstacleClearedHeading = angle
 
     def updateCurCoord(self, x, y) :
         self.curXCoord = x
@@ -154,7 +156,12 @@ class navigation (object) :
             # or if not allowed to turn because already turned 90degrees
             if ((math.fabs(turnAngle) < self.angleTolerance) or
                 (self.canTurn is False)):
-                print "keep going in your current direction"
+                sentence = "Go straight"
+                if time.time() - self.prev_message_time_str > self.message_delay:
+                    self.voiceQueue.append(sentence)
+                    self.voiceSema.release()
+                    self.prev_message_time_str = time.time()
+                print sentence
                 return 0
             
 ##            # ensure don't turn back into an obstacle 
@@ -211,7 +218,7 @@ class navigation (object) :
                     else :
                         if math.fabs(self.curAngle - self.obstacleClearedHeading) > 75:
                             self.canTurn = False
-                sentence = "Left %.0f" %(directionToHead)
+                sentence = "Left %.0f" %(turnAngle)
                 print sentence
                 if time.time() - self.prev_message_time_turn > self.message_delay:
                     self.voiceQueue.append(sentence)
@@ -220,7 +227,11 @@ class navigation (object) :
     ##                    GPIO.output(self.leftPin, True)
     ##                    GPIO.output(self.rightPin, False)
             else :
-                sentence = "Keep going in your current direction!"
+                sentence = "Go straight"
+                if time.time() - self.prev_message_time_str > self.message_delay:
+                    self.voiceQueue.append(sentence)
+                    self.voiceSema.release()
+                    self.prev_message_time_str = time.time()
                 print sentence
     ##                self.voiceQueue.append(sentence)
     ##                self.voiceSema.release()

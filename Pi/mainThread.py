@@ -36,7 +36,7 @@ class voiceThread(threading.Thread):
                 if temp == "-~^/CLEAR^~-":
                     voiceQueue.clear()
                 else:
-                    speaker.speak(str(voiceQueue.popleft()))
+                    speaker.speak(temp)
             else:
                 time.sleep(1)
             # time.sleep(5)

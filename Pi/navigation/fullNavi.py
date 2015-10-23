@@ -26,7 +26,6 @@ class fullNavi(object) :
         self.message_delay = 5
         self.voiceQueue = voiceQueue
         self.voiceSema = voiceSema
-        self.voiceStopSema
         self.ANGLE_TOLERANCE = 13
 
         self.buildingName = None
@@ -45,7 +44,7 @@ class fullNavi(object) :
 
         # after turning, make sure take 1 step
         self.obstacleTurnSteps = 0
-        self.NUM_OBSTACLE_STEPS
+        self.NUM_OBSTACLE_STEPS = 2
 
         self.obstStartHeading = 0
         self.obstEndHeading = 0
@@ -233,6 +232,10 @@ class fullNavi(object) :
             return False
         else :
             sentence = "Move straight ahead"
+            if time.time() - self.prev_message_time > self.message_delay:
+                self.voiceQueue.append(sentence)
+                self.voiceSema.release()
+                self.prev_message_time = time.time()
             return True
 
     def ignoreNodeObstacle(self) :
@@ -262,11 +265,11 @@ class fullNavi(object) :
             return False
         else :
             # update obstacle cleared heading
-            self.nodeNavi.updateObstacleClearedHeading(self.obstEndHeading)
+            self.nodeNavi.setObstacleClearedHeading(self.obstEndHeading)
             if ((self.obstacleClearedSteps - self.obstacleTurnSteps) > self.NUM_OBSTACLE_STEPS) :
-                self.nodeNavi.canTurn(True)
+                self.nodeNavi.setCanTurn(True)
             else :
-                self.nodeNavi.canTurn(False)
+                self.nodeNavi.setCanTurn(False)
             
             if ((self.obstacleClearedSteps - self.obstacleEncounteredSteps) <= self.MAX_STEPS):
                 angleDisp = self.obstStartHeading - self.obstEndHeading
@@ -280,7 +283,8 @@ class fullNavi(object) :
             isNodeReached = self.nodeNavi.navigate()
 
             if isNodeReached == 1 :
-                print "NODE REACHED!!!!!"
+                sentence = "NODE REACHED!!!!!"
+                print sentence
                 self.voiceQueue.append(sentence)
                 self.voiceSema.release()
                 self.pathListIndex += 1
