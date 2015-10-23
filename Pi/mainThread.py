@@ -107,11 +107,48 @@ class CalibrationThread(threading.Thread):
 
         global keypad
         global speaker
+
         validInput = False
         while not validInput:
             # userInput = raw_input("Press enter to calibrate? y/n ")
 
-            speaker.speak(str("To begin calibration, press start. To skip calibration, press back."))
+            speaker.speak(str("To calibrate gyroscope, press start. To skip, press back."))
+            userInput = keypad.get_binary_response()
+            print userInput
+            if not userInput:
+                validInput = True
+                for i in range(0, 3):
+                    num = 3 - i
+                    print num
+                    speaker.speak(str(num))
+                    time.sleep(1)
+                dataFeeder.serialPort.flushInput()
+                dataFeeder.serialPort.flushOutput()
+                userInputLock.release()
+
+        while not self.isDone['gyro']:
+            self.calibrateGyro()
+
+        userInputLock.acquire()
+
+        self.calibrationTools.initGyroOffset(-self.calibrator.initGXOffset,
+                                             -self.calibrator.initGYOffset,
+                                             -self.calibrator.initGZOffset)
+
+        temp = 'Gyro calibrated' + \
+               self.calibrator.initGXOffset + ' ' + \
+               self.calibrator.initGYOffset, + ' ' + \
+               self.calibrator.initGZOffset
+        print temp
+        speaker.speak(temp)
+        while keypad.get_binary_response():
+           pass
+
+        validInput = False
+        while not validInput:
+            # userInput = raw_input("Press enter to calibrate? y/n ")
+
+            speaker.speak(str("To begin compass calibration, press start. To skip calibration, press back."))
             userInput = keypad.get_binary_response()
             print userInput
             if not userInput:
@@ -119,15 +156,28 @@ class CalibrationThread(threading.Thread):
             else:
                 dataFeeder.serialPort.flushInput()
                 dataFeeder.serialPort.flushOutput()
+
+                global data, data_single
+                data = [deque() for x in range(NUM_QUEUED_ID)]
+                data_single = [0 for x in range(NUM_SINGLE_ID)]
+                data.extend(data_single)
+
                 userInputLock.release()
                 return
+
         for i in range(0, 3):
-            num =  3 - i
+            num = 3 - i
             print num
             speaker.speak(str(num))
             time.sleep(1)
 
         # print 'Calibrating'
+
+        global data, data_single
+        data = [deque() for x in range(NUM_QUEUED_ID)]
+        data_single = [0 for x in range(NUM_SINGLE_ID)]
+        data.extend(data_single)
+
         dataFeeder.serialPort.flushInput()
         dataFeeder.serialPort.flushOutput()
         userInputLock.release()
@@ -141,14 +191,6 @@ class CalibrationThread(threading.Thread):
         while not self.isDone['nOffset']:
             self.calibrateNOffset()
 
-        while not self.isDone['gyro']:
-            self.calibrateGyro()
-
-        self.calibrationTools.initGyroOffset(-self.calibrator.initGXOffset,
-                                             -self.calibrator.initGYOffset,
-                                             -self.calibrator.initGZOffset)
-        # gyroDriftThread.start()
-
         userInputLock.acquire()
         temp = 'Your are ' + str(self.calibrator.getNOffsetAngle() / (2 * math.pi) * 360) + ' from N. To continue, press start'
         print temp
@@ -157,6 +199,12 @@ class CalibrationThread(threading.Thread):
            pass
         dataFeeder.serialPort.flushInput()
         dataFeeder.serialPort.flushOutput()
+
+        global data, data_single
+        data = [deque() for x in range(NUM_QUEUED_ID)]
+        data_single = [0 for x in range(NUM_SINGLE_ID)]
+        data.extend(data_single)
+
         userInputLock.release()
 
     def calibrateTilt(self):
