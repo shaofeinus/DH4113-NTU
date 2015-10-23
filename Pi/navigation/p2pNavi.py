@@ -16,6 +16,9 @@ import math
 
 class navigation (object) :
     def __init__(self, voiceQueue, voiceSema) :
+        self.prev_message_time_dist = 0
+        self.prev_message_time_turn = 0
+        self.message_delay = 5
         self.voiceQueue = voiceQueue
         self.voiceSema = voiceSema
         self.prevXCoord = 0         # cm
@@ -110,10 +113,12 @@ class navigation (object) :
 
     def alertNearingNode(self, distanceTo) :
         if ((distanceTo <= self.nearingCount) and (distanceTo > self.maxTolerance)) :
-            sentence = "You are now %.1f meters away from %s" %(distanceTo/100.0, self.nextNodeName)
+            sentence = "%s in %.1f metres." %(self.nextNodeName, distanceTo/100.0)
             print sentence
-            self.voiceQueue.append(sentence)
-            self.voiceSema.release()
+            if time.time() - self.prev_message_time_dist > self.message_delay:
+                self.voiceQueue.append(sentence)
+                self.voiceSema.release()
+                self.prev_message_time_dist = time.time()
             while (self.nearingCount >= distanceTo) :
                 self.nearingCount -= 100
 
@@ -169,19 +174,23 @@ class navigation (object) :
             if (turnAngle > 0) :
                 if ((self.prevObstacleHeading < 360) and (turnAngle > 90)) :
                     turnAngle = 90
-                sentence = "Move towards the right by " + str(turnAngle)
+                sentence = "Right " + str(turnAngle) + "."
                 print sentence
-                self.voiceQueue.append(sentence)
-                self.voiceSema.release()
+                if time.time() - self.prev_message_time_turn > self.message_delay:
+                    self.voiceQueue.append(sentence)
+                    self.voiceSema.release()
+                    self.prev_message_time_dist = time.time()
     ##                    GPIO.output(self.rightPin, True)
     ##                    GPIO.output(self.leftPin, False)
             elif (turnAngle < 0) :
                 if ((self.prevObstacleHeading < 360) and (turnAngle < -90)) :
                     turnAngle = -90
-                sentence = "Move towards the left by " + str(math.fabs(turnAngle))
+                sentence = "Left " + str(math.fabs(turnAngle)) + "."
                 print sentence
-                self.voiceQueue.append(sentence)
-                self.voiceSema.release()
+                if time.time() - self.prev_message_time_turn > self.message_delay:
+                    self.voiceQueue.append(sentence)
+                    self.voiceSema.release()
+                    self.prev_message_time_dist = time.time()
     ##                    GPIO.output(self.leftPin, True)
     ##                    GPIO.output(self.rightPin, False)
             else :
