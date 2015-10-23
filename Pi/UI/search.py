@@ -77,7 +77,7 @@ class locationSetting(object) :
                     print "Building is " + self.buildingName + ". To confirm, press start. To cancel, press back"
                     self.speaker.speak("Building is " + self.buildingName + ". To confirm, press start. To cancel, press back")
 
-                    if not self.keypad.get_binary_response:
+                    if not self.keypad.get_binary_response():
                         break
         else:
             while True:
@@ -87,7 +87,7 @@ class locationSetting(object) :
                 print "Building is " + self.buildingName + ". To confirm, press start. To cancel, press back"
                 self.speaker.speak("Building is " + self.buildingName + ". To confirm, press start. To cancel, press back")
 
-                if not self.keypad.get_binary_response:
+                if not self.keypad.get_binary_response():
                     break
 
         if self.isEndLocation:
@@ -101,7 +101,7 @@ class locationSetting(object) :
                     print "Level number is " + str(self.levelNumber) + ". To confirm, press start. To cancel, press back"
                     self.speaker.speak("Level number is " + str(self.levelNumber) + ". To confirm, press start. To cancel, press back")
 
-                    if not self.keypad.get_binary_response:
+                    if not self.keypad.get_binary_response():
                         break
         else:
             while True:
@@ -110,7 +110,7 @@ class locationSetting(object) :
                 print "Level number is " + str(self.levelNumber) + ". To confirm, press start. To cancel, press back"
                 self.speaker.speak("Level number is " + str(self.levelNumber) + ". To confirm, press start. To cancel, press back")
 
-                if not self.keypad.get_binary_response:
+                if not self.keypad.get_binary_response():
                     break
 
             # print "Building is " + self.buildingName + ", level is " + str(self.levelNumber) + ". To confirm, press start. To cancel, press back"
@@ -137,7 +137,7 @@ class locationSetting(object) :
                         print "Building is " + self.buildingName + ". To confirm, press start. To cancel, press back"
                         self.speaker.speak("Building is " + self.buildingName + ". To confirm, press start. To cancel, press back")
 
-                        if not self.keypad.get_binary_response:
+                        if not self.keypad.get_binary_response():
                             break
             else:
                 while True:
@@ -147,7 +147,7 @@ class locationSetting(object) :
                     print "Building is " + self.buildingName + ". To confirm, press start. To cancel, press back"
                     self.speaker.speak("Building is " + self.buildingName + ". To confirm, press start. To cancel, press back")
 
-                    if not self.keypad.get_binary_response:
+                    if not self.keypad.get_binary_response():
                         break
 
             if self.isEndLocation:
@@ -161,7 +161,7 @@ class locationSetting(object) :
                         print "Level number is " + str(self.levelNumber) + ". To confirm, press start. To cancel, press back"
                         self.speaker.speak("Level number is " + str(self.levelNumber) + ". To confirm, press start. To cancel, press back")
 
-                        if not self.keypad.get_binary_response:
+                        if not self.keypad.get_binary_response():
                             break
             else:
                 while True:
@@ -170,7 +170,7 @@ class locationSetting(object) :
                     print "Level number is " + str(self.levelNumber) + ". To confirm, press start. To cancel, press back"
                     self.speaker.speak("Level number is " + str(self.levelNumber) + ". To confirm, press start. To cancel, press back")
 
-                    if not self.keypad.get_binary_response:
+                    if not self.keypad.get_binary_response():
                         break
 
             isMapSetSuccessfully = self.building.setMap(self.buildingName, self.levelNumber)

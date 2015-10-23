@@ -1,5 +1,4 @@
 import threading
-import pychecker.checker
 import time
 import math
 import datetime
