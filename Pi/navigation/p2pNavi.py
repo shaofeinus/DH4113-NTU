@@ -20,7 +20,8 @@ class navigation (object) :
         self.prev_message_time_dist = 0
         self.prev_message_time_turn = 0
         self.prev_message_time_str = 0
-        self.message_delay = 5
+        self.prev_message = ""
+        self.message_delay = 6
         self.voiceQueue = voiceQueue
         self.voiceSema = voiceSema
         self.prevXCoord = 0         # cm
@@ -130,9 +131,11 @@ class navigation (object) :
             sentence = "%s in %.1f metres." %(self.nextNodeName, distanceTo/100.0)
             print sentence
             if time.time() - self.prev_message_time_dist > self.message_delay:
-                self.voiceQueue.append(sentence)
-                self.voiceSema.release()
-                self.prev_message_time_dist = time.time()
+                if self.prev_message != sentence:
+                    self.voiceQueue.append(sentence)
+                    self.voiceSema.release()
+                    self.prev_message_time_dist = time.time()
+                    self.prev_message = sentence
             while (self.nearingCount >= distanceTo) :
                 self.nearingCount -= 100
 
@@ -205,9 +208,11 @@ class navigation (object) :
                 sentence = "Right %.0f" %(turnAngle)
                 print sentence
                 if time.time() - self.prev_message_time_turn > self.message_delay:
-                    self.voiceQueue.append(sentence)
-                    self.voiceSema.release()
-                    self.prev_message_time_turn = time.time()
+                    if self.prev_message != sentence:
+                        self.voiceQueue.append(sentence)
+                        self.voiceSema.release()
+                        self.prev_message_time_turn = time.time()
+                        self.prev_message = sentence
     ##                    GPIO.output(self.rightPin, True)
     ##                    GPIO.output(self.leftPin, False)
             elif (turnAngle < 0) :
@@ -221,17 +226,21 @@ class navigation (object) :
                 sentence = "Left %.0f" %(turnAngle)
                 print sentence
                 if time.time() - self.prev_message_time_turn > self.message_delay:
-                    self.voiceQueue.append(sentence)
-                    self.voiceSema.release()
-                    self.prev_message_time_turn = time.time()
+                    if self.prev_message != sentence:
+                        self.voiceQueue.append(sentence)
+                        self.voiceSema.release()
+                        self.prev_message_time_turn = time.time()
+                        self.prev_message = sentence
     ##                    GPIO.output(self.leftPin, True)
     ##                    GPIO.output(self.rightPin, False)
             else :
-                sentence = "Go straight"
+                sentence = "Go."
                 if time.time() - self.prev_message_time_str > self.message_delay:
-                    self.voiceQueue.append(sentence)
-                    self.voiceSema.release()
-                    self.prev_message_time_str = time.time()
+                    if self.prev_message != sentence:
+                        self.voiceQueue.append(sentence)
+                        self.voiceSema.release()
+                        self.prev_message_time_turn = time.time()
+                        self.prev_message = sentence
                 print sentence
     ##                self.voiceQueue.append(sentence)
     ##                self.voiceSema.release()
