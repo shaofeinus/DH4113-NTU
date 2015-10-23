@@ -67,6 +67,8 @@ class keypad(object):
             self.str_input = self.poll_for_str()
             print "Input is " + self.str_input + ". To confirm, press start. To cancel, press back"
 
+            return self.str_input
+
             if self.en_snd:
                 self.speaker.speak("Input is " + self.str_input + ". To confirm, press start. To cancel, press back")
             ans = 0
@@ -84,6 +86,8 @@ class keypad(object):
 
             self.chr_queue.flush()
             self.ext_num_input = self.poll_for_ext_num()
+
+            return self.ext_num_input
 
             print "Input is " + str(self.ext_num_input) + ". To confirm, press start. To cancel, press back"
             if self.en_snd:

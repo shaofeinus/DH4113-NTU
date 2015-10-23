@@ -56,10 +56,10 @@ class locationSetting(object) :
         return self.locationPoint
 
     def getLocationXCoord(self) :
-        return building.getLocationXCoord()
+        return self.building.getLocationXCoord()
 
     def getLocationYCoord(self) :
-        return building.getLocationYCoord()        
+        return self.building.getLocationYCoord()
 
     def getBuildingFromUser(self) :
         # get building name and level number input from user (keypad code)
@@ -70,6 +70,7 @@ class locationSetting(object) :
                 self.speaker.speak ("Is destination in the same building as the starting location? If \"YES\", press start. If \"NO\", press back.")
 
                 if self.keypad.get_binary_response():
+                    print self.BUILDING_PROMPT
                     self.buildingName = self.keypad.get_input_str(self.BUILDING_PROMPT)# raw_input("Enter building name or number: ")
             else:
                 self.buildingName = self.keypad.get_input_str(self.BUILDING_PROMPT)# raw_input("Enter building name or number: ")
