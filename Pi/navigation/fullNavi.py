@@ -143,8 +143,7 @@ class fullNavi(object) :
             self.pathListIndex = nextNodeIndex - 1
             sentence = "Re-routing."
             print sentence
-            self.voiceQueue.append("-~^/CLEAR^~-")
-            self.voiceSema.release()
+            self.voiceQueue.flush()
             self.voiceQueue.append(sentence)
             self.voiceSema.release()
             self.updatePrevNexCoord()
@@ -173,8 +172,7 @@ class fullNavi(object) :
         curNodeName = self.comMap[self.mapNumber].getLocationName(prevNode)
         nodeReachedSentence = "You reached" + str(curNodeName) + "."
         print nodeReachedSentence
-        self.voiceQueue.append("-~^/CLEAR^~-")
-        self.voiceSema.release()
+        self.voiceQueue.flush()
         self.voiceQueue.append(nodeReachedSentence)
         self.voiceSema.release()
         print "Path index " + str(self.pathListIndex)
@@ -238,8 +236,7 @@ class fullNavi(object) :
             else :
                 sentence = "Navigation complete."
                 print sentence
-                self.voiceQueue.append("-~^/CLEAR^~-")
-                self.voiceSema.release()
+                self.voiceQueue.flush()
                 self.voiceQueue.append(sentence)
                 self.voiceSema.release()
                 return True
@@ -273,8 +270,7 @@ class fullNavi(object) :
                 else :
                     sentence = "Navigation complete."
                     print sentence
-                    self.voiceQueue.append("-~^/CLEAR^~-")
-                    self.voiceSema.release()
+                    self.voiceQueue.flush()
                     self.voiceQueue.append(sentence)
                     self.voiceSema.release()
                     return True

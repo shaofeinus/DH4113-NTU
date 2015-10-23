@@ -13,10 +13,9 @@ from UI import voiceCommands
 from UI import search
 from UI import keypad_polling
 from UI import pyespeak
+from my_deque import my_deque
 
 __author__ = 'Shao Fei'
-
-#to print sound just call voiceQueue.append(sentence)
 
 class voiceThread(threading.Thread):
     def __init__(self,threadID,threadName):
@@ -31,20 +30,10 @@ class voiceThread(threading.Thread):
         global speaker
 
         while True:
-            if len(voiceQueue) > 0:
-                temp = str(voiceQueue.popleft())
-                if temp == "-~^/CLEAR^~-":
-                    voiceQueue.clear()
-                else:
-                    speaker.speak(str(voiceQueue.popleft()))
+            if not voiceQueue.empty():
+                speaker.speak(str(voiceQueue.popleft()))
             else:
                 time.sleep(1)
-            # time.sleep(5)
-#             voiceSema.acquire()
-#             if len(voiceQueue) > 0:
-# ##                speaker.speak(str(voiceQueue.popleft()))
-#                 voiceQueue.popleft()
-#                 time.sleep(1)
 
 class ReceiveDataThread(threading.Thread):
     def __init__(self, threadID, threadName):
@@ -711,7 +700,7 @@ NUM_SINGLE_ID = 11
 
 
 # Queue for sound
-voiceQueue = deque()
+voiceQueue = my_deque()
 
 # Data lists for raw data
 data = [deque() for x in range(NUM_QUEUED_ID)]
@@ -768,7 +757,6 @@ voiceThreads.append(voiceThread(8, "play sound notification"))
 
 for thread in voiceThreads:
     thread.start()
-
 
 #
 # # UI threads
