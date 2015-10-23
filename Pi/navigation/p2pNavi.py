@@ -45,8 +45,20 @@ class navigation (object) :
         # distance from node for updates
         self.nearingCount = 500
 
+        # boolean whether allowed to turn
+        self.canTurn = True
+
+        # heading to check if can stop turning
+        self.obstacleClearedHeading = 0
+
+    def setCanTurn(self, canTurn) :
+        self.canTurn = canTurn
+
     def setPrevObstacleHeading(self, angle) :
         self.prevObstacleHeading = angle
+
+    def setObstacleClearedHeading(self, angle) :
+        elf.obstacleClearedHeading = angle
 
     def updateCurCoord(self, x, y) :
         self.curXCoord = x
@@ -134,7 +146,9 @@ class navigation (object) :
             turnAngle = self.getTurnAngle()
 
             # if angle is within tolerance, continue in current direction
-            if (math.fabs(turnAngle) < self.angleTolerance) :
+            # or if not allowed to turn because already turned 90degrees
+            if ((math.fabs(turnAngle) < self.angleTolerance) or
+                (self.canTurn is False)):
                 print "keep going in your current direction"
                 return 0
             
@@ -166,10 +180,17 @@ class navigation (object) :
 ##                    sentence = "keep going straight"
 ##                print sentence
 ##            else:
+
             if (turnAngle > 0) :
                 if ((self.prevObstacleHeading < 360) and (turnAngle > 90)) :
                     turnAngle = 90
-                sentence = "Right " + str(turnAngle) + "."
+                    if self.canTurn is False :
+                        return 0
+                    else :
+                        if math.fabs(self.curAngle - self.obstacleClearedHeading) > 75:
+                            self.canTurn = False
+                
+                sentence = "Right %.0f" %(turnAngle)
                 print sentence
                 self.voiceQueue.append(sentence)
                 self.voiceSema.release()
@@ -178,7 +199,12 @@ class navigation (object) :
             elif (turnAngle < 0) :
                 if ((self.prevObstacleHeading < 360) and (turnAngle < -90)) :
                     turnAngle = -90
-                sentence = "Left " + str(math.fabs(turnAngle)) + "."
+                    if self.canTurn is False :
+                        return 0
+                    else :
+                        if math.fabs(self.curAngle - self.obstacleClearedHeading) > 75:
+                            self.canTurn = False
+                sentence = "Left %.0f" %(directionToHead)
                 print sentence
                 self.voiceQueue.append(sentence)
                 self.voiceSema.release()

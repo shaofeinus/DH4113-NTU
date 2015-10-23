@@ -491,6 +491,7 @@ class NavigationThread(threading.Thread):
         global naviCount
         global obstacleDetected
         global checkSideObstacle
+        global isFirstCleared
         while 1:
             naviCount += 1
             locationTrackerLock.acquire()
@@ -510,7 +511,8 @@ class NavigationThread(threading.Thread):
                     navi.ignoreNodeObstacle()
                     time.sleep(0.1)
                     continue
-                
+                if isFirstCleared == 1 :
+                    navi.updateObstacleTurnSteps(locationTracker.getTotalSteps())
                 navi.updateClearSteps(locationTracker.getTotalSteps())
                 navi.setObstacleEndHeading(heading)
                 isNavigationDone = navi.fullNavigate()
@@ -528,6 +530,7 @@ class ObstacleAvoidanceThread(threading.Thread):
     def run(self):
         global obstacleDetected
         global checkSideObstacle
+        global isFirstCleared
         while 1:
             irFC = data[6]
             irLS = data[7]
@@ -558,6 +561,7 @@ class ObstacleAvoidanceThread(threading.Thread):
                 obstacleStatusLock.acquire()
                 obstacleDetected = 1
                 checkSideObstacle = 0
+                isFirstCleared = 0
                 obstacleStatusLock.release()
                 obstacle.vibrateMotors()
             # existing obstacle
@@ -588,6 +592,7 @@ class ObstacleClearedThread(threading.Thread):
 
     def run(self):
         global checkSideObstacle
+        global isFirstCleared
         while 1:
             irFC = data[6]
             irLS = data[7]
@@ -613,6 +618,7 @@ class ObstacleClearedThread(threading.Thread):
                 if obstacle.checkObstacleCleared() == 1:
                     obstacleStatusLock.acquire()
                     checkSideObstacle = 0
+                    isFirstCleared = 1
                     print "obstacle cleared"
                     obstacleStatusLock.release()
             time.sleep(0.5)
@@ -717,6 +723,8 @@ obstacle = obstacleAvoidance.obstacleAvoidance()
 # 1 if an obstacle avoidance is taking place, else 0
 obstacleDetected = 0
 checkSideObstacle = 0
+# 1 if just cleared, 0 if cleared a while ago
+isFirstCleared = 0
 
 # Location tracker initialisation
 # TODO: Set initial position
@@ -782,14 +790,11 @@ navi.generateFullPath("com1", 2, 14, 26)
 # List of threads
 mainThreads = []
 
-# mainThreads.append(ReceiveDataThread(1, "data receiving"))
-# mainThreads.append(ProcessDataThread(2, "data processing"))
 mainThreads.append(LocationUpdateThread(3, "location update"))
 mainThreads.append(LocationDisplayThread(4, "location display"))
-# mainThreads.append(NavigationThread(5, "navigation"))
-# mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
-# mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
-##mainThreads.append(voiceThread(8, "play sound notification"))
+mainThreads.append(NavigationThread(5, "navigation"))
+mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
+mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
 ##mainThreads.append(collectIRThread(9, "collect ir data"))
 
 
