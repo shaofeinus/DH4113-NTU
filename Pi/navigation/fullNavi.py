@@ -28,7 +28,7 @@ class fullNavi(object) :
         self.prev_message = ""
         self.voiceQueue = voiceQueue
         self.voiceSema = voiceSema
-        self.ANGLE_TOLERANCE = 13
+        self.ANGLE_TOLERANCE = 15
 
         self.buildingName = None
         self.levelNumber = 0
@@ -252,7 +252,11 @@ class fullNavi(object) :
     def ignoreNodeObstacle(self) :
         distTo = distAngleCalc.distance(self.curX, self.curY, self.nexX, self.nexY)
         if distTo < self.maxTolerance :
-            print "PSEUDO Node reached!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            sentence = "Node Reached."
+            print sentence
+            self.voiceQueue.flush()
+            self.voiceQueue.append(sentence)
+            self.voiceSema.release()
             self.pathListIndex += 1
             self.alertNodeReached()
             if self.pathListIndex < (len(self.pathList) - 1) :
