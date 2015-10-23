@@ -19,7 +19,7 @@ __author__ = 'Shao Fei'
 
 #to print sound just call voiceQueue.append(sentence)
 
-skip_pad = keypad_polling.keypad()
+skip_pad = keypad_polling.keypad(None, None, None)
 
 skip_init = skip_pad.poll_for_num_timed()
 
@@ -786,7 +786,7 @@ voiceThreads.append(voiceThread(8, "play sound notification"))
 for thread in voiceThreads:
     thread.start()
 
-if not skip_pad:
+if not skip_init:
     # UI threads
     UIThreads = []
     UIThreads.append(UIThread(-2, "Run UI"))
@@ -806,7 +806,7 @@ naviCount = 0
 navi = fullNavi.fullNavi(voiceQueue, voiceSema)
 # navi.generateFullPath("com1", 2, 14, 26)
 
-if not skip_pad:
+if skip_init:
     navi.generateFullPath("com1", 2, 1, 10)
 else:
     navi.generateFullPath(startLocation.getBuildingName(),
@@ -816,12 +816,16 @@ else:
 # List of threads
 mainThreads = []
 
-mainThreads.append(LocationUpdateThread(3, "location update"))
-mainThreads.append(LocationDisplayThread(4, "location display"))
-mainThreads.append(NavigationThread(5, "navigation"))
-mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
-mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
-##mainThreads.append(collectIRThread(9, "collect ir data"))
+if skip_init:
+    mainThreads.append(LocationUpdateThread(3, "location update"))
+    mainThreads.append(LocationDisplayThread(4, "location display"))
+else:
+    mainThreads.append(LocationUpdateThread(3, "location update"))
+    mainThreads.append(LocationDisplayThread(4, "location display"))
+    mainThreads.append(NavigationThread(5, "navigation"))
+    mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
+    mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
+    ##mainThreads.append(collectIRThread(9, "collect ir data"))
 
 
 for thread in mainThreads:

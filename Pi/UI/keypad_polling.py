@@ -125,6 +125,7 @@ class keypad(object):
 
     def poll_for_num_timed(self):
         timer_start = time.time()
+        x = 0
         while True:
             self.GPIO.output(self.hori[x], self.GPIO.HIGH) # test for closed switch by taking turns setting each hori
             num_pressed = -3 # reset num_pressed
@@ -134,7 +135,7 @@ class keypad(object):
                     hold_timer_start = time.time()
                     while GPIO.input(self.vert[y]) == GPIO.HIGH and self.num_map[y][x] == 10:
                         if time.time() - hold_timer_start >= self.HOLD_DELAY: #checks if button is help sufficiently long
-                            return true
+                            return True
 
             self.GPIO.output(self.hori[x], self.GPIO.LOW)
             x = (x + 1) % len(self.hori)
