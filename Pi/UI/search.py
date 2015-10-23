@@ -54,7 +54,12 @@ class locationSetting(object) :
 
     def getLocationPointIndex(self) :
         return self.locationPoint
-        
+
+    def getLocationXCoord(self) :
+        return building.getLocationXCoord()
+
+    def getLocationYCoord(self) :
+        return building.getLocationYCoord()        
 
     def getBuildingFromUser(self) :
         # get building name and level number input from user (keypad code)

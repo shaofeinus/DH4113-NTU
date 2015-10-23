@@ -13,9 +13,10 @@ from UI import voiceCommands
 from UI import search
 from UI import keypad_polling
 from UI import pyespeak
-from my_deque import my_deque
 
 __author__ = 'Shao Fei'
+
+#to print sound just call voiceQueue.append(sentence)
 
 class voiceThread(threading.Thread):
     def __init__(self,threadID,threadName):
@@ -30,10 +31,20 @@ class voiceThread(threading.Thread):
         global speaker
 
         while True:
-            if not voiceQueue.empty():
-                speaker.speak(str(voiceQueue.popleft()))
+            if len(voiceQueue) > 0:
+                temp = str(voiceQueue.popleft())
+                if temp == "-~^/CLEAR^~-":
+                    voiceQueue.clear()
+                else:
+                    speaker.speak(temp)
             else:
                 time.sleep(1)
+            # time.sleep(5)
+#             voiceSema.acquire()
+#             if len(voiceQueue) > 0:
+# ##                speaker.speak(str(voiceQueue.popleft()))
+#                 voiceQueue.popleft()
+#                 time.sleep(1)
 
 class ReceiveDataThread(threading.Thread):
     def __init__(self, threadID, threadName):
@@ -108,7 +119,7 @@ class CalibrationThread(threading.Thread):
         while not validInput:
             # userInput = raw_input("Press enter to calibrate? y/n ")
 
-            # speaker.speak(str("To calibrate gyroscope, press start."))
+            speaker.speak(str("To calibrate gyroscope, press start."))
             userInput = keypad.get_binary_response()
             print userInput
             if not userInput:
@@ -116,7 +127,7 @@ class CalibrationThread(threading.Thread):
                 for i in range(0, 3):
                     num = 3 - i
                     print num
-                    # speaker.speak(str(num))
+                    speaker.speak(str(num))
                     time.sleep(1)
                 dataFeeder.serialPort.flushInput()
                 dataFeeder.serialPort.flushOutput()
@@ -134,22 +145,22 @@ class CalibrationThread(threading.Thread):
 
         userInputLock.acquire()
 
-        self.calibrationTools.initGyroOffset(self.calibrator.initGXOffset,
-                                             self.calibrator.initGYOffset,
-                                             self.calibrator.initGZOffset)
+        self.calibrationTools.initGyroOffset(-self.calibrator.initGXOffset,
+                                             -self.calibrator.initGYOffset,
+                                             -self.calibrator.initGZOffset)
 
         temp = 'Gyro calibrated' + \
                str(self.calibrator.initGXOffset) + ' ' + \
                str(self.calibrator.initGYOffset) + ' ' + \
                str(self.calibrator.initGZOffset)
         print temp
-        # speaker.speak(temp)
+        speaker.speak(temp)
 
         validInput = False
         while not validInput:
             # userInput = raw_input("Press enter to calibrate? y/n ")
 
-            # speaker.speak(str("To begin compass calibration, press start. To skip calibration, press back."))
+            speaker.speak(str("To begin compass calibration, press start. To skip calibration, press back."))
             userInput = keypad.get_binary_response()
             print userInput
             if not userInput:
@@ -168,7 +179,7 @@ class CalibrationThread(threading.Thread):
         for i in range(0, 3):
             num = 3 - i
             print num
-            # speaker.speak(str(num))
+            speaker.speak(str(num))
             time.sleep(1)
 
         # print 'Calibrating'
@@ -196,7 +207,7 @@ class CalibrationThread(threading.Thread):
         userInputLock.acquire()
         temp = 'Your are ' + str(self.calibrator.getNOffsetAngle() / (2 * math.pi) * 360) + ' from N. To continue, press start'
         print temp
-        # speaker.speak(temp)
+        speaker.speak(temp)
         while keypad.get_binary_response():
            pass
         dataFeeder.serialPort.flushInput()
@@ -628,6 +639,9 @@ class UIThread(threading.Thread):
         global data
         global keypad
         global speaker
+        global startLocation
+        global endLocation
+
         userInputLock.acquire()
 
         # get start location
@@ -706,7 +720,7 @@ NUM_SINGLE_ID = 11
 
 
 # Queue for sound
-voiceQueue = my_deque()
+voiceQueue = deque()
 
 # Data lists for raw data
 data = [deque() for x in range(NUM_QUEUED_ID)]
@@ -724,6 +738,8 @@ isFirstCleared = 0
 # Location tracker initialisation
 # TODO: Set initial position
 locationTracker = locationTracker.LocationTracker(7065.0, 1787.0, 0.0)
+##locationTracker = locationTracker.LocationTracker(startLocation.getLocationXCoord(),
+##                                                  startLocation.getLocationYCoord(), 0.0)
 dataFeeder = dataFeeder.DataFeeder()
 
 # Speaker object
@@ -737,6 +753,10 @@ dataInSema = threading.Semaphore(0)
 userInputLock = threading.Lock()
 voiceSema = threading.Semaphore(0)
 voiceStopSema = False
+
+# Location variables
+startLocation = None
+endLocation = None
 
 # Keypad initialization
 keypad = keypad_polling.keypad(voiceQueue, voiceSema, speaker)
@@ -766,6 +786,7 @@ voiceThreads.append(voiceThread(8, "play sound notification"))
 for thread in voiceThreads:
     thread.start()
 
+
 #
 # # UI threads
 # UIThreads = []
@@ -781,6 +802,9 @@ for thread in voiceThreads:
 naviCount = 0
 navi = fullNavi.fullNavi(voiceQueue, voiceSema)
 navi.generateFullPath("com1", 2, 14, 26)
+##navi.generateFullPath(startLocation.getBuildingName(),
+##                      startLocation.getLevelNumber(),
+##                      startLocation.getLocationPointIndex(), endLocationgetLocationPointIndex())
 
 # List of threads
 mainThreads = []
