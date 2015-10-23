@@ -26,7 +26,6 @@ class fullNavi(object) :
         self.message_delay = 5
         self.voiceQueue = voiceQueue
         self.voiceSema = voiceSema
-        self.voiceStopSema
         self.ANGLE_TOLERANCE = 13
 
         self.buildingName = None
@@ -42,6 +41,10 @@ class fullNavi(object) :
         self.obstacleEncounteredSteps = 0
         self.obstacleClearedSteps = 0
         self.MAX_STEPS = 2
+
+        # after turning, make sure take 1 step
+        self.obstacleTurnSteps = 0
+        self.NUM_OBSTACLE_STEPS = 2
 
         self.obstStartHeading = 0
         self.obstEndHeading = 0
@@ -84,11 +87,17 @@ class fullNavi(object) :
         self.nodeNavi.updateCurCoord(x, y)
         self.nodeNavi.updateHeading(heading)
 
+    # when an obstacle is first encountered
     def updateEncounterSteps(self, numSteps) :
         self.obstacleEncounteredSteps = numSteps
 
+    # current current steps
     def updateClearSteps(self, numSteps) :
         self.obstacleClearedSteps = numSteps
+
+    # when a step has been taken after turning
+    def updateObstacleTurnSteps(self, numSteps) :
+        self.obstacleTurnSteps = numSteps
 
     def setObstacleStartHeading(self, heading) :
         self.obstStartHeading = heading
@@ -221,6 +230,10 @@ class fullNavi(object) :
             return False
         else :
             sentence = "Move straight ahead"
+            if time.time() - self.prev_message_time > self.message_delay:
+                self.voiceQueue.append(sentence)
+                self.voiceSema.release()
+                self.prev_message_time = time.time()
             return True
 
     def ignoreNodeObstacle(self) :
@@ -248,6 +261,13 @@ class fullNavi(object) :
             self.angleCorrect = self.ensureTurnedCorrectDirection()
             return False
         else :
+            # update obstacle cleared heading
+            self.nodeNavi.setObstacleClearedHeading(self.obstEndHeading)
+            if ((self.obstacleClearedSteps - self.obstacleTurnSteps) > self.NUM_OBSTACLE_STEPS) :
+                self.nodeNavi.setCanTurn(True)
+            else :
+                self.nodeNavi.setCanTurn(False)
+            
             if ((self.obstacleClearedSteps - self.obstacleEncounteredSteps) <= self.MAX_STEPS):
                 angleDisp = self.obstStartHeading - self.obstEndHeading
                 self.nodeNavi.setPrevObstacleHeading(angleDisp)
@@ -260,7 +280,10 @@ class fullNavi(object) :
             isNodeReached = self.nodeNavi.navigate()
 
             if isNodeReached == 1 :
-                print "NODE REACHED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+                sentence = "NODE REACHED!!!!!"
+                print sentence
+                self.voiceQueue.append(sentence)
+                self.voiceSema.release()
                 self.pathListIndex += 1
                 self.alertNodeReached()
                 if self.pathListIndex < (len(self.pathList) - 1) :

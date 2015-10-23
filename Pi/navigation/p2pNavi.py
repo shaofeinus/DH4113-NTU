@@ -1,4 +1,5 @@
 import distAngleCalc
+import time
 import math
 ##import RPi.GPIO as GPIO
 
@@ -18,6 +19,7 @@ class navigation (object) :
     def __init__(self, voiceQueue, voiceSema) :
         self.prev_message_time_dist = 0
         self.prev_message_time_turn = 0
+        self.prev_message_time_str = 0
         self.message_delay = 5
         self.voiceQueue = voiceQueue
         self.voiceSema = voiceSema
@@ -48,8 +50,20 @@ class navigation (object) :
         # distance from node for updates
         self.nearingCount = 500
 
+        # boolean whether allowed to turn
+        self.canTurn = True
+
+        # heading to check if can stop turning
+        self.obstacleClearedHeading = 0
+
+    def setCanTurn(self, canTurn) :
+        self.canTurn = canTurn
+
     def setPrevObstacleHeading(self, angle) :
         self.prevObstacleHeading = angle
+
+    def setObstacleClearedHeading(self, angle) :
+        self.obstacleClearedHeading = angle
 
     def updateCurCoord(self, x, y) :
         self.curXCoord = x
@@ -139,8 +153,15 @@ class navigation (object) :
             turnAngle = self.getTurnAngle()
 
             # if angle is within tolerance, continue in current direction
-            if (math.fabs(turnAngle) < self.angleTolerance) :
-                print "keep going in your current direction"
+            # or if not allowed to turn because already turned 90degrees
+            if ((math.fabs(turnAngle) < self.angleTolerance) or
+                (self.canTurn is False)):
+                sentence = "Go straight"
+                if time.time() - self.prev_message_time_str > self.message_delay:
+                    self.voiceQueue.append(sentence)
+                    self.voiceSema.release()
+                    self.prev_message_time_str = time.time()
+                print sentence
                 return 0
             
 ##            # ensure don't turn back into an obstacle 
@@ -171,10 +192,17 @@ class navigation (object) :
 ##                    sentence = "keep going straight"
 ##                print sentence
 ##            else:
+
             if (turnAngle > 0) :
                 if ((self.prevObstacleHeading < 360) and (turnAngle > 90)) :
                     turnAngle = 90
-                sentence = "Right " + str(turnAngle) + "."
+                    if self.canTurn is False :
+                        return 0
+                    else :
+                        if math.fabs(self.curAngle - self.obstacleClearedHeading) > 75:
+                            self.canTurn = False
+                
+                sentence = "Right %.0f" %(turnAngle)
                 print sentence
                 if time.time() - self.prev_message_time_turn > self.message_delay:
                     self.voiceQueue.append(sentence)
@@ -185,7 +213,12 @@ class navigation (object) :
             elif (turnAngle < 0) :
                 if ((self.prevObstacleHeading < 360) and (turnAngle < -90)) :
                     turnAngle = -90
-                sentence = "Left " + str(math.fabs(turnAngle)) + "."
+                    if self.canTurn is False :
+                        return 0
+                    else :
+                        if math.fabs(self.curAngle - self.obstacleClearedHeading) > 75:
+                            self.canTurn = False
+                sentence = "Left %.0f" %(turnAngle)
                 print sentence
                 if time.time() - self.prev_message_time_turn > self.message_delay:
                     self.voiceQueue.append(sentence)
@@ -194,7 +227,11 @@ class navigation (object) :
     ##                    GPIO.output(self.leftPin, True)
     ##                    GPIO.output(self.rightPin, False)
             else :
-                sentence = "Keep going in your current direction!"
+                sentence = "Go straight"
+                if time.time() - self.prev_message_time_str > self.message_delay:
+                    self.voiceQueue.append(sentence)
+                    self.voiceSema.release()
+                    self.prev_message_time_str = time.time()
                 print sentence
     ##                self.voiceQueue.append(sentence)
     ##                self.voiceSema.release()

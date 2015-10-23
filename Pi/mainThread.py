@@ -108,7 +108,7 @@ class CalibrationThread(threading.Thread):
         while not validInput:
             # userInput = raw_input("Press enter to calibrate? y/n ")
 
-            speaker.speak(str("To calibrate gyroscope, press start."))
+            # speaker.speak(str("To calibrate gyroscope, press start."))
             userInput = keypad.get_binary_response()
             print userInput
             if not userInput:
@@ -116,7 +116,7 @@ class CalibrationThread(threading.Thread):
                 for i in range(0, 3):
                     num = 3 - i
                     print num
-                    speaker.speak(str(num))
+                    # speaker.speak(str(num))
                     time.sleep(1)
                 dataFeeder.serialPort.flushInput()
                 dataFeeder.serialPort.flushOutput()
@@ -134,22 +134,22 @@ class CalibrationThread(threading.Thread):
 
         userInputLock.acquire()
 
-        self.calibrationTools.initGyroOffset(-self.calibrator.initGXOffset,
-                                             -self.calibrator.initGYOffset,
-                                             -self.calibrator.initGZOffset)
+        self.calibrationTools.initGyroOffset(self.calibrator.initGXOffset,
+                                             self.calibrator.initGYOffset,
+                                             self.calibrator.initGZOffset)
 
         temp = 'Gyro calibrated' + \
                str(self.calibrator.initGXOffset) + ' ' + \
                str(self.calibrator.initGYOffset) + ' ' + \
                str(self.calibrator.initGZOffset)
         print temp
-        speaker.speak(temp)
+        # speaker.speak(temp)
 
         validInput = False
         while not validInput:
             # userInput = raw_input("Press enter to calibrate? y/n ")
 
-            speaker.speak(str("To begin compass calibration, press start. To skip calibration, press back."))
+            # speaker.speak(str("To begin compass calibration, press start. To skip calibration, press back."))
             userInput = keypad.get_binary_response()
             print userInput
             if not userInput:
@@ -168,7 +168,7 @@ class CalibrationThread(threading.Thread):
         for i in range(0, 3):
             num = 3 - i
             print num
-            speaker.speak(str(num))
+            # speaker.speak(str(num))
             time.sleep(1)
 
         # print 'Calibrating'
@@ -196,7 +196,7 @@ class CalibrationThread(threading.Thread):
         userInputLock.acquire()
         temp = 'Your are ' + str(self.calibrator.getNOffsetAngle() / (2 * math.pi) * 360) + ' from N. To continue, press start'
         print temp
-        speaker.speak(temp)
+        # speaker.speak(temp)
         while keypad.get_binary_response():
            pass
         dataFeeder.serialPort.flushInput()
@@ -486,6 +486,7 @@ class NavigationThread(threading.Thread):
         global naviCount
         global obstacleDetected
         global checkSideObstacle
+        global isFirstCleared
         while 1:
             naviCount += 1
             locationTrackerLock.acquire()
@@ -505,7 +506,8 @@ class NavigationThread(threading.Thread):
                     navi.ignoreNodeObstacle()
                     time.sleep(0.1)
                     continue
-                
+                if isFirstCleared == 1 :
+                    navi.updateObstacleTurnSteps(locationTracker.getTotalSteps())
                 navi.updateClearSteps(locationTracker.getTotalSteps())
                 navi.setObstacleEndHeading(heading)
                 isNavigationDone = navi.fullNavigate()
@@ -523,6 +525,7 @@ class ObstacleAvoidanceThread(threading.Thread):
     def run(self):
         global obstacleDetected
         global checkSideObstacle
+        global isFirstCleared
         while 1:
             irFC = data[6]
             irLS = data[7]
@@ -553,6 +556,7 @@ class ObstacleAvoidanceThread(threading.Thread):
                 obstacleStatusLock.acquire()
                 obstacleDetected = 1
                 checkSideObstacle = 0
+                isFirstCleared = 0
                 obstacleStatusLock.release()
                 obstacle.vibrateMotors()
             # existing obstacle
@@ -583,6 +587,7 @@ class ObstacleClearedThread(threading.Thread):
 
     def run(self):
         global checkSideObstacle
+        global isFirstCleared
         while 1:
             irFC = data[6]
             irLS = data[7]
@@ -608,6 +613,7 @@ class ObstacleClearedThread(threading.Thread):
                 if obstacle.checkObstacleCleared() == 1:
                     obstacleStatusLock.acquire()
                     checkSideObstacle = 0
+                    isFirstCleared = 1
                     print "obstacle cleared"
                     obstacleStatusLock.release()
             time.sleep(0.5)
@@ -712,6 +718,8 @@ obstacle = obstacleAvoidance.obstacleAvoidance()
 # 1 if an obstacle avoidance is taking place, else 0
 obstacleDetected = 0
 checkSideObstacle = 0
+# 1 if just cleared, 0 if cleared a while ago
+isFirstCleared = 0
 
 # Location tracker initialisation
 # TODO: Set initial position

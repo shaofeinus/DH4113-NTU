@@ -21,9 +21,9 @@ class CalibrationTools:
 
     AV_RAW_RANGE = (-28000, 28000)
     AV_ACTUAL_RANGE = (-245.0 / 180.0 * math.pi, 245.0 / 180.0 * math.pi)
-    GY_X_OFFSET = -76.38
-    GY_Y_OFFSET = -553.19
-    GY_Z_OFFSET = 57.45
+    GY_X_OFFSET = 76.38
+    GY_Y_OFFSET = 553.19
+    GY_Z_OFFSET = -57.45
     GY_X_SCALE_FACTOR = 1.0
     GY_Y_SCALE_FACTOR = 1.0
     GY_Z_SCALE_FACTOR = 1.0
@@ -34,6 +34,10 @@ class CalibrationTools:
         self.gyroXOffsetWindow = deque(maxlen=self.GY_OFFSET_MA_WINDOW_SIZE)
         self.gyroYOffsetWindow = deque(maxlen=self.GY_OFFSET_MA_WINDOW_SIZE)
         self.gyroZOffsetWindow = deque(maxlen=self.GY_OFFSET_MA_WINDOW_SIZE)
+        self.counter = 0
+        self.gxLast = self.GY_X_OFFSET
+        self.gyLast = self.GY_Y_OFFSET
+        self.gzLast = self.GY_Z_OFFSET
 
     # x y z are the actual x y z axis of the the IMU
     # returns in Gs
@@ -81,9 +85,27 @@ class CalibrationTools:
 
         # self.adaptGyroOffset(self, gyX, gyY, gyZ)
 
-        gyX += self.GY_X_OFFSET
-        gyY += self.GY_Y_OFFSET
-        gyZ += self.GY_Z_OFFSET
+        # if self.counter == 10:
+        #     print 'curr offset:', self.GY_X_OFFSET, 'curr gyX:', gyX
+        #     self.counter = 0
+        # else:
+        #     self.counter += 1
+
+        # f = open('gyro_offset.csv', 'a')
+        # f.write(str(self.GY_X_OFFSET) + ',' + str(gyX) + '\n')
+        # f.close()
+
+        # self.GY_X_OFFSET = 0.9999*self.GY_X_OFFSET + 0.0001*gyX
+        # self.GY_Y_OFFSET = 0.9999*self.GY_Y_OFFSET + 0.0001*gyY
+        # self.GY_Z_OFFSET = 0.9999*self.GY_Z_OFFSET + 0.0001*gyZ
+
+        self.GY_X_OFFSET += 0.000001 * (gyX - self.GY_X_OFFSET)
+        self.GY_Y_OFFSET += 0.000001 * (gyY - self.GY_Y_OFFSET)
+        self.GY_Z_OFFSET += 0.000001 * (gyZ - self.GY_Z_OFFSET)
+
+        gyX -= self.GY_X_OFFSET
+        gyY -= self.GY_Y_OFFSET
+        gyZ -= self.GY_Z_OFFSET
 
         gyX *= self.GY_X_SCALE_FACTOR
         gyY *= self.GY_Y_SCALE_FACTOR
@@ -103,29 +125,10 @@ class CalibrationTools:
 
         return gyX, gyY, gyZ
 
-    def adaptGyroOffset(self, gyX, gyY, gyZ):
-
-        self.gyroXOffsetWindow.append(gyX)
-        self.gyroYOffsetWindow.append(gyY)
-        self.gyroZOffsetWindow.append(gyZ)
-
-        if len(self.gyroXOffsetWindow) < self.GY_OFFSET_MA_WINDOW_SIZE:
-            return
-        else:
-            newX = float(sum(self.gyroXOffsetWindow)) / len(self.gyroXOffsetWindow)
-            newY = float(sum(self.gyroYOffsetWindow)) / len(self.gyroYOffsetWindow)
-            newZ = float(sum(self.gyroZOffsetWindow)) / len(self.gyroZOffsetWindow)
-
-            if math.fabs(newX - self.GY_X_OFFSET) < self.GY_RECALIBRATE_THRESHOLD:
-                self.GY_X_OFFSET = -newX
-
-            if math.fabs(newY - self.GY_Y_OFFSET) < self.GY_RECALIBRATE_THRESHOLD:
-                self.GY_Y_OFFSET = -newY
-
-            if math.fabs(newZ - self.GY_Z_OFFSET) < self.GY_RECALIBRATE_THRESHOLD:
-                self.GY_Z_OFFSET = -newZ
-
     def initGyroOffset(self, gyX, gyY, gyZ):
         self.GY_X_OFFSET = gyX
         self.GY_Y_OFFSET = gyY
         self.GY_Z_OFFSET = gyZ
+        self.gxLast = gyX
+        self.gyLast = gyY
+        self.gzLast = gyZ
