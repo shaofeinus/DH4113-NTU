@@ -1,3 +1,4 @@
+import os
 import json
 import urllib2
 
@@ -44,7 +45,8 @@ class mapParser (object) :
                 if(self.isMapAlreadyLoaded(mapName) is True) :
                         self.jsonFileInput(mapName)
                 else :
-                        try :               
+                        try :    
+                                os.system("sudo ifmetric wlan0 100")           
                                 self.jsonServerInput(buildingName, levelNumber)
                         except :
                                 return False

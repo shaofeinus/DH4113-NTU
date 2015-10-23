@@ -73,8 +73,6 @@ class pathFinder (object) :
         return False
 
     def getPath(self, start, end):
-        start = start - 1
-        end = end - 1
         rev = False
 
         if (start > end):
@@ -94,6 +92,7 @@ class pathFinder (object) :
                     break
             if not isFound:
                 self.redNodes[path.pop()] = 1
+            
 
         if rev == True:
             path.reverse()
