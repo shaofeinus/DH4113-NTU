@@ -13,6 +13,7 @@ from UI import voiceCommands
 from UI import search
 from UI import keypad_polling
 from UI import pyespeak
+from my_deque import my_deque
 
 __author__ = 'Shao Fei'
 
@@ -31,12 +32,8 @@ class voiceThread(threading.Thread):
         global speaker
 
         while True:
-            if len(voiceQueue) > 0:
-                temp = str(voiceQueue.popleft())
-                if temp == "-~^/CLEAR^~-":
-                    voiceQueue.clear()
-                else:
-                    speaker.speak(temp)
+            if not voiceQueue.empty():
+                speaker.speak(str(voiceQueue.popleft()))
             else:
                 time.sleep(1)
             # time.sleep(5)
@@ -720,7 +717,7 @@ NUM_SINGLE_ID = 11
 
 
 # Queue for sound
-voiceQueue = deque()
+voiceQueue = my_deque()
 
 # Data lists for raw data
 data = [deque() for x in range(NUM_QUEUED_ID)]
