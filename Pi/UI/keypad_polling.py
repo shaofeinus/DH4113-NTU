@@ -6,35 +6,6 @@ from collections import deque
 
 __author__ = 'Dan'
 
-# chr_queue = deque()
-# stop_sema = False
-#
-# class speak_thread(threading.Thread):
-#     def __init__(self, threadName, threadID):
-#         threading.Thread.__init__(self)
-#         self.threadName = threadName
-#         self.threadID = threadID
-#         self.exit_thread = False
-#
-#     def stop_thread(self):
-#         self.exit_thread = True
-#
-#     def run(self):
-#         global chr_queue
-#         global stop_sema
-#         while True:
-#             if stop_sema:
-#                 chr_queue.clear()
-#                 stop_sema = False
-#             if len(chr_queue) > 0:
-#                 speak(str(chr_queue.popleft()))
-#             if self.exit_thread:
-#                 break
-
-#THREAD SETUP
-# speakThread = speak_thread("speak_thread", 1)
-# speakThread.start()
-
 class keypad(object):
     def __init__(self, chr_queue, voiceSema, speaker):
         #OUTPUT TABLES
