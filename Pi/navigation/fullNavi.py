@@ -26,6 +26,7 @@ class fullNavi(object) :
         self.message_delay = 5
         self.voiceQueue = voiceQueue
         self.voiceSema = voiceSema
+        self.voiceStopSema
         self.ANGLE_TOLERANCE = 13
 
         self.buildingName = None
@@ -152,11 +153,13 @@ class fullNavi(object) :
             self.pathListIndex = nextNodeIndex - 1
             sentence = "Re-routing."
             print sentence
+            self.voiceQueue.append("-~^/CLEAR^~-")
+            self.voiceSema.release()
             self.voiceQueue.append(sentence)
             self.voiceSema.release()
             self.updatePrevNexCoord()
             self.provideNexNodeDirections()
-            
+
 
     def updatePrevNexCoord(self) :
         prevNode = self.pathList[self.pathListIndex]
@@ -180,12 +183,14 @@ class fullNavi(object) :
         curNodeName = self.comMap[self.mapNumber].getLocationName(prevNode)
         nodeReachedSentence = "You reached" + str(curNodeName) + "."
         print nodeReachedSentence
+        self.voiceQueue.append("-~^/CLEAR^~-")
+        self.voiceSema.release()
         self.voiceQueue.append(nodeReachedSentence)
         self.voiceSema.release()
         print "Path index " + str(self.pathListIndex)
 ##        time.sleep(1)
 ##        GPIO.output(self.leftPin, False)
-##        GPIO.output(self.rightPin, False)      
+##        GPIO.output(self.rightPin, False)
 
 
     def provideNexNodeDirections(self) :
@@ -243,10 +248,12 @@ class fullNavi(object) :
             else :
                 sentence = "Navigation complete."
                 print sentence
+                self.voiceQueue.append("-~^/CLEAR^~-")
+                self.voiceSema.release()
                 self.voiceQueue.append(sentence)
                 self.voiceSema.release()
                 return True
-        
+
 
     # returns true if navigation is complete
     def fullNavigate(self) :
@@ -285,6 +292,8 @@ class fullNavi(object) :
                 else :
                     sentence = "Navigation complete."
                     print sentence
+                    self.voiceQueue.append("-~^/CLEAR^~-")
+                    self.voiceSema.release()
                     self.voiceQueue.append(sentence)
                     self.voiceSema.release()
                     return True

@@ -27,13 +27,19 @@ class voiceThread(threading.Thread):
     def run(self):
         global voiceQueue
         global voiceSema
+        global voiceStopSema
         global speaker
 
         while True:
-            voiceSema.acquire()
             if len(voiceQueue) > 0:
-                speaker.speak(str(voiceQueue.popleft()))
-            time.sleep(5)
+                temp = str(voiceQueue.popleft())
+                if temp == "-~^/CLEAR^~-":
+                    voiceQueue.clear()
+                else:
+                    speaker.speak(str(voiceQueue.popleft()))
+            else:
+                time.sleep(1)
+            # time.sleep(5)
 #             voiceSema.acquire()
 #             if len(voiceQueue) > 0:
 # ##                speaker.speak(str(voiceQueue.popleft()))
@@ -741,6 +747,7 @@ obstacleStatusLock = threading.Lock()
 dataInSema = threading.Semaphore(0)
 userInputLock = threading.Lock()
 voiceSema = threading.Semaphore(0)
+voiceStopSema = False
 
 # Keypad initialization
 keypad = keypad_polling.keypad(voiceQueue, voiceSema, speaker)

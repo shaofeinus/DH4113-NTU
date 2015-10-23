@@ -16,6 +16,9 @@ import math
 
 class navigation (object) :
     def __init__(self, voiceQueue, voiceSema) :
+        self.prev_message_time_dist = 0
+        self.prev_message_time_turn = 0
+        self.message_delay = 5
         self.voiceQueue = voiceQueue
         self.voiceSema = voiceSema
         self.prevXCoord = 0         # cm
@@ -124,8 +127,10 @@ class navigation (object) :
         if ((distanceTo <= self.nearingCount) and (distanceTo > self.maxTolerance)) :
             sentence = "%s in %.1f metres." %(self.nextNodeName, distanceTo/100.0)
             print sentence
-            self.voiceQueue.append(sentence)
-            self.voiceSema.release()
+            if time.time() - self.prev_message_time_dist > self.message_delay:
+                self.voiceQueue.append(sentence)
+                self.voiceSema.release()
+                self.prev_message_time_dist = time.time()
             while (self.nearingCount >= distanceTo) :
                 self.nearingCount -= 100
 
@@ -192,8 +197,10 @@ class navigation (object) :
                 
                 sentence = "Right %.0f" %(turnAngle)
                 print sentence
-                self.voiceQueue.append(sentence)
-                self.voiceSema.release()
+                if time.time() - self.prev_message_time_turn > self.message_delay:
+                    self.voiceQueue.append(sentence)
+                    self.voiceSema.release()
+                    self.prev_message_time_dist = time.time()
     ##                    GPIO.output(self.rightPin, True)
     ##                    GPIO.output(self.leftPin, False)
             elif (turnAngle < 0) :
@@ -206,8 +213,10 @@ class navigation (object) :
                             self.canTurn = False
                 sentence = "Left %.0f" %(directionToHead)
                 print sentence
-                self.voiceQueue.append(sentence)
-                self.voiceSema.release()
+                if time.time() - self.prev_message_time_turn > self.message_delay:
+                    self.voiceQueue.append(sentence)
+                    self.voiceSema.release()
+                    self.prev_message_time_dist = time.time()
     ##                    GPIO.output(self.leftPin, True)
     ##                    GPIO.output(self.rightPin, False)
             else :
