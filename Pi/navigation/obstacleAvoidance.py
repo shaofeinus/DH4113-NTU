@@ -41,7 +41,7 @@ class obstacleAvoidance (object) :
 
         # used to check if rerouting is necessary
         self.tempObstacleCount = 0
-        self.MAX_OBSTACLE_COUNT = 10
+        self.MAX_OBSTACLE_COUNT = 5
 
         # obstacle cleared count
         self.obstacleClearedCount = 0
