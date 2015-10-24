@@ -36,12 +36,6 @@ class navigation (object) :
         self.leftPin = 9
         self.rightPin = 10
 
-        # maximum allowable angle to prevent
-        # returning to obstacle
-        self.maxAllowableAngle = 15
-        # location of previous obstacle
-        self.prevObstacleHeading = 360
-
         # deviation tolerance
         self.maxDeviation = 80       # cm
         # vicinity tolerance
@@ -54,17 +48,8 @@ class navigation (object) :
         # boolean whether allowed to turn
         self.canTurn = True
 
-        # heading to check if can stop turning
-        self.obstacleClearedHeading = 0
-
     def setCanTurn(self, canTurn) :
         self.canTurn = canTurn
-
-    def setPrevObstacleHeading(self, angle) :
-        self.prevObstacleHeading = angle
-
-    def setObstacleClearedHeading(self, angle) :
-        self.obstacleClearedHeading = angle
 
     def updateCurCoord(self, x, y) :
         self.curXCoord = x
@@ -157,8 +142,7 @@ class navigation (object) :
 
             # if angle is within tolerance, continue in current direction
             # or if not allowed to turn because already turned 90degrees
-            if ((math.fabs(turnAngle) < self.angleTolerance) or
-                (self.canTurn is False)):
+            if (math.fabs(turnAngle) < self.angleTolerance):
                 sentence = "Go."
                 if time.time() - self.prev_message_time_str > self.message_delay:
                     self.voiceQueue.append(sentence)
@@ -166,45 +150,12 @@ class navigation (object) :
                     self.prev_message_time_str = time.time()
                 print sentence
                 return 0
-            
-##            # ensure don't turn back into an obstacle 
-##            ultimateAngleHeading = turnAngle + self.curAngle
-##            angle1 = math.fabs(ultimateAngleHeading - self.prevObstacleHeading)
-##            angle2 = 360 - angle1
-            
-##            if ((self.prevObstacleHeading < 360) and (min(angle1, angle2) < self.maxAllowableAngle)) :
-##                if ((turnAngle < 0) and (self.prevObstacleHeading <= 0)):
-##                    correctAngle = self.prevObstacleHeading - self.maxAllowableAngle
-##                if ((turnAngle < 0) and (self.prevObstacleHeading > 0)):
-##                    correctAngle = self.prevObstacleHeading + self.maxAllowableAngle
-##                elif ((turnAngle > 0) and (self.prevObstacleHeading <= 0)):
-##                    correctAngle = self.prevObstacleHeading + self.maxAllowableAngle
-##                else:
-##                    correctAngle = self.prevObstacleHeading - self.maxAllowableAngle
-##
-##                if correctAngle > 180 :
-##                    correctAngle -= 360
-##                elif correctAngle <= -180 :
-##                    correctAngle += 360
-##
-##                if correctAngle > 0 and math.fabs(correctAngle) > self.angleTolerance:
-##                    sentence = "move towards the right by: " + str(correctAngle)
-##                elif correctAngle < 0 and math.fabs(correctAngle) > self.angleTolerance:
-##                    sentence = "move towards the left by: " + str(math.fabs(correctAngle))
-##                else :
-##                    sentence = "keep going straight"
-##                print sentence
-##            else:
+        
 
             if (turnAngle > 0) :
-                if ((self.prevObstacleHeading < 360) and (turnAngle > 90)) :
+                if ((self.canTurn is False) and (turnAngle > 90)) :
                     turnAngle = 90
-                    if self.canTurn is False :
-                        return 0
-                    else :
-                        if math.fabs(self.curAngle - self.obstacleClearedHeading) > 75:
-                            self.canTurn = False
-                
+                    return 0
                 sentence = "Right %.0f" %(turnAngle)
                 print sentence
                 if time.time() - self.prev_message_time_turn > self.message_delay:
@@ -216,14 +167,10 @@ class navigation (object) :
     ##                    GPIO.output(self.rightPin, True)
     ##                    GPIO.output(self.leftPin, False)
             elif (turnAngle < 0) :
-                if ((self.prevObstacleHeading < 360) and (turnAngle < -90)) :
+                if ((self.canTurn is False) and (turnAngle < -90)) :
                     turnAngle = -90
-                    if self.canTurn is False :
-                        return 0
-                    else :
-                        if math.fabs(self.curAngle - self.obstacleClearedHeading) > 75:
-                            self.canTurn = False
-                sentence = "Left %.0f" %(turnAngle)
+                    return 0
+                sentence = "Left %.0f" %(math.fabs(turnAngle))
                 print sentence
                 if time.time() - self.prev_message_time_turn > self.message_delay:
                     if self.prev_message != sentence:

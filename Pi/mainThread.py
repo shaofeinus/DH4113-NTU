@@ -513,15 +513,15 @@ class NavigationThread(threading.Thread):
             if (naviCount%10 == 0) :
                 navi.updateCurLocation(curX, curY, heading)
                 if obstacleDetected == 1 or checkSideObstacle == 1:
-                    navi.updateEncounterSteps(locationTracker.getTotalSteps())
-                    navi.setObstacleStartHeading(heading)
                     navi.ignoreNodeObstacle()
                     time.sleep(0.1)
                     continue
                 if isFirstCleared == 1 :
-                    navi.updateObstacleTurnSteps(locationTracker.getTotalSteps())
-                navi.updateClearSteps(locationTracker.getTotalSteps())
-                navi.setObstacleEndHeading(heading)
+                    navi.updateClearSteps(locationTracker.getTotalSteps())
+                    isFirstCleared = 0
+                else :
+                    navi.updateCurrentSteps(locationTracker.getTotalSteps())
+                    
                 isNavigationDone = navi.fullNavigate()
                 if isNavigationDone is True :
                     return
