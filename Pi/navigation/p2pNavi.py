@@ -132,8 +132,8 @@ class navigation (object) :
             print sentence
             if time.time() - self.prev_message_time_dist > self.message_delay:
                 if self.prev_message != sentence:
-                    self.voiceQueue.append(sentence)
-                    self.voiceSema.release()
+                    if self.voiceQueue.append(sentence, time.time()):
+                        self.voiceSema.release()
                     self.prev_message_time_dist = time.time()
                     self.prev_message = sentence
             while (self.nearingCount >= distanceTo) :
@@ -161,8 +161,8 @@ class navigation (object) :
                 (self.canTurn is False)):
                 sentence = "Go."
                 if time.time() - self.prev_message_time_str > self.message_delay:
-                    self.voiceQueue.append(sentence)
-                    self.voiceSema.release()
+                    if self.voiceQueue.append(sentence, time.time()):
+                        self.voiceSema.release()
                     self.prev_message_time_str = time.time()
                 print sentence
                 return 0
@@ -209,8 +209,8 @@ class navigation (object) :
                 print sentence
                 if time.time() - self.prev_message_time_turn > self.message_delay:
                     if self.prev_message != sentence:
-                        self.voiceQueue.append(sentence)
-                        self.voiceSema.release()
+                        if self.voiceQueue.append(sentence, time.time()):
+                            self.voiceSema.release()
                         self.prev_message_time_turn = time.time()
                         self.prev_message = sentence
     ##                    GPIO.output(self.rightPin, True)
@@ -227,8 +227,8 @@ class navigation (object) :
                 print sentence
                 if time.time() - self.prev_message_time_turn > self.message_delay:
                     if self.prev_message != sentence:
-                        self.voiceQueue.append(sentence)
-                        self.voiceSema.release()
+                        if self.voiceQueue.append(sentence, time.time()):
+                            self.voiceSema.release()
                         self.prev_message_time_turn = time.time()
                         self.prev_message = sentence
     ##                    GPIO.output(self.leftPin, True)
@@ -237,8 +237,8 @@ class navigation (object) :
                 sentence = "Go."
                 if time.time() - self.prev_message_time_str > self.message_delay:
                     if self.prev_message != sentence:
-                        self.voiceQueue.append(sentence)
-                        self.voiceSema.release()
+                        if self.voiceQueue.append(sentence, time.time()):
+                            self.voiceSema.release()
                         self.prev_message_time_turn = time.time()
                         self.prev_message = sentence
                 print sentence

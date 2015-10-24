@@ -154,9 +154,8 @@ class fullNavi(object) :
             self.pathListIndex = nextNodeIndex - 1
             sentence = "Re-routing."
             print sentence
-            self.voiceQueue.flush()
-            self.voiceQueue.append(sentence)
-            self.voiceSema.release()
+            if self.voiceQueue.append_high(sentence, time.time()):
+                self.voiceSema.release()
             self.updatePrevNexCoord()
             self.provideNexNodeDirections()
 
@@ -181,12 +180,11 @@ class fullNavi(object) :
 ##        GPIO.output(self.rightPin, True)
         prevNode = self.pathList[self.pathListIndex]
         curNodeName = self.comMap[self.mapNumber].getLocationName(prevNode)
-        nodeReachedSentence = "You reached node " + str(prevNode + 1) + ", " + str(curNodeName) + "."
+        nodeReachedSentence = "You reached node " + str(curNodeName) + "." # str(prevNode + 1) + ", " + str(curNodeName) + "."
         print nodeReachedSentence
         if nodeReachedSentence != self.prev_message:
-            self.voiceQueue.flush()
-            self.voiceQueue.append(nodeReachedSentence)
-            self.voiceSema.release()
+            if self.voiceQueue.append_high(nodeReachedSentence, time.time()):
+                self.voiceSema.release()
             self.prev_message = nodeReachedSentence
         print "Path index " + str(self.pathListIndex)
 ##        time.sleep(1)
@@ -200,9 +198,8 @@ class fullNavi(object) :
         nextNodeSentence = "Next is " + str(nexNode+1) + ", " + nexNodeName + "."
         print nextNodeSentence
         if nextNodeSentence != self.prev_message:
-            self.voiceQueue.flush()
-            self.voiceQueue.append(nextNodeSentence)
-            self.voiceSema.release()
+            if self.voiceQueue.append_high(nextNodeSentence, time.time()):
+                self.voiceSema.release()
             self.prev_message = nextNodeSentence
 
     # returns 1 for right (and straight ahead), 2 for left
@@ -225,8 +222,8 @@ class fullNavi(object) :
                 print sentence
                 if time.time() - self.prev_message_time_turn > self.message_delay:
                     if self.prev_message != sentence:
-                        self.voiceQueue.append(sentence)
-                        self.voiceSema.release()
+                        if self.voiceQueue.append(sentence, time.time()):
+                            self.voiceSema.release()
                         self.prev_message_time_turn = time.time()
                         self.prev_message = sentence
             elif (directionToHead < 0) :
@@ -234,17 +231,18 @@ class fullNavi(object) :
                 print sentence
                 if time.time() - self.prev_message_time_turn > self.message_delay:
                     if self.prev_message != sentence:
-                        self.voiceQueue.append(sentence)
-                        self.voiceSema.release()
+                        if self.voiceQueue.append(sentence, time.time()):
+                            self.voiceSema.release()
                         self.prev_message_time_turn = time.time()
                         self.prev_message = sentence
             return False
         else :
             sentence = "Go."
+            print sentence
             if time.time() - self.prev_message_time_str > self.message_delay:
                 if self.prev_message != sentence:
-                    self.voiceQueue.append(sentence)
-                    self.voiceSema.release()
+                    if self.voiceQueue.append(sentence, time.time()):
+                        self.voiceSema.release()
                     self.prev_message_time_turn = time.time()
                     self.prev_message = sentence
             return True
@@ -254,9 +252,8 @@ class fullNavi(object) :
         if distTo < self.maxTolerance :
             sentence = "Node Reached."
             print sentence
-            self.voiceQueue.flush()
-            self.voiceQueue.append(sentence)
-            self.voiceSema.release()
+            if self.voiceQueue.append_high(sentence, time.time()):
+                self.voiceSema.release()
             self.pathListIndex += 1
             self.alertNodeReached()
             if self.pathListIndex < (len(self.pathList) - 1) :
@@ -267,9 +264,8 @@ class fullNavi(object) :
                 sentence = "Navigation complete."
                 print sentence
                 if self.prev_message != sentence:
-                    self.voiceQueue.flush()
-                    self.voiceQueue.append(sentence)
-                    self.voiceSema.release()
+                    if self.voiceQueue.append_high(sentence, time.time()):
+                        self.voiceSema.release()
                     self.prev_message_time_turn = time.time()
                     self.prev_message = sentence
                 return True
@@ -303,9 +299,8 @@ class fullNavi(object) :
                 sentence = "Node Reached."
                 print sentence
                 if self.prev_message != sentence:
-                    self.voiceQueue.flush()
-                    self.voiceQueue.append(sentence)
-                    self.voiceSema.release()
+                    if self.voiceQueue.append_high(sentence, time.time()):
+                        self.voiceSema.release()
                     self.prev_message_time_turn = time.time()
                     self.prev_message = sentence
                 self.pathListIndex += 1
@@ -318,12 +313,9 @@ class fullNavi(object) :
                     sentence = "Navigation complete."
                     print sentence
                     if self.prev_message != sentence:
-                        self.voiceQueue.flush()
-                        self.voiceQueue.append(sentence)
-                        self.voiceSema.release()
+                        if self.voiceQueue.append_high(sentence, time.time()):
+                            self.voiceSema.release()
                         self.prev_message_time_turn = time.time()
                         self.prev_message = sentence
                     return True
         return False
-        
-        
