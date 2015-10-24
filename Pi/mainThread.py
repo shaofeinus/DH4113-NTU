@@ -20,8 +20,8 @@ __author__ = 'Shao Fei'
 #to print sound just call voiceQueue.append(sentence)
 
 skip_pad = keypad_polling.keypad(None, None, None)
-
 skip_init = skip_pad.poll_for_num_timed()
+del skip_pad
 
 class voiceThread(threading.Thread):
     def __init__(self,threadID,threadName):
@@ -37,7 +37,9 @@ class voiceThread(threading.Thread):
 
         while True:
             if not voiceQueue.empty():
-                speaker.speak(str(voiceQueue.popleft()))
+                item = voiceQueue.popleft()
+                if item is not None:
+                    speaker.speak(str(voiceQueue.popleft()))
             else:
                 time.sleep(1)
             # time.sleep(5)
