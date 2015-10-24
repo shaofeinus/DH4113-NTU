@@ -1,7 +1,7 @@
 import processing.serial.*;
 import java.util.*;
 
-String portName = "COM5";
+String portName = "COM3";
 Serial myPort;  // Create object from Serial class
 int[] val;      // Data received from the serial port
 int offset = 0;
@@ -13,7 +13,7 @@ final int[] dataSize = {
                   1, 8, 8, 8,
                   5, 4, 4, 4,
                   4, 4, 4, 4,
-                  4, 4, 1, 1
+                  4, 4, 1, 4
                 };
                   
 LinkedList<Integer> reset_conditions;
@@ -30,6 +30,8 @@ float[] ir_hz;
 int[] us_time, us_dist, us_packets;
 float[] us_hz;
 int start_count;
+int ir_long_time, ir_long_dist, ir_long_packets;
+float ir_long_hz;
 
 Date last_start;
 
@@ -37,7 +39,7 @@ int[] additional_info;
 
 void setup() 
 {
-  size(600, 360);
+  size(600, 380);
   ir_time = new int[10];
   ir_dist = new int[10];
   ir_packets = new int[10];
@@ -131,6 +133,14 @@ void draw()
   }
   
   text_y += 20;
+  text("irL", 20, text_y);
+  text(ir_long_time, 50, text_y);
+  text(ir_long_dist, 110, text_y);
+  text(ir_long_hz + "hz", 290, text_y);
+  text((float)ir_long_packets/sec + "hz", 410, text_y);
+  
+  
+  text_y += 20;
   text(start_count, 50, text_y);
   if (last_start != null) 
     text(last_start.toString(), 110, text_y);
@@ -218,7 +228,7 @@ void serialEvent(Serial thisPort) {
         case 5:
           if (val[0] == 'S' && val[2] == '\r' && val[3] == '\n')
           {
-            a_packets = m_packets = g_packets = ba_packets = 0;
+            a_packets = m_packets = g_packets = ba_packets = ir_long_packets = 0;
             for (int i = 0; i < 10; ++i)
             {
               ir_packets[i] = us_packets[i] = 0;
@@ -260,6 +270,18 @@ void serialEvent(Serial thisPort) {
           us_hz[device] = 1000.0/last;
           us_time[device] = time;
           us_dist[device] = val[2]<<8|val[3];
+          break;
+        case 15:
+          ++ir_long_packets;
+          last = ir_long_time;
+          time = ((val[0]&0x0F)<<8)|val[1];
+          if (time < last)
+            last = ((time|0x1000)-last);
+          else
+            last =(time-last);
+          ir_long_hz = 1000.0/last;
+          ir_long_time = time;
+          ir_long_dist = val[2]<<8|val[3];
           break;
         default:
           break;
