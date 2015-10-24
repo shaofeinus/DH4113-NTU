@@ -39,17 +39,10 @@ class fullNavi(object) :
         self.curY = 0               # cm
         self.heading = 0            # -180 to 180 degrees
 
-        # prevent going back to obstacle
-        self.obstacleEncounteredSteps = 0
+        # prevent turning more than 90 degrees back to obstacle
         self.obstacleClearedSteps = 0
-        self.MAX_STEPS = 2
-
-        # after turning, make sure take 1 step
-        self.obstacleTurnSteps = 0
-        self.NUM_OBSTACLE_STEPS = 2
-
-        self.obstStartHeading = 0
-        self.obstEndHeading = 0
+        self.currentSteps = 0
+        self.NUM_OBSTACLE_STEPS = 1
 
         # tolerance
         self.maxTolerance = 200
@@ -89,24 +82,13 @@ class fullNavi(object) :
         self.nodeNavi.updateCurCoord(x, y)
         self.nodeNavi.updateHeading(heading)
 
-    # when an obstacle is first encountered
-    def updateEncounterSteps(self, numSteps) :
-        self.obstacleEncounteredSteps = numSteps
-
     # current current steps
     def updateClearSteps(self, numSteps) :
         self.obstacleClearedSteps = numSteps
 
     # when a step has been taken after turning
-    def updateObstacleTurnSteps(self, numSteps) :
-        self.obstacleTurnSteps = numSteps
-
-    def setObstacleStartHeading(self, heading) :
-        self.obstStartHeading = heading
-
-    def setObstacleEndHeading(self, heading) :
-        self.obstEndHeading = heading
-
+    def updateCurrentSteps(self, numSteps) :
+        self.currentSteps = numSteps
 
     # returns false if at a node, but not facing in the direction of the next node
     def isInitialAngleCorrect(self):
@@ -278,18 +260,11 @@ class fullNavi(object) :
             return False
         else :
             # update obstacle cleared heading
-            self.nodeNavi.setObstacleClearedHeading(self.obstEndHeading)
-            if ((self.obstacleClearedSteps - self.obstacleTurnSteps) > self.NUM_OBSTACLE_STEPS) :
+            if ((self.CurrentSteps - self.obstacleClearedSteps) > self.NUM_OBSTACLE_STEPS) :
                 self.nodeNavi.setCanTurn(True)
             else :
                 self.nodeNavi.setCanTurn(False)
             
-            if ((self.obstacleClearedSteps - self.obstacleEncounteredSteps) <= self.MAX_STEPS):
-                angleDisp = self.obstStartHeading - self.obstEndHeading
-                self.nodeNavi.setPrevObstacleHeading(angleDisp)
-            else :
-                self.nodeNavi.setPrevObstacleHeading(360)
-##
             curNode =  self.pathList[self.pathListIndex + 1]
             curNodeName = self.comMap[self.mapNumber].getLocationName(curNode)
             print "next node is " + str(curNode + 1) + ", name is:" + str(curNodeName)
