@@ -23,6 +23,24 @@ skip_pad = keypad_polling.keypad(None, None, None)
 skip_init = skip_pad.poll_for_num_timed()
 del skip_pad
 
+# VoiceQueue has 2 levels of priority: HIGH is enqueued by append_high, and NORMAL is enqueued by append
+#
+# ===HIGH PRIORITY===
+# Node Reached
+# You reached %s node
+# Navigation Complete
+# Rerouting
+#
+# ===NORMAL PRIORITY===
+# Right %f
+# Left %f
+# Go
+# %s in %f metres
+# Normal Priority will be preempted by HIGH Priority
+
+# If NORMAL Prio is enqueued before latest enqueue timing, dropped. Released not called
+# If NORMAL Prio is dequeued with timestamp after latest dequeue timing, dropped. Acquire is called successfully, but nothing will be spoken
+
 class voiceThread(threading.Thread):
     def __init__(self,threadID,threadName):
         threading.Thread.__init__(self)
@@ -32,22 +50,16 @@ class voiceThread(threading.Thread):
     def run(self):
         global voiceQueue
         global voiceSema
-        global voiceStopSema
         global speaker
 
         while True:
+            voiceSema.acqire()
             if not voiceQueue.empty():
                 item = voiceQueue.popleft()
                 if item is not None:
                     speaker.speak(str(voiceQueue.popleft()))
             else:
                 time.sleep(1)
-            # time.sleep(5)
-#             voiceSema.acquire()
-#             if len(voiceQueue) > 0:
-# ##                speaker.speak(str(voiceQueue.popleft()))
-#                 voiceQueue.popleft()
-#                 time.sleep(1)
 
 class ReceiveDataThread(threading.Thread):
     def __init__(self, threadID, threadName):
