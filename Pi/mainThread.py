@@ -819,6 +819,9 @@ mainThreads = []
 if skip_init:
     mainThreads.append(LocationUpdateThread(3, "location update"))
     mainThreads.append(LocationDisplayThread(4, "location display"))
+    # mainThreads.append(NavigationThread(5, "navigation"))
+    # mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
+    # mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
 else:
     mainThreads.append(LocationUpdateThread(3, "location update"))
     mainThreads.append(LocationDisplayThread(4, "location display"))

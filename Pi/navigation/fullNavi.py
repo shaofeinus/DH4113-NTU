@@ -181,7 +181,7 @@ class fullNavi(object) :
 ##        GPIO.output(self.rightPin, True)
         prevNode = self.pathList[self.pathListIndex]
         curNodeName = self.comMap[self.mapNumber].getLocationName(prevNode)
-        nodeReachedSentence = "You reached" + str(curNodeName) + "."
+        nodeReachedSentence = "You reached node " + str(prevNode + 1) + ", " + str(curNodeName) + "."
         print nodeReachedSentence
         if nodeReachedSentence != self.prev_message:
             self.voiceQueue.flush()
@@ -197,7 +197,7 @@ class fullNavi(object) :
     def provideNexNodeDirections(self) :
         nexNode =  self.pathList[self.pathListIndex + 1]
         nexNodeName = self.comMap[self.mapNumber].getLocationName(nexNode)
-        nextNodeSentence = "Next is" + nexNodeName + "."
+        nextNodeSentence = "Next is " + str(nexNode+1) + ", " + nexNodeName + "."
         print nextNodeSentence
         if nextNodeSentence != self.prev_message:
             self.voiceQueue.flush()
@@ -296,7 +296,7 @@ class fullNavi(object) :
 ##
             curNode =  self.pathList[self.pathListIndex + 1]
             curNodeName = self.comMap[self.mapNumber].getLocationName(curNode)
-            print "next node name is: " + str(curNodeName)
+            print "next node is " + str(curNode + 1) + ", name is:" + str(curNodeName)
             isNodeReached = self.nodeNavi.navigate()
 
             if isNodeReached == 1 :

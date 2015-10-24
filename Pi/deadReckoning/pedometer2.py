@@ -14,8 +14,8 @@ class Pedometer2:
     ACC_WINDOW_SIZE = ACC_WINDOW_TIME / ACC_DATA_INTERVAL
     SINGLE_DATA_WINDOW_SIZE = 5
 
-    ACC_H_THRESHOLD = 1.2     # In G
-    ACC_L_THRESHOLD = 0.85     # In G
+    ACC_H_THRESHOLD = 1.1     # In G
+    ACC_L_THRESHOLD = 0.95     # In G
     ACC_REST = 0.97
 
     HIGH_LOW_INTERVAL_MAX = 500  # In ms
@@ -57,7 +57,7 @@ class Pedometer2:
 
         # print str(math.sqrt(accX*accX + accY*accY + accZ*accZ))
 
-        # For debug
+        #For debug
         # f = open('pedodata.csv', 'a')
         # # f.write(str(accX) + "," + str(accY) + "," + str(accZ) + "\n")
         # f.write(str(math.sqrt(accX*accX + accY*accY + accZ*accZ)) + "\n")
