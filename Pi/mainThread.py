@@ -581,6 +581,9 @@ class ObstacleAvoidanceThread(threading.Thread):
                 obstacleDetected = 1
                 obstacleStatusLock.release()
                 obstacle.vibrateMotors()
+            else:
+                obstacle.turnOffMotors()
+
             
             # up/down step
 ##            stepType = obstacle.hasStep()

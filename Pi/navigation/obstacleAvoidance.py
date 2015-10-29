@@ -258,7 +258,7 @@ class obstacleAvoidance (object) :
             else :
                 return False
 
-    def hasLeftSonarObstacle(self) :
+    def hasLeftSonarObstacle(self, isAlreadyDetected) :
         sonarAverage = 0
         for i in self.sonarLS :
             sonarAverage += i
@@ -278,7 +278,7 @@ class obstacleAvoidance (object) :
             else :
                 return False
 
-    def hasRightSonarObstacle(self) :
+    def hasRightSonarObstacle(self, isAlreadyDetected) :
         sonarAverage = 0
         for i in self.sonarRS :
             sonarAverage += i
@@ -459,7 +459,6 @@ class obstacleAvoidance (object) :
         time.sleep(self.VIBRATE_DURATION)
 
     def turnOffMotors(self) :
-        print "Vibration motors turned off"
         GPIO.output(self.leftPin, False)
         GPIO.output(self.rightPin, False)
 
@@ -542,7 +541,7 @@ class obstacleAvoidance (object) :
         if ((self.hasFCSonarObstacle(isAlreadyDetected) is True) or
             (self.hasFCIrObstacle(isAlreadyDetected) is True) or
             (self.hasFLIrObstacle(isAlreadyDetected) is True) or
-            (self.hasFRIrObstacle(isAlreadyDetected) is True)
+            (self.hasFRIrObstacle(isAlreadyDetected) is True) or
             (self.hasLeftSonarObstacle(isAlreadyDetected) is True) or
             (self.hasRightSonarObstacle(isAlreadyDetected) is True) or
             (self.hasLeftIrObstacle(isAlreadyDetected) is True) or
