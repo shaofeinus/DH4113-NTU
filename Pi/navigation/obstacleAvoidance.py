@@ -18,7 +18,7 @@ class obstacleAvoidance (object) :
         self.SIDE_OBSTACLE_SONAR = 70
         self.UPSTEP_THRESHHOLD = 500
         self.DOWNSTEP_THRESHHOLD = 430
-        self.VIBRATE_DURATION = 2
+        self.VIBRATE_DURATION = 1
         self.OBSTACLE_RADIUS = 70
         self.LARGE_VALUE = 150
         self.SONAR_LARGE_VALUE = 350

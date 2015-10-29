@@ -13,8 +13,8 @@ from UI import voiceCommands
 from UI import search
 from UI import keypad_polling
 from UI import pyespeak
-from my_deque import my_deque
-from UISpeaker import UI_Speaker
+from UI import my_deque
+from UI import UISpeaker
 
 __author__ = 'Shao Fei'
 
@@ -571,12 +571,16 @@ class ObstacleAvoidanceThread(threading.Thread):
             obstacle.updateFrontSensorData(irLarge, sonarFC, irFC, irFL, irFR)
             obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
             obstacleLock.release()
+
+            obstacleStatusLock.acquire()
+            obstacleStatus = obstacleDetected
+            obstacleStatusLock.release()
+
             if obstacle.isFrontObstacleDetected(obstacleStatus) is True :
+                obstacleStatusLock.acquire()
+                obstacleDetected = 1
+                obstacleStatusLock.release()
                 obstacle.vibrateMotors()
-            
-##            obstacleStatusLock.acquire()
-##            obstacleStatus = obstacleDetected
-##            obstacleStatusLock.release()
             
             # up/down step
 ##            stepType = obstacle.hasStep()
@@ -734,14 +738,14 @@ NUM_SINGLE_ID = 11
 # 8 - IR (right side) (2)
 # 9 - IR (front left)
 # 10 - IR (front right)
-# 11 - unused
+# 11 - sonar (front) (29 trig echo)
 # 12 - sonar (left side) (27 trig 18 echo)
 # 13 - sonar (right side) (25 trig  2 echo)
 # 15 - IR (large)
 
 
 # Queue for sound
-voiceQueue = my_deque()
+voiceQueue = my_deque.my_deque()
 
 # Data lists for raw data
 data = [deque() for x in range(NUM_QUEUED_ID)]
@@ -764,7 +768,7 @@ dataFeeder = dataFeeder.DataFeeder()
 
 # Speaker object
 speaker = pyespeak.Speaker()
-UISpeaker = UI_Speaker()
+UISpeaker = UISpeaker.UI_Speaker()
 
 # Locks for various variables
 locationTrackerLock = threading.Lock()

@@ -81,6 +81,8 @@ class keypad(object):
             self.chr_queue.flush()
             self.ext_num_input = self.poll_for_ext_num()
 
+            print self.ext_num_input
+
             return self.ext_num_input
 
             print "Input is " + str(self.ext_num_input) + ". To confirm, press start. To cancel, press back"
@@ -181,7 +183,7 @@ class keypad(object):
                 if self.GPIO.input(self.vert[y]) == self.GPIO.HIGH: # closed switch detected
                     if self.num_map[y][x] != 9 and self.num_map[y][x] != 11:
                         if self.en_snd:
-                            self.chr_queue.append(self.num_map[y][x])
+                            self.chr_queue.append(self.num_map[y][x], time.time())
                             self.voiceSema.release()
                     while GPIO.input(self.vert[y]) == GPIO.HIGH:
                         pass
@@ -216,15 +218,15 @@ class keypad(object):
                         first_press = False
                     if self.num_map[y][x] == 11:
                         if self.en_snd:
-                            self.chr_queue.append("delete")
+                            self.chr_queue.append("delete", time.time())
                             self.voiceSema.release()
                     elif self.num_map[y][x] != 9:
                         if self.en_snd:
                             if self.num_map[y][x] == 10:
-                                self.chr_queue.append(0)
+                                self.chr_queue.append(0, time.time())
                                 self.voiceSema.release()
                             else:
-                                self.chr_queue.append(self.num_map[y][x] + 1)
+                                self.chr_queue.append(self.num_map[y][x] + 1, time.time())
                                 self.voiceSema.release()
 
                     while GPIO.input(self.vert[y]) == GPIO.HIGH:
@@ -322,7 +324,7 @@ class keypad(object):
             if self.curr_chr != '':
                 self.out_str += self.curr_chr
                 if self.en_snd:
-                    self.chr_queue.append(str(self.curr_chr))
+                    self.chr_queue.append(str(self.curr_chr), time.time())
                     self.voiceSema.release()
             self.curr_chr = ''
             self.prev_num = -3
@@ -332,7 +334,7 @@ class keypad(object):
                 if len(self.out_str)>0:
                     self.out_str = self.out_str[:len(self.out_str)-1]
             if self.en_snd and (self.curr_chr != '' or len(self.out_str) > 0):
-                self.chr_queue.append("delete")
+                self.chr_queue.append("delete", time.time())
                 self.voiceSema.release()
             self.curr_chr = '' #clear curr_chr
             self.num_count = 0 #reset count on key map
@@ -348,7 +350,7 @@ class keypad(object):
         elif num_pressed == 23: #clear all
             self.out_str = ""
             if self.en_snd:
-                self.chr_queue.append("clear")
+                self.chr_queue.append("clear", time.time())
                 self.voiceSema.release()
             self.curr_chr = '' #clear curr_chr
             self.num_count = 0 #reset count on key map
@@ -360,17 +362,17 @@ class keypad(object):
             self.prev_num = 21 #update keypress history
             self.end_flag = True
             self.chr_queue.flush()
-            self.chr_queue.append("")
+            self.chr_queue.append("", time.time())
         else:
             if num_pressed >= 12: #hold down keys
                 if self.curr_chr != '':
                     self.out_str += self.curr_chr
                     if self.en_snd:
-                        self.chr_queue.append(self.curr_chr)
+                        self.chr_queue.append(self.curr_chr, time.time())
                         self.voiceSema.release()
                 self.out_str += self.key_map[num_pressed][0]
                 if self.en_snd:
-                    self.chr_queue.append(self.key_map[num_pressed][0])
+                    self.chr_queue.append(self.key_map[num_pressed][0], time.time())
                     self.voiceSema.release()
                 self.num_count = 0 #reset count on keymap
                 self.prev_num = -3 #update clear history
@@ -379,7 +381,7 @@ class keypad(object):
                 if self.prev_num != -3: #first press condition
                     self.out_str += self.curr_chr
                     if self.en_snd:
-                        self.chr_queue.append(self.curr_chr) ##self.speaker.speak(self.key_map[self.prev_num][self.num_count])
+                        self.chr_queue.append(self.curr_chr, time.time()) ##self.speaker.speak(self.key_map[self.prev_num][self.num_count])
                         self.voiceSema.release()
                 self.num_count = 0 #reset count on keymap
                 self.prev_num = num_pressed #update keypress history

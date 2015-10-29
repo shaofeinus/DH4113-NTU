@@ -1,17 +1,17 @@
 import keypad_polling
+import UISpeaker
+import my_deque
 import threading
-import pyespeak
-from collections import deque
 
 __author__ = 'Dan'
 
-temp = deque()
+# temp = deque()
 sema = threading.Semaphore(0)
-key_pad = keypad_polling.keypad(temp, sema)
+q =  my_deque.my_deque()
+speaker = UISpeaker.UI_Speaker()
+key_pad = keypad_polling.keypad(q, sema, speaker)
 
 
 while True:
-    print temp
-    print key_pad.get_input_str("ENTER EXTENDED NUMBER")
-    print temp
+    print key_pad.get_input_ext_num("ENTER EXTENDED NUMBER")
 print "exit"
