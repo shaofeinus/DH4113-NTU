@@ -569,12 +569,16 @@ class ObstacleAvoidanceThread(threading.Thread):
             obstacle.updateFrontSensorData(irLarge, sonarFC, irFC, irFL, irFR)
             obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
             obstacleLock.release()
+
+            obstacleStatusLock.acquire()
+            obstacleStatus = obstacleDetected
+            obstacleStatusLock.release()
+
             if obstacle.isFrontObstacleDetected(obstacleStatus) is True :
+                obstacleStatusLock.acquire()
+                obstacleDetected = 1
+                obstacleStatusLock.release()
                 obstacle.vibrateMotors()
-            
-##            obstacleStatusLock.acquire()
-##            obstacleStatus = obstacleDetected
-##            obstacleStatusLock.release()
             
             # up/down step
 ##            stepType = obstacle.hasStep()
