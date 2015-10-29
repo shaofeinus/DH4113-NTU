@@ -16,19 +16,22 @@ class my_deque(object):
         self.flush_queue = True
 
     def empty(self):
-        return len(self.queue) is 0 and len(self.queue_high)
+        return len(self.queue) is 0 and len(self.queue_high) is 0
 
     def popleft(self):
+        print self.curr_speak_time
+        print "NQ:", self.queue
+        print "HQ:", self.queue_high
         if len(self.queue_high) > 0:
             item = self.queue_high.popleft()
             self.curr_speak_time = item[1]
         else:
             item = self.queue.popleft()
             if self.curr_speak_time > 0 and item[1] < self.curr_speak_time:
-                if self.flush_queue:
-                    self.queue.clear()
-                    self.flush_queue = False
+                print "None"
                 return None
+            self.curr_speak_time = item[1]
+
         if self.flush_queue:
             self.queue.clear()
             self.flush_queue = False
