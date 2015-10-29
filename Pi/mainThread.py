@@ -522,25 +522,25 @@ class NavigationThread(threading.Thread):
             heading = locationTracker.getHeadingInDeg()
             locationTrackerLock.release()
             # update location and next node direction for obstacle avoidance
-            obstacle.setNextNodeDirection(navi.getGeneralTurnDirection())
-            obstacle.setCurrentLocation(curX, curY)
+##            obstacle.setNextNodeDirection(navi.getGeneralTurnDirection())
+##            obstacle.setCurrentLocation(curX, curY)
             # every second, check navigation
-            if (naviCount%10 == 0) :
-                navi.updateCurLocation(curX, curY, heading)
-                if obstacleDetected == 1 or checkSideObstacle == 1:
-                    navi.ignoreNodeObstacle()
-                    time.sleep(0.1)
-                    continue
-                if isFirstCleared == 1 :
-                    navi.updateClearSteps(locationTracker.getTotalSteps())
-                    isFirstCleared = 0
-                else :
-                    navi.updateCurrentSteps(locationTracker.getTotalSteps())
+##            if (naviCount%10 == 0) :
+##                navi.updateCurLocation(curX, curY, heading)
+##                if obstacleDetected == 1 or checkSideObstacle == 1:
+##                    navi.ignoreNodeObstacle()
+##                    time.sleep(0.1)
+##                    continue
+##                if isFirstCleared == 1 :
+##                    navi.updateClearSteps(locationTracker.getTotalSteps())
+##                    isFirstCleared = 0
+##                else :
+##                    navi.updateCurrentSteps(locationTracker.getTotalSteps())
                     
-                isNavigationDone = navi.fullNavigate()
-                if isNavigationDone is True :
-                    return
-            time.sleep(0.1)
+            isNavigationDone = navi.fullNavigate()
+            if isNavigationDone is True :
+                return
+            time.sleep(1)
 
            
 class ObstacleAvoidanceThread(threading.Thread):
@@ -568,82 +568,84 @@ class ObstacleAvoidanceThread(threading.Thread):
             obstacleLock.acquire()
             obstacle.updateFrontSensorData(irLarge, sonarFC, irFC, irFL, irFR)
             obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
-            #obstacle.collectIrData(irLarge)
             obstacleLock.release()
-            obstacleStatusLock.acquire()
-            obstacleStatus = obstacleDetected
-            obstacleStatusLock.release()
+            if obstacle.isFrontObstacleDetected(obstacleStatus) is True :
+                obstacle.vibrateMotors()
+            
+##            obstacleStatusLock.acquire()
+##            obstacleStatus = obstacleDetected
+##            obstacleStatusLock.release()
             
             # up/down step
 ##            stepType = obstacle.hasStep()
 ##            if ((stepType == 1) or (stepType == 2)) :
 ##                obstacle.stepVibrateMotor(stepType)
             
-            if obstacle.isNewObstacleDetected(obstacleStatus) is True:
-                obstacleStatusLock.acquire()
-                obstacleDetected = 1
-                checkSideObstacle = 0
-                isFirstCleared = 0
-                obstacleStatusLock.release()
-                obstacle.vibrateMotors()
-            # existing obstacle
-            obstacleStatusLock.acquire()
-            obstacleStatus = obstacleDetected
-            obstacleStatusLock.release()
-            if obstacleStatus == 1:
-                obstacleLock.acquire()
-                obstacle.updateFrontSensorData(irLarge, sonarFC, irFC, irFL, irFR)
-                obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
-                obstacleLock.release()
-                if obstacle.isFrontObstacleDetected(obstacleStatus) is True:
-                    obstacle.turnFromObstacle()
-                else:
-                    obstacle.turnOffMotors()
-                    obstacleStatusLock.acquire()
-                    obstacleDetected = 0
-                    checkSideObstacle = 1
-                    obstacleStatusLock.release()
+##            if obstacle.isNewObstacleDetected(obstacleStatus) is True:
+##                obstacleStatusLock.acquire()
+##                obstacleDetected = 1
+##                checkSideObstacle = 0
+##                isFirstCleared = 0
+##                obstacleStatusLock.release()
+##                obstacle.vibrateMotors()
+##            # existing obstacle
+##            obstacleStatusLock.acquire()
+##            obstacleStatus = obstacleDetected
+##            obstacleStatusLock.release()
+##            if obstacleStatus == 1:
+##                obstacleLock.acquire()
+##                obstacle.updateFrontSensorData(irLarge, sonarFC, irFC, irFL, irFR)
+##                obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
+##                obstacleLock.release()
+##                if obstacle.isFrontObstacleDetected(obstacleStatus) is True:
+##                    obstacle.turnFromObstacle()
+##                else:
+##                    obstacle.turnOffMotors()
+##                    obstacleStatusLock.acquire()
+##                    obstacleDetected = 0
+##                    checkSideObstacle = 1
+##                    obstacleStatusLock.release()
             time.sleep(0.1)
 
 
-class ObstacleClearedThread(threading.Thread):
-    def __init__(self, threadID, threadName):
-        threading.Thread.__init__(self)
-        self.threadID = threadID
-        self.threadName = threadName
-
-    def run(self):
-        global checkSideObstacle
-        global isFirstCleared
-        while 1:
-            irFC = data[6]
-            irLS = data[7]
-            irRS = data[8]
-            irFL = data[9]
-            irFR = data[10]
-            sonarFC = data[11]
-            sonarLS = data[12]
-            sonarRS = data[13]
-            irLarge = data[15]
-
-            obstacleStatusLock.acquire()
-            toMonitorObstacle = checkSideObstacle
-            obstacleStatusLock.release()
-            if toMonitorObstacle == 1:
-                obstacleLock.acquire()
-                obstacle.updateFrontSensorData(irLarge, sonarFC, irFC, irFL, irFR)
-                obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
-                obstacleLock.release()
-                # re-route if necessary
-                if obstacle.isRerouteNeeded() is True :
-                    navi.reroutePath()
-                if obstacle.checkObstacleCleared() == 1:
-                    obstacleStatusLock.acquire()
-                    checkSideObstacle = 0
-                    isFirstCleared = 1
-                    print "obstacle cleared"
-                    obstacleStatusLock.release()
-            time.sleep(0.5)
+##class ObstacleClearedThread(threading.Thread):
+##    def __init__(self, threadID, threadName):
+##        threading.Thread.__init__(self)
+##        self.threadID = threadID
+##        self.threadName = threadName
+##
+##    def run(self):
+##        global checkSideObstacle
+##        global isFirstCleared
+##        while 1:
+##            irFC = data[6]
+##            irLS = data[7]
+##            irRS = data[8]
+##            irFL = data[9]
+##            irFR = data[10]
+##            sonarFC = data[11]
+##            sonarLS = data[12]
+##            sonarRS = data[13]
+##            irLarge = data[15]
+##
+##            obstacleStatusLock.acquire()
+##            toMonitorObstacle = checkSideObstacle
+##            obstacleStatusLock.release()
+##            if toMonitorObstacle == 1:
+##                obstacleLock.acquire()
+##                obstacle.updateFrontSensorData(irLarge, sonarFC, irFC, irFL, irFR)
+##                obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
+##                obstacleLock.release()
+##                # re-route if necessary
+##                if obstacle.isRerouteNeeded() is True :
+##                    navi.reroutePath()
+##                if obstacle.checkObstacleCleared() == 1:
+##                    obstacleStatusLock.acquire()
+##                    checkSideObstacle = 0
+##                    isFirstCleared = 1
+##                    print "obstacle cleared"
+##                    obstacleStatusLock.release()
+##            time.sleep(0.5)
 
 class UIThread(threading.Thread):
     def __init__(self, threadID, threadName):
@@ -844,8 +846,8 @@ else:
     mainThreads.append(LocationDisplayThread(4, "location display"))
     mainThreads.append(NavigationThread(5, "navigation"))
     mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
-    mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
-    ##mainThreads.append(collectIRThread(9, "collect ir data"))
+##    mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
+##    mainThreads.append(collectIRThread(9, "collect ir data"))
 
 
 for thread in mainThreads:
