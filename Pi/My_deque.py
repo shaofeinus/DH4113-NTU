@@ -12,8 +12,8 @@ class my_deque(object):
     def clear(self):
         self.queue.clear()
 
-    # def flush(self):
-    #     self.flush_queue = True
+    def flush(self):
+        self.flush_queue = True
 
     def empty(self):
         return len(self.queue) is 0 and len(self.queue_high)
@@ -25,6 +25,9 @@ class my_deque(object):
         else:
             item = self.queue.popleft()
             if self.curr_speak_time > 0 and item[1] < self.curr_speak_time:
+                if self.flush_queue:
+                    self.queue.clear()
+                    self.flush_queue = False
                 return None
         if self.flush_queue:
             self.queue.clear()
@@ -33,6 +36,9 @@ class my_deque(object):
 
     def append(self, item, timeStamp):
         if timeStamp < self.curr_time:
+            if self.flush_queue:
+                self.queue.clear()
+                self.flush_queue = False
             return False
         if self.flush_queue:
             self.queue.clear()
