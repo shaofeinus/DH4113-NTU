@@ -161,6 +161,7 @@ class CalibrationThread(threading.Thread):
 
         userInputLock.acquire()
 
+        # Update Gyro offset
         self.calibrationTools.initGyroOffset(self.calibrator.initGXOffset,
                                              self.calibrator.initGYOffset,
                                              self.calibrator.initGZOffset)
@@ -200,7 +201,6 @@ class CalibrationThread(threading.Thread):
 
         # print 'Calibrating'
 
-
         data = [deque() for x in range(NUM_QUEUED_ID)]
         data_single = [0 for x in range(NUM_SINGLE_ID)]
         data.extend(data_single)
@@ -214,8 +214,9 @@ class CalibrationThread(threading.Thread):
         while not self.isDone['tilt']:
             self.calibrateTilt()
 
+        # Update pitch and roll
         locationTracker.pedometer.calibrate(self.calibrator.pitch, self.calibrator.roll)
-        locationTracker.compass.gyroCompass.calibrate(self.calibrator.pitch, self.calibrator.roll)
+        locationTracker.gyroCompass.calibrate(self.calibrator.pitch, self.calibrator.roll)
 
         while not self.isDone['nOffset']:
             self.calibrateNOffset()
@@ -351,7 +352,7 @@ class LocationDisplayThread(threading.Thread):
                 self.count += 1
 
             locationTrackerLock.release()
-            time.sleep(0.1)
+            time.sleep(1.0)
 
 
 class LocationUpdateThread(threading.Thread):

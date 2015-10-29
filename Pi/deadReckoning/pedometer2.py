@@ -9,7 +9,8 @@ class Pedometer2:
     CLOCK_MAX = 4095  # In ms
 
     ACC_WINDOW_TIME = 500  # In ms
-    ACC_DATA_INTERVAL = 10  # In ms
+    ACC_DATA_INTERVAL = 20  # In ms
+    INVALID_ACC_TIME = ACC_WINDOW_TIME + 1
 
     ACC_WINDOW_SIZE = ACC_WINDOW_TIME / ACC_DATA_INTERVAL
     SINGLE_DATA_WINDOW_SIZE = 5
@@ -209,14 +210,14 @@ class Pedometer2:
             # Reset global prev H time since a local H is detected
             if accG > self.ACC_H_THRESHOLD:
                 prevHighTimeLocal = accTime
-                self.prevHighTimeGlobal = self.ACC_WINDOW_TIME  # Reset
+                self.prevHighTimeGlobal = self.INVALID_ACC_TIME  # Reset
 
             # If current accG goes below L threshold, see the prev H time
             if accG < self.ACC_L_THRESHOLD:
 
                 # If H time is not reset, continue on
                 # If H time is reset,
-                if prevHighTimeLocal != self.ACC_WINDOW_TIME:
+                if prevHighTimeLocal != self.INVALID_ACC_TIME:
                     HLTime = accTime - prevHighTimeLocal
 
                     # If L time and nearest H time is in range
@@ -225,20 +226,20 @@ class Pedometer2:
                         self.stepsSinceLastQuery += 1
 
                         # Reset prev H time to max time in window, so that it is never reached
-                        prevHighTimeLocal = self.ACC_WINDOW_TIME  # Reset
+                        prevHighTimeLocal = self.INVALID_ACC_TIME  # Reset
 
             accTime += self.ACC_DATA_INTERVAL
 
         # If global prev H time is not reset, account for the time elapsed with no new H
-        if self.prevHighTimeGlobal != self.ACC_WINDOW_TIME:
+        if self.prevHighTimeGlobal != self.INVALID_ACC_TIME:
             self.prevHighTimeGlobal -= self.ACC_WINDOW_TIME
 
         # If local prev H time is not reset, there exists a unpaired H
         # Need to account for this H time in the next window
-        elif prevHighTimeLocal != self.ACC_WINDOW_TIME:
+        elif prevHighTimeLocal != self.INVALID_ACC_TIME:
             self.prevHighTimeGlobal = prevHighTimeLocal - self.ACC_WINDOW_TIME
 
         # If local prev H time is not reset, all H are paired with a L, reset the global prev H time
         else:
-            self.prevHighTimeGlobal = self.ACC_WINDOW_TIME
+            self.prevHighTimeGlobal = self.INVALID_ACC_TIME
 

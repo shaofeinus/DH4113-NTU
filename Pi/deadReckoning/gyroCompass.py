@@ -7,7 +7,7 @@ __author__ = 'Shao Fei'
 class GyroCompass:
 
     WINDOW_SIZE = 10
-    TIME_INTERVAL = 10.0 / 1000     # In sec
+    TIME_INTERVAL = 20.0 / 1000     # In sec
     RATE_OF_DRIFT = -9.0E-10    #0.0
     INITIAL_DRIFT = -6.0E-7     #-1.0E-5
 
@@ -31,11 +31,10 @@ class GyroCompass:
         self.YMAWindow.append(yReading)
         self.ZMAWindow.append(zReading)
 
-        xReading = sum(self.XMAWindow) / len(self.XMAWindow)
-        yReading = sum(self.YMAWindow) / len(self.YMAWindow)
-        zReading = sum(self.ZMAWindow) / len(self.ZMAWindow)
-
         if len(self.XMAWindow) == self.WINDOW_SIZE:
+            xReading = sum(self.XMAWindow) / len(self.XMAWindow)
+            yReading = sum(self.YMAWindow) / len(self.YMAWindow)
+            zReading = sum(self.ZMAWindow) / len(self.ZMAWindow)
             self.updateHeading(xReading, yReading, zReading)
         # self.updateHeading(xReading, yReading, zReading)
 
@@ -76,8 +75,10 @@ class GyroCompass:
             ans -= 360.0
         return ans
 
-    def resetRefAngle(self):
+    def getAngleDevInRad(self):
+        ans = self.angleDeviation
         self.angleDeviation = 0.0
+        return ans
 
     def updateOffset(self):
         self.currDriftOffset += self.RATE_OF_DRIFT
