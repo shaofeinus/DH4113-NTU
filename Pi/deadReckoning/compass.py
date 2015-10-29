@@ -131,7 +131,7 @@ class Compass:
         else:
             # In [0, 2 * pi]
             newHeading = self.calculateHeadingInRad()
-            gyroHeading = (self.gyroCompass.angleDeviation + self.currHeading - self.gyroCompass.currDriftOffset)\
+            gyroHeading = (self.gyroCompass.angleDeviation + self.currHeading)\
                         % (2 * math.pi)
 
             # print 'Mag compass:', self.getHeadingInDeg(newHeading)

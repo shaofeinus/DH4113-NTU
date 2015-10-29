@@ -44,6 +44,7 @@ class GyroCompass:
         resolvedAV = self.resolveGyro(xReading, yReading, zReading)
 
         self.angleDeviation -= resolvedAV * self.TIME_INTERVAL
+        self.angleDeviation -= self.currDriftOffset
 
         # Converts angle deviation to [0, 2 * pi]
         if self.angleDeviation > 2 * math.pi:

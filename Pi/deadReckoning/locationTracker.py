@@ -102,10 +102,10 @@ class LocationTracker:
         # Reflects true steps, 1/2 of what is recorded (pseudo steps)
         currDistance = currSteps * self.STEP_DISTANCE
 
-        compAngleDev = self.gyrocompass.getAngleDevInRad()
-        gyroAngleDev = self.compass.getAngleDevInRad()
+        compAngleDev = self.compass.getAngleDevInRad()
+        gyroAngleDev = self.gyroCompass.getAngleDevInRad()
 
-        if currSteps > 0:
+        if currSteps == 0:
             angleDev = gyroAngleDev
         else:
             angleDev = compAngleDev
@@ -144,4 +144,4 @@ class LocationTracker:
             angleInRad += 2 * math.pi
 
         self.headingWRTNorthInRad = angleInRad
-        self.headingWRTNorthInDeg = self.compass.Compass.getHeadingInDeg(self.headingWRTNorthInRad)
+        self.headingWRTNorthInDeg = compass.Compass.getHeadingInDeg(self.headingWRTNorthInRad)

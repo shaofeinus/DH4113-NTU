@@ -9,20 +9,20 @@ from navigation import obstacleAvoidance
 from communication import dataFeeder
 # from communication import dataFeederDum
 from collections import deque
+from UI import voiceCommands
 from UI import search
 from UI import keypad_polling
-# from UI import keyboard as keypad_polling
 from UI import pyespeak
-from UI import my_deque
-from UI import UISpeaker
+from my_deque import my_deque
+from UISpeaker import UI_Speaker
 
 __author__ = 'Shao Fei'
 
 #to print sound just call voiceQueue.append(sentence)
 
-skip_pad = keypad_polling.keypad(None, None, None)
-skip_init = skip_pad.poll_for_num_timed()
-del skip_pad
+# skip_pad = keypad_polling.keypad(None, None, None)
+# skip_init = skip_pad.poll_for_num_timed()
+# del skip_pad
 
 # VoiceQueue has 2 levels of priority: HIGH is enqueued by append_high, and NORMAL is enqueued by append
 #
@@ -127,23 +127,19 @@ class CalibrationThread(threading.Thread):
         # self.calibrator.inputManualRange(magZRange, magYRange, magXrange)
         userInputLock.acquire()
 
-        global keypad
-        global UISpeaker
         global data, data_single
 
         validInput = False
         while not validInput:
             # userInput = raw_input("Press enter to calibrate? y/n ")
 
-            UISpeaker.speak(str("To calibrate gyroscope, press start."))
-            userInput = keypad.get_binary_response()
-            print userInput
-            if not userInput:
+            # UISpeaker.speak(str("To calibrate gyroscope, press start."))
+            userInput = raw_input("To calibrate gyroscope, press y.")
+            if userInput == 'y':
                 validInput = True
                 for i in range(0, 3):
                     num = 3 - i
                     print num
-                    UISpeaker.speak(str(num))
                     time.sleep(1)
                 dataFeeder.serialPort.flushInput()
                 dataFeeder.serialPort.flushOutput()
@@ -170,19 +166,17 @@ class CalibrationThread(threading.Thread):
                str(self.calibrator.initGXOffset) + ' ' + \
                str(self.calibrator.initGYOffset) + ' ' + \
                str(self.calibrator.initGZOffset)
+
         print temp
-        UISpeaker.speak(temp)
 
         validInput = False
         while not validInput:
             # userInput = raw_input("Press enter to calibrate? y/n ")
 
-            UISpeaker.speak(str("To begin compass calibration, press start. To skip calibration, press back."))
-            userInput = keypad.get_binary_response()
-            print userInput
-            if not userInput:
+            userInput = raw_input("To begin compass calibration, press y")
+            if userInput == 'y':
                 validInput = True
-            else:
+            elif userInput == 'n':
                 dataFeeder.serialPort.flushInput()
                 dataFeeder.serialPort.flushOutput()
 
@@ -223,10 +217,7 @@ class CalibrationThread(threading.Thread):
 
         userInputLock.acquire()
         temp = 'Your are ' + str(int(self.calibrator.getNOffsetAngle() / (2 * math.pi) * 360)) + ' from N. To continue, press start'
-        print temp
-        UISpeaker.speak(temp)
-        while keypad.get_binary_response():
-           pass
+        raw_input(temp)
         dataFeeder.serialPort.flushInput()
         dataFeeder.serialPort.flushOutput()
 
@@ -502,7 +493,6 @@ class LocationUpdateThread(threading.Thread):
             self.updateBaroData()
             self.updateGyroData()
             locationTrackerLock.release()
-            pass
 
 
 class NavigationThread(threading.Thread):
@@ -517,6 +507,7 @@ class NavigationThread(threading.Thread):
         global checkSideObstacle
         global isFirstCleared
         while 1:
+
             # feedback steps walked
             navi.feedbackWalking(locationTracker.getTotalSteps())
             
@@ -569,9 +560,6 @@ class ObstacleAvoidanceThread(threading.Thread):
             sonarRS = data[13]
             irLarge = data[15]
 
-            # feedback steps walked
-            obstacle.feedbackWalking(locationTracker.getTotalSteps())
-
             # update sensor data
             obstacleLock.acquire()
             obstacle.updateFrontSensorData(irLarge, sonarFC, irFC, irFL, irFR)
@@ -590,7 +578,6 @@ class ObstacleAvoidanceThread(threading.Thread):
             else:
                 obstacle.turnOffMotors()
 
-            
             # up/down step
 ##            stepType = obstacle.hasStep()
 ##            if ((stepType == 1) or (stepType == 2)) :
@@ -747,14 +734,14 @@ NUM_SINGLE_ID = 11
 # 8 - IR (right side) (2)
 # 9 - IR (front left)
 # 10 - IR (front right)
-# 11 - sonar (front) (29 trig echo)
+# 11 - unused
 # 12 - sonar (left side) (27 trig 18 echo)
 # 13 - sonar (right side) (25 trig  2 echo)
 # 15 - IR (large)
 
 
 # Queue for sound
-voiceQueue = my_deque.my_deque()
+voiceQueue = my_deque()
 
 # Data lists for raw data
 data = [deque() for x in range(NUM_QUEUED_ID)]
@@ -777,7 +764,7 @@ dataFeeder = dataFeeder.DataFeeder()
 
 # Speaker object
 speaker = pyespeak.Speaker()
-UISpeaker = UISpeaker.UI_Speaker()
+UISpeaker = UI_Speaker()
 
 # Locks for various variables
 locationTrackerLock = threading.Lock()
@@ -793,7 +780,7 @@ startLocation = None
 endLocation = None
 
 # Keypad initialization
-keypad = keypad_polling.keypad(voiceQueue, voiceSema, UISpeaker)
+keypad = keypad_polling.keypad(voiceQueue, voiceSema, speaker)
 
 # Threads to receive data from Arduino
 dataThreads = []
@@ -807,63 +794,35 @@ for thread in dataThreads:
 initThreads = []
 initThreads.append(CalibrationThread(-1, "calibrating pedometer and compass"))
 
-for thread in initThreads:
-    thread.start()
-
-for thread in initThreads:
-    thread.join()
+##for thread in initThreads:
+##    thread.start()
+##
+##for thread in initThreads:
+##    thread.join()
 
 # voice threads
 voiceThreads = []
 voiceThreads.append(voiceThread(8, "play sound notification"))
 
-for thread in voiceThreads:
-    thread.start()
-
-if not skip_init:
-    # UI threads
-    UIThreads = []
-    UIThreads.append(UIThread(-2, "Run UI"))
-
-    for thread in UIThreads:
-       thread.start()
-
-    for thread in UIThreads:
-       thread.join()
-
-    locationTracker.setLocation(startLocation.getLocationXCoord(), startLocation.getLocationYCoord())
-else:
-    locationTracker.setLocation(0,0)
+##for thread in voiceThreads:
+##    thread.start()
 
 # Navigation initialization
 naviCount = 0
 navi = fullNavi.fullNavi(voiceQueue, voiceSema)
 # navi.generateFullPath("com1", 2, 14, 26)
 
-if skip_init:
-    navi.generateFullPath("com1", 2, 1, 10)
-else:
-    navi.generateFullPath(startLocation.getBuildingName(),
-                         startLocation.getLevelNumber(),
-                         startLocation.getLocationPointIndex(), endLocation.getLocationPointIndex())
+navi.generateFullPath("com1", 2, 1, 10)
 
 # List of threads
 mainThreads = []
 
-if skip_init:
-    mainThreads.append(LocationUpdateThread(3, "location update"))
-    mainThreads.append(LocationDisplayThread(4, "location display"))
-    # mainThreads.append(NavigationThread(5, "navigation"))
-    # mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
-    # mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
-else:
-    mainThreads.append(LocationUpdateThread(3, "location update"))
-    mainThreads.append(LocationDisplayThread(4, "location display"))
-    mainThreads.append(NavigationThread(5, "navigation"))
-    mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
-##    mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
-##    mainThreads.append(collectIRThread(9, "collect ir data"))
-
+mainThreads.append(LocationUpdateThread(3, "location update"))
+mainThreads.append(LocationDisplayThread(4, "location display"))
+# mainThreads.append(NavigationThread(5, "navigation"))
+mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
+##mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
+# mainThreads.append(collectIRThread(9, "collect ir data"))
 
 for thread in mainThreads:
     thread.start()
