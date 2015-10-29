@@ -14,6 +14,7 @@ from UI import search
 from UI import keypad_polling
 from UI import pyespeak
 from my_deque import my_deque
+from UISpeaker import UI_Speaker
 
 __author__ = 'Shao Fei'
 
@@ -127,14 +128,14 @@ class CalibrationThread(threading.Thread):
         userInputLock.acquire()
 
         global keypad
-        global speaker
+        global UISpeaker
         global data, data_single
 
         validInput = False
         while not validInput:
             # userInput = raw_input("Press enter to calibrate? y/n ")
 
-            speaker.speak(str("To calibrate gyroscope, press start."))
+            UISpeaker.speak(str("To calibrate gyroscope, press start."))
             userInput = keypad.get_binary_response()
             print userInput
             if not userInput:
@@ -142,7 +143,7 @@ class CalibrationThread(threading.Thread):
                 for i in range(0, 3):
                     num = 3 - i
                     print num
-                    speaker.speak(str(num))
+                    UISpeaker.speak(str(num))
                     time.sleep(1)
                 dataFeeder.serialPort.flushInput()
                 dataFeeder.serialPort.flushOutput()
@@ -169,13 +170,13 @@ class CalibrationThread(threading.Thread):
                str(self.calibrator.initGYOffset) + ' ' + \
                str(self.calibrator.initGZOffset)
         print temp
-        speaker.speak(temp)
+        UISpeaker.speak(temp)
 
         validInput = False
         while not validInput:
             # userInput = raw_input("Press enter to calibrate? y/n ")
 
-            speaker.speak(str("To begin compass calibration, press start. To skip calibration, press back."))
+            UISpeaker.speak(str("To begin compass calibration, press start. To skip calibration, press back."))
             userInput = keypad.get_binary_response()
             print userInput
             if not userInput:
@@ -194,7 +195,7 @@ class CalibrationThread(threading.Thread):
         for i in range(0, 3):
             num = 3 - i
             print num
-            speaker.speak(str(num))
+            UISpeaker.speak(str(num))
             time.sleep(1)
 
         # print 'Calibrating'
@@ -222,7 +223,7 @@ class CalibrationThread(threading.Thread):
         userInputLock.acquire()
         temp = 'Your are ' + str(int(self.calibrator.getNOffsetAngle() / (2 * math.pi) * 360)) + ' from N. To continue, press start'
         print temp
-        speaker.speak(temp)
+        UISpeaker.speak(temp)
         while keypad.get_binary_response():
            pass
         dataFeeder.serialPort.flushInput()
@@ -653,18 +654,19 @@ class UIThread(threading.Thread):
     def run(self):
         global data
         global keypad
-        global speaker
         global startLocation
         global endLocation
+        global UISpeaker
+
 
         userInputLock.acquire()
 
         # get start location
-        startLocation = search.locationSetting(False, keypad, voiceSema, speaker)
+        startLocation = search.locationSetting(False, keypad, voiceSema, UIspeaker)
         startLocation.run()
 
         # get end location
-        endLocation = search.locationSetting(True, keypad, voiceSema, speaker)
+        endLocation = search.locationSetting(True, keypad, voiceSema, UIspeaker)
         endLocation.setBuildingAndLevel(startLocation.buildingName, startLocation.levelNumber)
         endLocation.run()
 
@@ -758,6 +760,7 @@ dataFeeder = dataFeeder.DataFeeder()
 
 # Speaker object
 speaker = pyespeak.Speaker()
+UISpeaker = UI_Speaker()
 
 # Locks for various variables
 locationTrackerLock = threading.Lock()
