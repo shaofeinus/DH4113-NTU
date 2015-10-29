@@ -39,17 +39,10 @@ class fullNavi(object) :
         self.curY = 0               # cm
         self.heading = 0            # -180 to 180 degrees
 
-        # prevent going back to obstacle
-        self.obstacleEncounteredSteps = 0
+        # prevent turning more than 90 degrees back to obstacle
         self.obstacleClearedSteps = 0
-        self.MAX_STEPS = 2
-
-        # after turning, make sure take 1 step
-        self.obstacleTurnSteps = 0
-        self.NUM_OBSTACLE_STEPS = 2
-
-        self.obstStartHeading = 0
-        self.obstEndHeading = 0
+        self.currentSteps = 0
+        self.NUM_OBSTACLE_STEPS = 1
 
         # tolerance
         self.maxTolerance = 200
@@ -89,24 +82,13 @@ class fullNavi(object) :
         self.nodeNavi.updateCurCoord(x, y)
         self.nodeNavi.updateHeading(heading)
 
-    # when an obstacle is first encountered
-    def updateEncounterSteps(self, numSteps) :
-        self.obstacleEncounteredSteps = numSteps
-
     # current current steps
     def updateClearSteps(self, numSteps) :
         self.obstacleClearedSteps = numSteps
 
     # when a step has been taken after turning
-    def updateObstacleTurnSteps(self, numSteps) :
-        self.obstacleTurnSteps = numSteps
-
-    def setObstacleStartHeading(self, heading) :
-        self.obstStartHeading = heading
-
-    def setObstacleEndHeading(self, heading) :
-        self.obstEndHeading = heading
-
+    def updateCurrentSteps(self, numSteps) :
+        self.currentSteps = numSteps
 
     # returns false if at a node, but not facing in the direction of the next node
     def isInitialAngleCorrect(self):
@@ -154,9 +136,8 @@ class fullNavi(object) :
             self.pathListIndex = nextNodeIndex - 1
             sentence = "Re-routing."
             print sentence
-            self.voiceQueue.flush()
-            self.voiceQueue.append(sentence)
-            self.voiceSema.release()
+            if self.voiceQueue.append_high(sentence, time.time()):
+                self.voiceSema.release()
             self.updatePrevNexCoord()
             self.provideNexNodeDirections()
 
@@ -181,12 +162,11 @@ class fullNavi(object) :
 ##        GPIO.output(self.rightPin, True)
         prevNode = self.pathList[self.pathListIndex]
         curNodeName = self.comMap[self.mapNumber].getLocationName(prevNode)
-        nodeReachedSentence = "You reached node " + str(prevNode + 1) + ", " + str(curNodeName) + "."
+        nodeReachedSentence = "You reached node " + str(curNodeName) + "." # str(prevNode + 1) + ", " + str(curNodeName) + "."
         print nodeReachedSentence
         if nodeReachedSentence != self.prev_message:
-            self.voiceQueue.flush()
-            self.voiceQueue.append(nodeReachedSentence)
-            self.voiceSema.release()
+            if self.voiceQueue.append_high(nodeReachedSentence, time.time()):
+                self.voiceSema.release()
             self.prev_message = nodeReachedSentence
         print "Path index " + str(self.pathListIndex)
 ##        time.sleep(1)
@@ -200,9 +180,8 @@ class fullNavi(object) :
         nextNodeSentence = "Next is " + str(nexNode+1) + ", " + nexNodeName + "."
         print nextNodeSentence
         if nextNodeSentence != self.prev_message:
-            self.voiceQueue.flush()
-            self.voiceQueue.append(nextNodeSentence)
-            self.voiceSema.release()
+            if self.voiceQueue.append_high(nextNodeSentence, time.time()):
+                self.voiceSema.release()
             self.prev_message = nextNodeSentence
 
     # returns 1 for right (and straight ahead), 2 for left
@@ -225,8 +204,8 @@ class fullNavi(object) :
                 print sentence
                 if time.time() - self.prev_message_time_turn > self.message_delay:
                     if self.prev_message != sentence:
-                        self.voiceQueue.append(sentence)
-                        self.voiceSema.release()
+                        if self.voiceQueue.append(sentence, time.time()):
+                            self.voiceSema.release()
                         self.prev_message_time_turn = time.time()
                         self.prev_message = sentence
             elif (directionToHead < 0) :
@@ -234,17 +213,18 @@ class fullNavi(object) :
                 print sentence
                 if time.time() - self.prev_message_time_turn > self.message_delay:
                     if self.prev_message != sentence:
-                        self.voiceQueue.append(sentence)
-                        self.voiceSema.release()
+                        if self.voiceQueue.append(sentence, time.time()):
+                            self.voiceSema.release()
                         self.prev_message_time_turn = time.time()
                         self.prev_message = sentence
             return False
         else :
             sentence = "Go."
+            print sentence
             if time.time() - self.prev_message_time_str > self.message_delay:
                 if self.prev_message != sentence:
-                    self.voiceQueue.append(sentence)
-                    self.voiceSema.release()
+                    if self.voiceQueue.append(sentence, time.time()):
+                        self.voiceSema.release()
                     self.prev_message_time_turn = time.time()
                     self.prev_message = sentence
             return True
@@ -254,9 +234,8 @@ class fullNavi(object) :
         if distTo < self.maxTolerance :
             sentence = "Node Reached."
             print sentence
-            self.voiceQueue.flush()
-            self.voiceQueue.append(sentence)
-            self.voiceSema.release()
+            if self.voiceQueue.append_high(sentence, time.time()):
+                self.voiceSema.release()
             self.pathListIndex += 1
             self.alertNodeReached()
             if self.pathListIndex < (len(self.pathList) - 1) :
@@ -267,9 +246,8 @@ class fullNavi(object) :
                 sentence = "Navigation complete."
                 print sentence
                 if self.prev_message != sentence:
-                    self.voiceQueue.flush()
-                    self.voiceQueue.append(sentence)
-                    self.voiceSema.release()
+                    if self.voiceQueue.append_high(sentence, time.time()):
+                        self.voiceSema.release()
                     self.prev_message_time_turn = time.time()
                     self.prev_message = sentence
                 return True
@@ -282,18 +260,11 @@ class fullNavi(object) :
             return False
         else :
             # update obstacle cleared heading
-            self.nodeNavi.setObstacleClearedHeading(self.obstEndHeading)
-            if ((self.obstacleClearedSteps - self.obstacleTurnSteps) > self.NUM_OBSTACLE_STEPS) :
+            if ((self.CurrentSteps - self.obstacleClearedSteps) > self.NUM_OBSTACLE_STEPS) :
                 self.nodeNavi.setCanTurn(True)
             else :
                 self.nodeNavi.setCanTurn(False)
             
-            if ((self.obstacleClearedSteps - self.obstacleEncounteredSteps) <= self.MAX_STEPS):
-                angleDisp = self.obstStartHeading - self.obstEndHeading
-                self.nodeNavi.setPrevObstacleHeading(angleDisp)
-            else :
-                self.nodeNavi.setPrevObstacleHeading(360)
-##
             curNode =  self.pathList[self.pathListIndex + 1]
             curNodeName = self.comMap[self.mapNumber].getLocationName(curNode)
             print "next node is " + str(curNode + 1) + ", name is:" + str(curNodeName)
@@ -303,9 +274,8 @@ class fullNavi(object) :
                 sentence = "Node Reached."
                 print sentence
                 if self.prev_message != sentence:
-                    self.voiceQueue.flush()
-                    self.voiceQueue.append(sentence)
-                    self.voiceSema.release()
+                    if self.voiceQueue.append_high(sentence, time.time()):
+                        self.voiceSema.release()
                     self.prev_message_time_turn = time.time()
                     self.prev_message = sentence
                 self.pathListIndex += 1
@@ -318,12 +288,9 @@ class fullNavi(object) :
                     sentence = "Navigation complete."
                     print sentence
                     if self.prev_message != sentence:
-                        self.voiceQueue.flush()
-                        self.voiceQueue.append(sentence)
-                        self.voiceSema.release()
+                        if self.voiceQueue.append_high(sentence, time.time()):
+                            self.voiceSema.release()
                         self.prev_message_time_turn = time.time()
                         self.prev_message = sentence
                     return True
         return False
-        
-        

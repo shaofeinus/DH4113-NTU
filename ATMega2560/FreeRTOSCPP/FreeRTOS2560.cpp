@@ -23,9 +23,9 @@ freertos2560.c
 SemaphoreHandle_t a_updated, m_updated, ba_updated, g_updated, ir_updated, us1_updated, us2_updated, us3_updated;
 int32_t ba_p;
 int16_t a_x, a_y, a_z, m_x, m_y, m_z, g_x, g_y, g_z;
-uint16_t ir1_dist, ir2_dist, ir3_dist, ir4_dist, ir5_dist;
+uint16_t ir1_dist, ir2_dist, ir3_dist, ir4_dist, ir5_dist, ir_long_dist;
 int32_t us1_dist, us2_dist, us3_dist;
-uint32_t a_last_update, m_last_update, ba_last_update, g_last_update, ir1_last_update, ir2_last_update, ir3_last_update, ir4_last_update, ir5_last_update, us1_last_update, us2_last_update, us3_last_update;
+uint32_t a_last_update, m_last_update, ba_last_update, g_last_update, ir1_last_update, ir2_last_update, ir3_last_update, ir4_last_update, ir5_last_update, ir_long_last_update, us1_last_update, us2_last_update, us3_last_update;
 uint32_t ticks;
 
 //extern uint32_t countPulseASM(volatile uint8_t *port, uint8_t bit, uint8_t stateMask, unsigned long maxloops) __asm__("countPulseASM");
@@ -65,6 +65,8 @@ enum deviceId
 	US2			= 0xC0,	// 12
 	US3			= 0xD0,	// 13
 	US4			= 0xE0,	// 14
+	
+	IRLONG		= 0xF0	// 15
 };
 
 int freeRam() 
@@ -164,6 +166,9 @@ void usart_process(void *p)
 			data[0] = ir5_dist>>8;
 			data[1] = ir5_dist;
 			send_data(IR5, ir5_last_update, data, 2);
+			data[0] = ir_long_dist>>8;
+			data[1] = ir_long_dist;
+			send_data(IRLONG, ir_long_last_update, data, 2);
 			//debug_send('i');
 		}
 		
@@ -281,7 +286,7 @@ void twowire_process(void *p)
 			xSemaphoreGive(ba_updated);	
 		}
 		
-		vTaskDelay(10);
+		vTaskDelay(20);
 	}
 }
 
@@ -300,6 +305,8 @@ void distir_process(void *p)
 		ir4_last_update = ticks;
 		ir5_dist = analog_read(4);
 		ir5_last_update = ticks;
+		ir_long_dist = analog_read(7);
+		ir_long_last_update = ticks;
 		xSemaphoreGive(ir_updated);
 		vTaskDelay(100);
 	}
@@ -500,9 +507,13 @@ char usart_recv()
 void analog_init()
 {
 	// ADC clock set to 1MHz
+	//ADCSRA |= (1<<ADPS2);
+	//ADCSRA &= ~(1<<ADPS1);
+	//ADCSRA &= ~(1<<ADPS0);
+	// ADC clock set to 125KHz
 	ADCSRA |= (1<<ADPS2);
-	ADCSRA &= ~(1<<ADPS1);
-	ADCSRA &= ~(1<<ADPS0);
+	ADCSRA |= (1<<ADPS1);
+	ADCSRA |= (1<<ADPS0);
 	ADCSRA |= (1<<ADEN);
 	// first conversion takes the longest
 	ADCSRA |= (1<<ADSC);

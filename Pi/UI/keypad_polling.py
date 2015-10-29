@@ -50,12 +50,6 @@ class keypad(object):
         self.GPIO.setup(self.hori, self.GPIO.OUT, initial=self.GPIO.LOW) #clear all horizontals
         self.GPIO.setup(self.vert, self.GPIO.IN)
 
-    # def kill_voice_thread(self):
-    #     global speakThread
-    #     speakThread.stop_thread()
-    #     speakThread.join(3)
-    #     print "speakThread successfully stopped", (not speakThread.isAlive())
-
     def toggle_sound(self):
         self.en_snd = not self.en_snd
 
@@ -102,9 +96,13 @@ class keypad(object):
 
     def get_binary_response(self):
         self.en_snd = False
+        first_press = True
         while True:
             self.chr_queue.flush()
             userInput = self.poll_for_num()
+            if first_press: # button press should stop reading of prompt
+                self.speaker.stop()
+                first_press = False
             if userInput == 9:
                 self.en_snd = True
                 return False
@@ -117,9 +115,13 @@ class keypad(object):
         print str(prompt)
         self.speaker.speak(str(prompt))
 
+        first_press = True
         while True:
             self.chr_queue.flush()
             userInput = self.poll_for_num()
+            if first_press: # button press should stop reading of prompt
+                self.speaker.stop()
+                first_press = False
             if userInput == 9:
                 return
 
@@ -193,6 +195,7 @@ class keypad(object):
 # ===============================Ext Num POLL==========================================
     def poll_for_ext_num(self):
         x = 0
+        first_press = True
         for y in range(len(self.hori)): #check input at each vert
             self.GPIO.output(self.hori[y], self.GPIO.LOW)
 
@@ -208,6 +211,9 @@ class keypad(object):
                     # Check hold button condition
                     hold_timer_start = time.time()
 
+                    if first_press: # button press should stop reading of prompt
+                        self.speaker.stop()
+                        first_press = False
                     if self.num_map[y][x] == 11:
                         if self.en_snd:
                             self.chr_queue.append("delete")
@@ -252,7 +258,7 @@ class keypad(object):
         #     for x in range(len(self.vert)):
         #         print self.GPIO.input(self.vert[x]),
         #     print ""
-
+        first_press = True
         x = 0
         self.end_flag = False
         for y in range(len(self.hori)): #check input at each vert
@@ -275,6 +281,9 @@ class keypad(object):
                             if num_pressed < 12:
                                 num_pressed += 12
                             if num_pressed != 21:
+                                if first_press: # button press should stop reading of prompt
+                                    self.speaker.stop()
+                                    first_press = False
                                 self.string_gen(num_pressed) #held button press
                             # if num_pressed == 21:
                             #     return self.out_str
@@ -282,6 +291,9 @@ class keypad(object):
                                 hold_thres_met = True
 
                     if num_pressed != -3 and not hold_thres_met: #normal button press
+                        if first_press: # button press should stop reading of prompt
+                            self.speaker.stop()
+                            first_press = False
                         self.string_gen(num_pressed)
 
                     self.inactive_delay_start = time.time()

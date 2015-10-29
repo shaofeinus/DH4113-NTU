@@ -9,11 +9,11 @@ import RPi.GPIO as GPIO
 # avoidObstacle()
 # hasStep()
 # stepVibrateMotor()
-# TODO : rerouting based on number of times same obstacle encountered, tolerance
+
 class obstacleAvoidance (object) :
     def __init__(self) :       
-        self.FRONT_OBSTACLE_DISTANCE = 80
-        self.FRONT_OBSTACLE_BUFFER = 90
+        self.FRONT_OBSTACLE_DISTANCE = 90
+        self.FRONT_OBSTACLE_BUFFER = 100
         self.SIDE_OBSTACLE_IR = 75
         self.SIDE_OBSTACLE_SONAR = 70
         self.UPSTEP_THRESHHOLD = 500
@@ -56,26 +56,38 @@ class obstacleAvoidance (object) :
             
         self.fHistoryIndex = -1
         self.frontNumHistory = 4
+        
         # front center Sonar
-        self.sonarFC = [self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE]
-
+        self.sonarFC = []
         # front center IR
-        self.irFC = [self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE]
+        self.irFC = []
         # front left IR
-        self.irFL = [self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE]
+        self.irFL = []
         # front right iR
-        self.irFR = [self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE]
-
+        self.irFR = []
+        
+        for i in xrange(self.frontNumHistory) :
+            self.sonarFC.append(self.LARGE_VALUE)
+            self.irFC.append(self.LARGE_VALUE)
+            self.irFL.append(self.LARGE_VALUE)
+            self.irFR.append(self.LARGE_VALUE)
+        
         self.sHistoryIndex = -1
-        self.sideNumHistory = 3
+        self.sideNumHistory = 4
         # left side sonar
-        self.sonarLS = [self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE]
+        self.sonarLS = []
         # left side IR
-        self.irLS = [self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE]
+        self.irLS = []
         # right side sonar
-        self.sonarRS = [self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE]
+        self.sonarRS = []
         # right side IR
-        self.irRS = [self.LARGE_VALUE, self.LARGE_VALUE, self.LARGE_VALUE]
+        self.irRS = []
+
+        for i in xrange(self.sideNumHistory) :
+            self.sonarLS.append(self.LARGE_VALUE)
+            self.sonarRS.append(self.LARGE_VALUE)
+            self.irLS.append(self.LARGE_VALUE)
+            self.irRS.append(self.LARGE_VALUE)
      
 
         # set up GPIO using BCM numbering
@@ -185,18 +197,7 @@ class obstacleAvoidance (object) :
                 return False
 
 
-
     def hasFCIrObstacle(self, isAlreadyDetected) :
-##        if isAlreadyDetected == 0 :
-##            for i in self.irFC :
-##                if i > self.FRONT_OBSTACLE_DISTANCE :
-##                    return False
-##            return True
-##        else :
-##            for i in self.irFC :
-##                if i <= self.FRONT_OBSTACLE_DISTANCE :
-##                    return True
-##            return False
         irAverage = 0
         for i in self.irFC :
             irAverage += i
@@ -217,18 +218,7 @@ class obstacleAvoidance (object) :
                 return False
 
 
-
     def hasFLIrObstacle(self, isAlreadyDetected) :
-##        if isAlreadyDetected == 0 :
-##            for i in self.irFL :
-##                if i > self.FRONT_OBSTACLE_DISTANCE :
-##                    return False
-##            return True
-##        else :
-##            for i in self.irFL :
-##                if i <= self.FRONT_OBSTACLE_DISTANCE :
-##                    return True
-##            return False
         irAverage = 0
         for i in self.irFL :
             irAverage += i
@@ -249,17 +239,6 @@ class obstacleAvoidance (object) :
                 return False
       
     def hasFRIrObstacle(self, isAlreadyDetected) :
-##        if isAlreadyDetected == 0 :
-##            for i in self.irFR :
-##                if i > self.FRONT_OBSTACLE_DISTANCE :
-##                    return False
-##            return True
-##        else :
-##            for i in self.irFR :
-##                if i <= self.FRONT_OBSTACLE_DISTANCE :
-##                    return True
-##            return False
-
         irAverage = 0
         for i in self.irFR :
             irAverage += i
@@ -279,13 +258,86 @@ class obstacleAvoidance (object) :
             else :
                 return False
 
-    def getIrLarge(self) :
-        average = 0
-        for i in self.irLarge :
-            average+= i
-        average /= self.sideNumHistory
-        return self.irLarge[self.fHistoryIndex]
+    def hasLeftSonarObstacle(self) :
+        sonarAverage = 0
+        for i in self.sonarLS :
+            sonarAverage += i
+        sonarAverage /= self.frontNumHistory
+        if isAlreadyDetected == 0 :
+            if (sonarAverage < self.FRONT_OBSTACLE_DISTANCE) :
+                print "left leg sonar: " + str(sonarAverage)
+                print self.sonarLS
+                return True
+            else :
+                return False
+        else :
+            if (sonarAverage < self.FRONT_OBSTACLE_BUFFER) :
+                print "left leg sonar: " + str(sonarAverage)
+                print self.sonarLS
+                return True
+            else :
+                return False
 
+    def hasRightSonarObstacle(self) :
+        sonarAverage = 0
+        for i in self.sonarRS :
+            sonarAverage += i
+        sonarAverage /= self.frontNumHistory
+        if isAlreadyDetected == 0 :
+            if (sonarAverage < self.FRONT_OBSTACLE_DISTANCE) :
+                print "right leg sonar: " + str(sonarAverage)
+                print self.sonarRS
+                return True
+            else :
+                return False
+        else :
+            if (sonarAverage < self.FRONT_OBSTACLE_BUFFER) :
+                print "right leg sonar: " + str(sonarAverage)
+                print self.sonarRS
+                return True
+            else :
+                return False
+
+    def hasLeftIrObstacle(self, isAlreadyDetected) :
+        irAverage = 0
+        for i in self.irLS :
+            irAverage += i
+        irAverage /= self.frontNumHistory
+        if isAlreadyDetected == 0 :
+            if (irAverage < self.FRONT_OBSTACLE_DISTANCE) :
+                print "left leg ir: " + str(irAverage)
+                print self.irLS
+                return True
+            else :
+                return False
+        else :
+            if (irAverage < self.FRONT_OBSTACLE_BUFFER) :
+                print "left leg ir: " + str(irAverage)
+                print self.irLS
+                return True
+            else :
+                return False
+
+    def hasRightIrObstacle(self, isAlreadyDetected) :
+        irAverage = 0
+        for i in self.irRS :
+            irAverage += i
+        irAverage /= self.frontNumHistory
+        if isAlreadyDetected == 0 :
+            if (irAverage < self.FRONT_OBSTACLE_DISTANCE) :
+                print "right leg ir: " + str(irAverage)
+                print self.irRS
+                return True
+            else :
+                return False
+        else :
+            if (irAverage < self.FRONT_OBSTACLE_BUFFER) :
+                print "right leg ir: " + str(irAverage)
+                print self.irRS
+                return True
+            else :
+                return False
+            
 
     def getLeftSonar(self) :
         average = 0
@@ -326,6 +378,14 @@ class obstacleAvoidance (object) :
             return self.irRS[(self.sHistoryIndex-1)%self.sideNumHistory]
         else :
             return average
+
+    
+    def getIrLarge(self) :
+        average = 0
+        for i in self.irLarge :
+            average+= i
+        average /= self.sideNumHistory
+        return self.irLarge[self.fHistoryIndex]
 
 
     def hasLeftObstacle(self) :
@@ -482,7 +542,11 @@ class obstacleAvoidance (object) :
         if ((self.hasFCSonarObstacle(isAlreadyDetected) is True) or
             (self.hasFCIrObstacle(isAlreadyDetected) is True) or
             (self.hasFLIrObstacle(isAlreadyDetected) is True) or
-            (self.hasFRIrObstacle(isAlreadyDetected) is True)) :
+            (self.hasFRIrObstacle(isAlreadyDetected) is True)
+            (self.hasLeftSonarObstacle(isAlreadyDetected) is True) or
+            (self.hasRightSonarObstacle(isAlreadyDetected) is True) or
+            (self.hasLeftIrObstacle(isAlreadyDetected) is True) or
+            (self.hasRightIrObstacle(isAlreadyDetected) is True)) :
             return True
         else :
             return False
