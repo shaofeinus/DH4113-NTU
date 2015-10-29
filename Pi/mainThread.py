@@ -732,7 +732,7 @@ NUM_SINGLE_ID = 11
 # 8 - IR (right side) (2)
 # 9 - IR (front left)
 # 10 - IR (front right)
-# 11 - unused
+# 11 - sonar (front) (29 trig echo)
 # 12 - sonar (left side) (27 trig 18 echo)
 # 13 - sonar (right side) (25 trig  2 echo)
 # 15 - IR (large)
