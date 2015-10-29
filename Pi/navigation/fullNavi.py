@@ -19,6 +19,7 @@ import time
 # fullNavigate()
 # getGeneralTurnDirection()
 # reroutePath()
+# feedbackWalking(currentSteps)
 
 class fullNavi(object) :
     def __init__(self, voiceQueue, voiceSema) :
@@ -43,6 +44,10 @@ class fullNavi(object) :
         self.obstacleClearedSteps = 0
         self.currentSteps = 0
         self.NUM_OBSTACLE_STEPS = 1
+
+        # used to feedback steps to user
+        self.walkingCount = 0
+        self.WALKING_VIBRATE_DURATION = 0.1
 
         # tolerance
         self.maxTolerance = 200
@@ -81,6 +86,15 @@ class fullNavi(object) :
         self.heading = heading
         self.nodeNavi.updateCurCoord(x, y)
         self.nodeNavi.updateHeading(heading)
+
+    # when a step is detected, right-side vibration motor will activate
+    def feedbackWalking(self, currentSteps) :
+        if currentSteps > self.walkingCount :
+            GPIO.output(self.rightPin, True)
+            time.sleep(self.WALKING_VIBRATE_DURATION)
+            GPIO.output(self.rightPin, False)
+
+        self.walkingCount = currentSteps
 
     # current current steps
     def updateClearSteps(self, numSteps) :

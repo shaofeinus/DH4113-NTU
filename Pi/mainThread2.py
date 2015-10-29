@@ -507,6 +507,10 @@ class NavigationThread(threading.Thread):
         global checkSideObstacle
         global isFirstCleared
         while 1:
+
+            # feedback steps walked
+            navi.feedbackWalking(locationTracker.getTotalSteps())
+            
             naviCount += 1
             locationTrackerLock.acquire()
             curX = locationTracker.getXCoord()

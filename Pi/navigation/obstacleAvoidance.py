@@ -109,7 +109,6 @@ class obstacleAvoidance (object) :
     def setCurrentLocation(self, x, y) :
         self.curX = x
         self.curY = y
-        
 
     # convert raw IR data to cm
     # removes zero value, change to LARGE_VALUE        
