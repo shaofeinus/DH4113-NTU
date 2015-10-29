@@ -13,8 +13,8 @@ from UI import voiceCommands
 from UI import search
 from UI import keypad_polling
 from UI import pyespeak
-from my_deque import my_deque
-from UISpeaker import UI_Speaker
+from UI import my_deque
+from UI import UISpeaker
 
 __author__ = 'Shao Fei'
 
@@ -739,7 +739,7 @@ NUM_SINGLE_ID = 11
 
 
 # Queue for sound
-voiceQueue = my_deque()
+voiceQueue = my_deque.my_deque()
 
 # Data lists for raw data
 data = [deque() for x in range(NUM_QUEUED_ID)]
@@ -762,7 +762,7 @@ dataFeeder = dataFeeder.DataFeeder()
 
 # Speaker object
 speaker = pyespeak.Speaker()
-UISpeaker = UI_Speaker()
+UISpeaker = UISpeaker.UI_Speaker()
 
 # Locks for various variables
 locationTrackerLock = threading.Lock()
