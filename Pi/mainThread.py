@@ -54,7 +54,7 @@ class voiceThread(threading.Thread):
         global speaker
 
         while True:
-            voiceSema.acqire()
+            voiceSema.acquire()
             if not voiceQueue.empty():
                 item = voiceQueue.popleft()
                 if item is not None:
