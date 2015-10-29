@@ -225,11 +225,15 @@ class CompassCalibrator:
 
         heading += self.DECLINATION_OFFSET
 
-        if heading > 2 * math.pi:
-            heading -= 2 * math.pi
-
+        # Convert to [0, 2 pi]
+        heading %= 2 * math.pi
         if heading < 0:
             heading += 2 * math.pi
+
+        if self.NOffsetAngle > heading:
+            heading = 2 * math.pi - (self.NOffsetAngle - heading)
+        else:
+            heading -= self.NOffsetAngle
 
         return heading
 
