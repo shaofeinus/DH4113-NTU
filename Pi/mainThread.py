@@ -161,6 +161,7 @@ class CalibrationThread(threading.Thread):
 
         userInputLock.acquire()
 
+        # Update Gyro offset
         self.calibrationTools.initGyroOffset(self.calibrator.initGXOffset,
                                              self.calibrator.initGYOffset,
                                              self.calibrator.initGZOffset)
@@ -200,7 +201,6 @@ class CalibrationThread(threading.Thread):
 
         # print 'Calibrating'
 
-
         data = [deque() for x in range(NUM_QUEUED_ID)]
         data_single = [0 for x in range(NUM_SINGLE_ID)]
         data.extend(data_single)
@@ -214,8 +214,9 @@ class CalibrationThread(threading.Thread):
         while not self.isDone['tilt']:
             self.calibrateTilt()
 
+        # Update pitch and roll
         locationTracker.pedometer.calibrate(self.calibrator.pitch, self.calibrator.roll)
-        locationTracker.compass.gyroCompass.calibrate(self.calibrator.pitch, self.calibrator.roll)
+        locationTracker.gyroCompass.calibrate(self.calibrator.pitch, self.calibrator.roll)
 
         while not self.isDone['nOffset']:
             self.calibrateNOffset()
@@ -351,7 +352,7 @@ class LocationDisplayThread(threading.Thread):
                 self.count += 1
 
             locationTrackerLock.release()
-            time.sleep(0.1)
+            time.sleep(1.0)
 
 
 class LocationUpdateThread(threading.Thread):
@@ -569,12 +570,16 @@ class ObstacleAvoidanceThread(threading.Thread):
             obstacle.updateFrontSensorData(irLarge, sonarFC, irFC, irFL, irFR)
             obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
             obstacleLock.release()
+
+            obstacleStatusLock.acquire()
+            obstacleStatus = obstacleDetected
+            obstacleStatusLock.release()
+
             if obstacle.isFrontObstacleDetected(obstacleStatus) is True :
+                obstacleStatusLock.acquire()
+                obstacleDetected = 1
+                obstacleStatusLock.release()
                 obstacle.vibrateMotors()
-            
-##            obstacleStatusLock.acquire()
-##            obstacleStatus = obstacleDetected
-##            obstacleStatusLock.release()
             
             # up/down step
 ##            stepType = obstacle.hasStep()
@@ -732,7 +737,7 @@ NUM_SINGLE_ID = 11
 # 8 - IR (right side) (2)
 # 9 - IR (front left)
 # 10 - IR (front right)
-# 11 - unused
+# 11 - sonar (front) (29 trig echo)
 # 12 - sonar (left side) (27 trig 18 echo)
 # 13 - sonar (right side) (25 trig  2 echo)
 # 15 - IR (large)

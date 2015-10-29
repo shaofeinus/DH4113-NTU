@@ -1,6 +1,7 @@
 import math
 import barometer
 import compass
+import gyroCompass
 import pedometer
 import pedometer2
 import calibrationTools
@@ -17,6 +18,7 @@ class LocationTracker:
         self.currY = initY      # Points northwards
         self.pedometer = pedometer2.Pedometer2()
         self.compass = compass.Compass()
+        self.gyroCompass = gyroCompass.GyroCompass()
         self.barometer = barometer.Barometer()
         self.totalSteps = 0
         self.totalDistance = 0
@@ -100,15 +102,19 @@ class LocationTracker:
         # Reflects true steps, 1/2 of what is recorded (pseudo steps)
         currDistance = currSteps * self.STEP_DISTANCE
 
-        # Heading wrt to North
-        self.headingWRTNorthInRad = self.compass.getHeadingInRad()
-        self.headingWRTNorthInDeg = compass.Compass.getHeadingInDeg(self.headingWRTNorthInRad)
+        compAngleDev = self.gyrocompass.getAngleDevInRad()
+        gyroAngleDev = self.compass.getAngleDevInRad()
 
-        # Heading wrt to y-axis of map
-        # self.headingWRTMapInRad = self.getHeadingWRTMap(self.headingWRTNorthInRad)
-        # self.headingWRTMapInDeg = self.headingConvert(self.headingWRTMapInRad)
-        # self.headingWRTMapInRad = self.headingWRTNorthInRad
-        # self.headingWRTMapInDeg = self.headingWRTNorthInDeg
+        if currSteps > 0:
+            angleDev = gyroAngleDev
+        else:
+            angleDev = compAngleDev
+
+        self.updateCurrHeading(angleDev + self.headingWRTNorthInRad)
+
+        # Heading wrt to North
+        # self.headingWRTNorthInRad = self.compass.getHeadingInRad()
+        # self.headingWRTNorthInDeg = self.compass.Compass.getHeadingInDeg(self.headingWRTNorthInRad)
 
         # x points to the East
         xCurrDistance = currDistance * math.sin(self.headingWRTNorthInRad)
@@ -131,17 +137,11 @@ class LocationTracker:
                 str(self.currY) + '\n')
         f.close()
 
-    # Get heading wrt y-axis of map (pointing upwards of north)
-    def getHeadingWRTMap(self, headingInRad):
-        # TODO: Test out
-        headingWRTMap = (headingInRad + self.northAt) % (2 * math.pi)
-        # print 'Heading from top of map:', headingWRTMap / math.pi * 180
-        return headingWRTMap
+    def updateCurrHeading(self, angleInRad):
+        angleInRad %= 2 * math.pi
 
-    # For testing only
-    @ staticmethod
-    def headingConvert(headingInRad):
-        if headingInRad < math.pi:
-            return headingInRad / (2 * math.pi) * 360
-        else:
-            return -1 * (2 * math.pi - headingInRad) / (2 * math.pi) * 360
+        if angleInRad < 0:
+            angleInRad += 2 * math.pi
+
+        self.headingWRTNorthInRad = angleInRad
+        self.headingWRTNorthInDeg = self.compass.Compass.getHeadingInDeg(self.headingWRTNorthInRad)
