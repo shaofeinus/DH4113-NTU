@@ -59,7 +59,7 @@ class keypad(object):
             self.speaker.speak(prompt)
             self.chr_queue.flush()
             self.str_input = self.poll_for_str()
-            print "Input is " + self.str_input + ". To confirm, press start. To cancel, press back"
+            # print "Input is " + self.str_input + ". To confirm, press start. To cancel, press back"
 
             return self.str_input
 
@@ -85,7 +85,7 @@ class keypad(object):
 
             return self.ext_num_input
 
-            print "Input is " + str(self.ext_num_input) + ". To confirm, press start. To cancel, press back"
+            # print "Input is " + str(self.ext_num_input) + ". To confirm, press start. To cancel, press back"
             if self.en_snd:
                 self.speaker.speak("Input is " + str(self.ext_num_input) + ". To confirm, press start. To cancel, press back")
             ans = 0
@@ -176,7 +176,7 @@ class keypad(object):
         for y in range(len(self.hori)): #check input at each vert
             self.GPIO.output(self.hori[y], self.GPIO.LOW)
         #Polling Loops
-        while len(self.chr_queue) > 0:
+        while not self.chr_queue.empty():
             self.GPIO.output(self.hori[x], self.GPIO.HIGH) # test for closed switch by taking turns setting each hori
             num_pressed = -3 # reset num_pressed
             for y in range(len(self.vert)): #check input at each vert
@@ -360,7 +360,8 @@ class keypad(object):
             self.curr_chr = '' #clear curr_chr
             self.num_count = 0 #reset count on key map
             self.prev_num = 21 #update keypress history
-            self.end_flag = True
+            if len(self.out_str) > 0:
+                self.end_flag = True
             self.chr_queue.flush()
             self.chr_queue.append("", time.time())
         else:

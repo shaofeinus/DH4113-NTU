@@ -28,6 +28,14 @@ class UI_Speaker(object):
         except:
             pass
 
+    def wait(self):
+        try:
+            self.sub_proc.communicate()
+            self.sub_proc.terminate()
+        except:
+            pass
+        self.sub_proc = subprocess.Popen(self.args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
     def __del__(self):
         try:
             self.sub_proc.communicate()
