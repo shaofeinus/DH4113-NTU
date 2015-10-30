@@ -190,8 +190,8 @@ class locationSetting(object) :
                 self.possibleNodes = []
                 for i in xrange(self.building.numElements) :
                     self.possibleNodes.append(i)
-                print "All nodes will be listed. When you are ready to make your selection, press start."
-                self.speaker.speak("All nodes will be listed. When you are ready to make your selection, press start.")
+                # print "All nodes will be listed. When you are ready to make your selection, press start."
+                # self.speaker.speak("All nodes will be listed. When you are ready to make your selection, press start.")
             elif node == "help":
                 print self.SEARCH_HELP
                 self.speaker.speak(str(self.SEARCH_HELP))
@@ -220,8 +220,8 @@ class locationSetting(object) :
                             self.possibleNodes.append(i)
                     if len(self.possibleNodes) > 0:
                         print "All search results will be listed."
-                        self.speaker.speak("All search results will be listed.")
-                        self.speaker.wait()
+                        # self.speaker.speak("All search results will be listed.")
+                        # self.speaker.wait()
                     else:
                         print "No results found"
                         self.speaker.speak("No results found")

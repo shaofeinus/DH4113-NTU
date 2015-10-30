@@ -9,8 +9,14 @@ __author__ = 'Dan'
 class keypad(object):
     def __init__(self, chr_queue, voiceSema, speaker):
         #OUTPUT TABLES
+        #   F E D
+        # K
+        # J
+        # H
+        # G
+
         self.hori = [25, 8, 7] #F, E, D
-        self.vert = [27, 22, 23, 24] # K, J, I, H
+        self.vert = [27, 22, 23, 24] # K, J, H, G
         self.num_map = [[0,1,2],[3,4,5],[6,7,8],[9,10,11]]
         self.key_map = [['.', ', ', '?', '!'], ['a', 'b', 'c'], ['d', 'e', 'f'],
                 ['g', 'h', 'i'], ['j', 'k', 'l'], ['m', 'n', 'o'],
@@ -129,23 +135,31 @@ class keypad(object):
 
     def poll_for_num_timed(self):
         timer_start = time.time()
-        x = 0
+        GPIO.input(self.hori[1], GPIO.HIGH)
         while True:
-            self.GPIO.output(self.hori[x], self.GPIO.HIGH) # test for closed switch by taking turns setting each hori
-            num_pressed = -3 # reset num_pressed
-            for y in range(len(self.vert)): #check input at each vert
-                if self.GPIO.input(self.vert[y]) == self.GPIO.HIGH: # closed switch detected
-
-                    hold_timer_start = time.time()
-                    while GPIO.input(self.vert[y]) == GPIO.HIGH and self.num_map[y][x] == 10:
-                        if time.time() - hold_timer_start >= self.HOLD_DELAY: #checks if button is help sufficiently long
-                            return True
-
-            self.GPIO.output(self.hori[x], self.GPIO.LOW)
-            x = (x + 1) % len(self.hori)
-            if time.time() - timer_start > 5:
+            if time.time() - timer_start >= 1:
+                if GPIO.output(self.vert[3]) == GPIO.HIGH:
+                    GPIO.input(self.hori[1], GPIO.LOW)
+                    return True
+                GPIO.input(self.hori[1], GPIO.LOW)
                 return False
-            time.sleep(self.SLEEP_DELAY)
+
+
+            # self.GPIO.output(self.hori[x], self.GPIO.HIGH) # test for closed switch by taking turns setting each hori
+            # num_pressed = -3 # reset num_pressed
+            # for y in range(len(self.vert)): #check input at each vert
+            #     if self.GPIO.input(self.vert[y]) == self.GPIO.HIGH: # closed switch detected
+            #
+            #         hold_timer_start = time.time()
+            #         while GPIO.input(self.vert[y]) == GPIO.HIGH and self.num_map[y][x] == 10:
+            #             if time.time() - hold_timer_start >= self.HOLD_DELAY: #checks if button is help sufficiently long
+            #                 return True
+            #
+            # self.GPIO.output(self.hori[x], self.GPIO.LOW)
+            # x = (x + 1) % len(self.hori)
+            # if time.time() - timer_start > 5:
+            #     return False
+            # time.sleep(self.SLEEP_DELAY)
 
 # ===============================NUM POLL==========================================
     def poll_for_num(self):
