@@ -9,9 +9,9 @@ from navigation import obstacleAvoidance
 from communication import dataFeeder
 # from communication import dataFeederDum
 from collections import deque
-from UI import voiceCommands
 from UI import search
 from UI import keypad_polling
+# from UI import keyboard as keypad_polling
 from UI import pyespeak
 from UI import my_deque
 from UI import UISpeaker
@@ -794,7 +794,7 @@ startLocation = None
 endLocation = None
 
 # Keypad initialization
-keypad = keypad_polling.keypad(voiceQueue, voiceSema, speaker)
+keypad = keypad_polling.keypad(voiceQueue, voiceSema, UISpeaker)
 
 # Threads to receive data from Arduino
 dataThreads = []
