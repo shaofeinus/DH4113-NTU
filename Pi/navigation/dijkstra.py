@@ -57,7 +57,7 @@ class pathFinder (object) :
     def dijkstra (self, start):
         self.init()
         self.nodes[start] = 0
-        
+
         while (self.isAllRed() == 0):
             v = self.getMinDistNode()
             self.redNodes[v] = 1
