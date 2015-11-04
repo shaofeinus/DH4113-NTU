@@ -78,7 +78,6 @@ class pathFinder (object) :
         if (start > end):
             start, end = end, start
             rev = True
-
         self.dijkstra(start)
         self.init()
         path = [start]

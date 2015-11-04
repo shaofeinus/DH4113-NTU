@@ -527,7 +527,7 @@ class NavigationThread(threading.Thread):
             # feedback steps walked
             navi.feedbackWalking(locationTracker.getTotalSteps())
             
-            naviCount += 1
+##            naviCount += 1
             locationTrackerLock.acquire()
             curX = locationTracker.getXCoord()
             curY = locationTracker.getYCoord()
@@ -551,7 +551,11 @@ class NavigationThread(threading.Thread):
                     
             isNavigationDone = navi.fullNavigate()
             if isNavigationDone is True :
-                return
+                if navi.hasNextPath() is True :
+                    isNextPathNeeded = True
+                    navi.switchToPathList2()
+                else :
+                    return
             time.sleep(1)
 
            
@@ -575,9 +579,6 @@ class ObstacleAvoidanceThread(threading.Thread):
             sonarLS = data[12]
             sonarRS = data[13]
             irLarge = data[15]
-
-            # feedback steps walked
-            obstacle.feedbackWalking(locationTracker.getTotalSteps())
 
             # update sensor data
             obstacleLock.acquire()
@@ -844,7 +845,9 @@ else:
 
 # Navigation initialization
 naviCount = 0
+isNextPathNeeded = False
 navi = fullNavi.fullNavi(voiceQueue, voiceSema)
+# navi.generateFullPath(startBuilding, startLevel, start, endBuilding, endLevel, end)
 # navi.generateFullPath("com1", 2, 14, 26)
 
 if skip_init:
