@@ -288,15 +288,14 @@ class fullNavi(object) :
         self.pathListIndex = 0
 ##        self.northAt = self.comMap[self.mapNumber].getNorthAt()
         self.northAt = 0
-        nexNode =  self.pathList[self.pathListIndex]
-        nexNodeName = self.comMap[self.mapNumber].getLocationName(nexNode)
-        nextNodeSentence = "Next is " + str(nexNode+1) + ", " + nexNodeName + "."
+        curNode =  self.pathList[self.pathListIndex]
+        curNodeName = self.comMap[self.mapNumber].getLocationName(curNode)
+        nextNodeSentence = "Reached " + str(curNode+1) + ", " + curNodeName + "."
         print nextNodeSentence
         if (len(self.pathList) == 1) :
             self.alertNodeReached()
             return
         self.updatePrevNexCoord()
-        print "Path: " + str(self.pathList)
         self.provideNexNodeDirections()
         self.angleCorrect = False
 
@@ -309,7 +308,7 @@ class fullNavi(object) :
         
         curNode =  self.pathList[self.pathListIndex + 1]
         curNodeName = self.comMap[self.mapNumber].getLocationName(curNode)
-        print "next node is " + str(curNode + 1) + ", name is:" + str(curNodeName)
+        print "next node is " + str(curNode + 1) + ", name is: " + str(curNodeName)
         isNodeReached = self.nodeNavi.navigate()
 
         if isNodeReached == 1 :
