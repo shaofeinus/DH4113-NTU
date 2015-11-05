@@ -577,7 +577,7 @@ class NavigationThread(threading.Thread):
                 if navi.hasNextPath() is True :
                     isNextPathNeeded = True
                     UISema.release()
-                    navi.switchToPathList2()
+                    navi.switchToNextPathList()
                 else :
                     return
             time.sleep(1)
