@@ -20,6 +20,7 @@ import os
 # getLocationYCoord(index)
 # getAngle(point1, point2)
 # getDistance(point1, point2)
+# getNodeID(self)
 # printMatrix()
 # printJSONNodeData()
 # index is in the range {0 to n-1}
@@ -30,10 +31,20 @@ class mapParser (object) :
                 self.buildingMap = {}
                 self.northAt = 0
                 self.numElements = 0
-                self.matrix = {}
+                self.matrix = []
                 self.loadedMaps = ["com1L2.json", "com2L2.json", "com2L3.json"]
+                # list of coordinates where the map merges with another map
+                # (startMap, endMap, x, y)
+                # 0 = com1L2, 1 = com2L2, 2 = com2L3
+                self.conList = [(0, 1, 11815, 406), (1, 0, 61, 4024),
+                                (1, 2, 3719, 2622), (2, 1, 3719, 2622)]
+
+        def clear(self) :
+                self.buildingMap = {}
+                self.northAt = 0
+                self.numElements = 0
+                self.matrix = []
                 
-        
         # returns the URL of the map
         def mapUrl(self, buildingName, levelNumber) :
                 mapName = "http://ShowMyWay.comp.nus.edu.sg/getMapInfo.php?Building=" + str(buildingName) + "&Level=" + str(levelNumber)
@@ -58,6 +69,7 @@ class mapParser (object) :
         
         # return True if successful, False if unsuccessful
         def setMap(self, buildingName, levelNumber) :
+                self.clear()
                 mapName = str(buildingName) + "L" + str(levelNumber) + ".json"
                 if(self.isMapAlreadyLoaded(mapName) is True) :
                         self.jsonFileInput(mapName)
@@ -70,7 +82,7 @@ class mapParser (object) :
 
                 if self.buildingMap['info'] is None :
                         return False
-                        
+                      
                 self.northAt = int(self.buildingMap['info']['northAt'])
                 self.numElements = len(self.buildingMap.get('map'))
                 self.matrix = [[0]*self.numElements for i in range(self.numElements)]
@@ -95,6 +107,7 @@ class mapParser (object) :
                                 else :
                                         self.matrix[i][j-1] = distAngleCalc.calcAngle(
                                             x2, y2, x1, y1, self.northAt)
+
         # returns the location of North
         def getNorthAt(self) :
                 return int(self.northAt)
@@ -124,7 +137,23 @@ class mapParser (object) :
                        return self.matrix[point1][point2]
                 else :
                        return self.matrix[point2][point1]
+                
+        # returns a list of tuples(startMap, endMap, id) of a building connection
+        def getNodeID(self) :
+                connectionList = []              
+                for i in xrange(len(self.conList)) :
+                        tempX = int(self.conList[i][2])
+                        tempY = int(self.conList[i][3])
 
+                        for j in xrange(self.numElements) :
+                                nodeX = int(self.buildingMap['map'][j]['x'])
+                                nodeY = int(self.buildingMap['map'][j]['y'])
+                                if ((nodeX == tempX) and (nodeY == tempY)) :
+                                        connectionList.append(
+                                                (self.conList[i][0], self.conList[i][1], j))
+                return connectionList
+                                
+                
         def printMatrix(self) :
              print('\n'.join([''.join(['{:5}'.format(item) for item in row[0:15]])
                               for row in self.matrix[0:15]]))

@@ -507,6 +507,10 @@ class NavigationThread(threading.Thread):
         global checkSideObstacle
         global isFirstCleared
         while 1:
+
+            # feedback steps walked
+            navi.feedbackWalking(locationTracker.getTotalSteps())
+            
             naviCount += 1
             locationTrackerLock.acquire()
             curX = locationTracker.getXCoord()
@@ -571,6 +575,8 @@ class ObstacleAvoidanceThread(threading.Thread):
                 obstacleDetected = 1
                 obstacleStatusLock.release()
                 obstacle.vibrateMotors()
+            else:
+                obstacle.turnOffMotors()
 
             # up/down step
 ##            stepType = obstacle.hasStep()
@@ -788,18 +794,18 @@ for thread in dataThreads:
 initThreads = []
 initThreads.append(CalibrationThread(-1, "calibrating pedometer and compass"))
 
-for thread in initThreads:
-    thread.start()
-
-for thread in initThreads:
-    thread.join()
+##for thread in initThreads:
+##    thread.start()
+##
+##for thread in initThreads:
+##    thread.join()
 
 # voice threads
 voiceThreads = []
 voiceThreads.append(voiceThread(8, "play sound notification"))
 
-for thread in voiceThreads:
-    thread.start()
+##for thread in voiceThreads:
+##    thread.start()
 
 # Navigation initialization
 naviCount = 0
@@ -814,8 +820,8 @@ mainThreads = []
 mainThreads.append(LocationUpdateThread(3, "location update"))
 mainThreads.append(LocationDisplayThread(4, "location display"))
 # mainThreads.append(NavigationThread(5, "navigation"))
-# mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
-# mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
+mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
+##mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
 # mainThreads.append(collectIRThread(9, "collect ir data"))
 
 for thread in mainThreads:

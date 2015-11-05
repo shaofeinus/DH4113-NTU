@@ -9,9 +9,9 @@ from navigation import obstacleAvoidance
 from communication import dataFeeder
 # from communication import dataFeederDum
 from collections import deque
-from UI import voiceCommands
 from UI import search
 from UI import keypad_polling
+# from UI import keyboard as keypad_polling
 from UI import pyespeak
 from UI import my_deque
 from UI import UISpeaker
@@ -517,7 +517,10 @@ class NavigationThread(threading.Thread):
         global checkSideObstacle
         global isFirstCleared
         while 1:
-            naviCount += 1
+            # feedback steps walked
+            navi.feedbackWalking(locationTracker.getTotalSteps())
+            
+##            naviCount += 1
             locationTrackerLock.acquire()
             curX = locationTracker.getXCoord()
             curY = locationTracker.getYCoord()
@@ -541,7 +544,11 @@ class NavigationThread(threading.Thread):
                     
             isNavigationDone = navi.fullNavigate()
             if isNavigationDone is True :
-                return
+                if navi.hasNextPath() is True :
+                    isNextPathNeeded = True
+                    navi.switchToPathList2()
+                else :
+                    return
             time.sleep(1)
 
            
@@ -581,6 +588,9 @@ class ObstacleAvoidanceThread(threading.Thread):
                 obstacleDetected = 1
                 obstacleStatusLock.release()
                 obstacle.vibrateMotors()
+            else:
+                obstacle.turnOffMotors()
+
             
             # up/down step
 ##            stepType = obstacle.hasStep()
@@ -784,7 +794,7 @@ startLocation = None
 endLocation = None
 
 # Keypad initialization
-keypad = keypad_polling.keypad(voiceQueue, voiceSema, speaker)
+keypad = keypad_polling.keypad(voiceQueue, voiceSema, UISpeaker)
 
 # Threads to receive data from Arduino
 dataThreads = []
@@ -828,7 +838,9 @@ else:
 
 # Navigation initialization
 naviCount = 0
+isNextPathNeeded = False
 navi = fullNavi.fullNavi(voiceQueue, voiceSema)
+# navi.generateFullPath(startBuilding, startLevel, start, endBuilding, endLevel, end)
 # navi.generateFullPath("com1", 2, 14, 26)
 
 if skip_init:

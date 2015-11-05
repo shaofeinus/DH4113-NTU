@@ -8,17 +8,18 @@ import math
 import time
 
 # API:
-# generateFullPath(building, start, end)
+# generateFullPath(startBuilding, startLevel, start, endBuilding, endLevel, end)
 # 0 for com1L2, 1 for com2L2, 2 for com2L3
 # updateCurLocation(x, y, heading)
 # updateEncounterSteps(numSteps)
-# updateClearSteps(numSteps)
-# setObstacleStartHeading(heading)
-# setObstacleEndHeading(heading)
 # isInitialAngleCorrect()
 # fullNavigate()
 # getGeneralTurnDirection()
 # reroutePath()
+# hasNextPath()
+# switchToPathList2()
+# feedbackWalking(currentSteps)
+
 
 class fullNavi(object) :
     def __init__(self, voiceQueue, voiceSema) :
@@ -29,9 +30,13 @@ class fullNavi(object) :
         self.voiceQueue = voiceQueue
         self.voiceSema = voiceSema
         self.ANGLE_TOLERANCE = 15
-
-        self.buildingName = None
-        self.levelNumber = 0
+        
+        self.pathFind = pathFinder()
+        self.hasAnotherPath = False
+        self.startBuilding = None
+        self.endBuilding = None
+        self.startLevel = 0
+        self.endLevel = 0
         self.mapNumber = 0          # index of map in comMap list
         self.startLocation = 0
         self.endLocation = 0
@@ -39,18 +44,18 @@ class fullNavi(object) :
         self.curY = 0               # cm
         self.heading = 0            # -180 to 180 degrees
 
-        # prevent turning more than 90 degrees back to obstacle
-        self.obstacleClearedSteps = 0
-        self.currentSteps = 0
-        self.NUM_OBSTACLE_STEPS = 1
+        # used to feedback steps to user
+        self.walkingCount = 0
+        self.WALKING_VIBRATE_DURATION = 0.1
 
         # tolerance
         self.maxTolerance = 200
 
         # list of json parsing maps
         self.comMap = []
-        # path list
+        # path lists
         self.pathList = []
+        self.pathList2 = []
         self.pathListIndex = 0
         self.northAt = 0            # 0 to 360 degrees
         self.prevX = 0              # cm
@@ -58,7 +63,6 @@ class fullNavi(object) :
         self.nexX = 0               # cm
         self.nexY = 0               # cm
         self.nodeNavi = navigation(self.voiceQueue, self.voiceSema)
-        self.angleCorrect = True
 
         self.leftPin = 9
         self.rightPin = 10
@@ -82,36 +86,93 @@ class fullNavi(object) :
         self.nodeNavi.updateCurCoord(x, y)
         self.nodeNavi.updateHeading(heading)
 
-    # current current steps
-    def updateClearSteps(self, numSteps) :
-        self.obstacleClearedSteps = numSteps
+    # when a step is detected, right-side vibration motor will activate
+    def feedbackWalking(self, currentSteps) :
+        if currentSteps > self.walkingCount :
+            GPIO.output(self.rightPin, True)
+            time.sleep(self.WALKING_VIBRATE_DURATION)
+            GPIO.output(self.rightPin, False)
 
-    # when a step has been taken after turning
-    def updateCurrentSteps(self, numSteps) :
-        self.currentSteps = numSteps
+        self.walkingCount = currentSteps
+
+    def hasNextPath (self) :
+        return self.hasAnotherPath
 
     # returns false if at a node, but not facing in the direction of the next node
     def isInitialAngleCorrect(self):
         return self.angleCorrect
 
-    def generateFullPath(self, buildingName, levelNumber, start, end) :
+    def generateFullPath(self, startBuilding, startLevel, start,
+                         endBuilding, endLevel, end) :
         self.mapNumber = 0
         self.pathListIndex = 0
         self.comMap.append(mapParser())
-        self.comMap[self.mapNumber].setMap(buildingName, levelNumber)
-        self.startLocation = start
-        self.endLocation = end
-        self.buildingName = buildingName
-        self.levelNumber = levelNumber
-        pathFind = pathFinder()
-        pathFind.setMap(buildingName, levelNumber)
-        self.pathList = pathFind.getPath(start, end)
+        self.comMap[self.mapNumber].setMap(startBuilding, startLevel)
+        self.startBuilding = startBuilding
+        self.startLevel = startLevel
+        self.endBuilding = endBuilding
+        self.endLevel = endLevel
+        self.startLocation = start - 1
+        self.endLocation = end - 1
+
+        if((startBuilding == endBuilding) and (startLevel == endLevel)) :
+            self.generateOnePath()
+        else :
+            self.generateTwoPaths()
 ##        self.northAt = self.comMap[self.mapNumber].getNorthAt()
         self.northAt = 0
+        if (len(self.pathList) == 1) :
+            self.alertNodeReached()
+            return
         self.updatePrevNexCoord()
-        print "Path: " + str(self.pathList)
         self.provideNexNodeDirections()
         self.angleCorrect = False
+
+    def generateOnePath(self) :
+        self.hasAnotherPath = False
+        self.pathFind.setMap(self.startBuilding, self.startLevel)
+        self.pathList = self.pathFind.getPath(self.startLocation, self.endLocation)
+        print "Path: " + str(self.pathList)
+        print "[",
+        for i in self.pathList :
+            print str(i+1) + ", ",
+        print "]"
+          
+    def generateTwoPaths(self) :
+        self.hasAnotherPath = True
+        self.pathFind.setMap(self.startBuilding, self.startLevel)
+        conList1 = self.comMap[self.mapNumber].getNodeID()
+        # append 2nd map
+        self.comMap.append(mapParser())
+        self.comMap[self.mapNumber + 1].setMap(self.endBuilding, self.endLevel)
+        conList2 = self.comMap[self.mapNumber + 1].getNodeID()
+        
+        midEnd, midStart = self.getBuildingConnection(conList1, conList2)
+        if (midEnd != 9999 and midStart != 9999) :
+            print str(midEnd) + " " + str(midStart) + " " + str(self.endLocation)
+            self.pathList = self.pathFind.getPath(self.startLocation, midEnd)
+            self.pathFind.setMap(self.endBuilding, self.endLevel)
+            self.pathList2 = self.pathFind.getPath(midStart, self.endLocation)
+
+        print "[",
+        for i in self.pathList :
+            print str(i+1) + ", ",
+        print "]"
+    
+        print "[",
+        for i in self.pathList2 :
+            print str(i+1) + ", ",
+        print "]"        
+        
+
+    # returns the index of the connection node, 9999 if not found
+    def getBuildingConnection(self, list1, list2) :
+        for i in xrange(len(list1)) :
+            for j in xrange(len(list2)) :
+                if ((list1[i][0] == list2[j][1]) and
+                    (list1[i][1] == list2[j][0])) :
+                    return ((list1[i][2], list2[j][2]))
+        return (9999, 9999)
 
     # returns nearest node, excluding the past and current nodes
     def getNearestNextNode(self) :
@@ -136,10 +197,10 @@ class fullNavi(object) :
             self.pathListIndex = nextNodeIndex - 1
             sentence = "Re-routing."
             print sentence
-            if self.voiceQueue.append_high(sentence, time.time()):
-                self.voiceSema.release()
-            self.updatePrevNexCoord()
-            self.provideNexNodeDirections()
+##            if self.voiceQueue.append_high(sentence, time.time()):
+##                self.voiceSema.release()
+##            self.updatePrevNexCoord()
+##            self.provideNexNodeDirections()
 
 
     def updatePrevNexCoord(self) :
@@ -164,10 +225,10 @@ class fullNavi(object) :
         curNodeName = self.comMap[self.mapNumber].getLocationName(prevNode)
         nodeReachedSentence = "You reached node " + str(curNodeName) + "." # str(prevNode + 1) + ", " + str(curNodeName) + "."
         print nodeReachedSentence
-        if nodeReachedSentence != self.prev_message:
-            if self.voiceQueue.append_high(nodeReachedSentence, time.time()):
-                self.voiceSema.release()
-            self.prev_message = nodeReachedSentence
+##        if nodeReachedSentence != self.prev_message:
+##            if self.voiceQueue.append_high(nodeReachedSentence, time.time()):
+##                self.voiceSema.release()
+##            self.prev_message = nodeReachedSentence
         print "Path index " + str(self.pathListIndex)
 ##        time.sleep(1)
 ##        GPIO.output(self.leftPin, False)
@@ -179,10 +240,10 @@ class fullNavi(object) :
         nexNodeName = self.comMap[self.mapNumber].getLocationName(nexNode)
         nextNodeSentence = "Next is " + str(nexNode+1) + ", " + nexNodeName + "."
         print nextNodeSentence
-        if nextNodeSentence != self.prev_message:
-            if self.voiceQueue.append_high(nextNodeSentence, time.time()):
-                self.voiceSema.release()
-            self.prev_message = nextNodeSentence
+##        if nextNodeSentence != self.prev_message:
+##            if self.voiceQueue.append_high(nextNodeSentence, time.time()):
+##                self.voiceSema.release()
+##            self.prev_message = nextNodeSentence
 
     # returns 1 for right (and straight ahead), 2 for left
     def getGeneralTurnDirection(self) :
@@ -193,41 +254,6 @@ class fullNavi(object) :
             return 2
         else :
             return 0
-
-    # before moving to next node, ensure turn in correct direction
-    # returns True if correct, False otherwise
-    def ensureTurnedCorrectDirection(self) :
-        directionToHead = self.nodeNavi.getTurnAngle()
-        if (math.fabs(directionToHead) > self.ANGLE_TOLERANCE) :
-            if (directionToHead > 0) :
-                sentence = "Right %.0f." %(directionToHead)
-                print sentence
-                if time.time() - self.prev_message_time_turn > self.message_delay:
-                    if self.prev_message != sentence:
-                        if self.voiceQueue.append(sentence, time.time()):
-                            self.voiceSema.release()
-                        self.prev_message_time_turn = time.time()
-                        self.prev_message = sentence
-            elif (directionToHead < 0) :
-                sentence = "Left %.0f." %(math.fabs(directionToHead))
-                print sentence
-                if time.time() - self.prev_message_time_turn > self.message_delay:
-                    if self.prev_message != sentence:
-                        if self.voiceQueue.append(sentence, time.time()):
-                            self.voiceSema.release()
-                        self.prev_message_time_turn = time.time()
-                        self.prev_message = sentence
-            return False
-        else :
-            sentence = "Go."
-            print sentence
-            if time.time() - self.prev_message_time_str > self.message_delay:
-                if self.prev_message != sentence:
-                    if self.voiceQueue.append(sentence, time.time()):
-                        self.voiceSema.release()
-                    self.prev_message_time_turn = time.time()
-                    self.prev_message = sentence
-            return True
 
     def ignoreNodeObstacle(self) :
         distTo = distAngleCalc.distance(self.curX, self.curY, self.nexX, self.nexY)
@@ -252,45 +278,63 @@ class fullNavi(object) :
                     self.prev_message = sentence
                 return True
 
+    # prepare for traversing the second building/level
+    def switchToPathList2(self) :
+        sentence = "Switching to new building/level!"
+        print sentence
+        self.hasAnotherPath = False
+        self.pathList = self.pathList2
+        self.mapNumber += 1
+        self.pathListIndex = 0
+##        self.northAt = self.comMap[self.mapNumber].getNorthAt()
+        self.northAt = 0
+        curNode =  self.pathList[self.pathListIndex]
+        curNodeName = self.comMap[self.mapNumber].getLocationName(curNode)
+        nextNodeSentence = "Reached " + str(curNode+1) + ", " + curNodeName + "."
+        print nextNodeSentence
+        if (len(self.pathList) == 1) :
+            self.alertNodeReached()
+            return
+        self.updatePrevNexCoord()
+        self.provideNexNodeDirections()
+        self.angleCorrect = False
 
+        
     # returns true if navigation is complete
     def fullNavigate(self) :
-        if self.angleCorrect is False :
-            self.angleCorrect = self.ensureTurnedCorrectDirection()
-            return False
-        else :
-            # update obstacle cleared heading
-            if ((self.CurrentSteps - self.obstacleClearedSteps) > self.NUM_OBSTACLE_STEPS) :
-                self.nodeNavi.setCanTurn(True)
-            else :
-                self.nodeNavi.setCanTurn(False)
-            
-            curNode =  self.pathList[self.pathListIndex + 1]
-            curNodeName = self.comMap[self.mapNumber].getLocationName(curNode)
-            print "next node is " + str(curNode + 1) + ", name is:" + str(curNodeName)
-            isNodeReached = self.nodeNavi.navigate()
+        if (len(self.pathList) == 1) :
+            self.alertNodeReached()
+            return True
+        
+        curNode =  self.pathList[self.pathListIndex + 1]
+        curNodeName = self.comMap[self.mapNumber].getLocationName(curNode)
+        print "next node is " + str(curNode + 1) + ", name is: " + str(curNodeName)
+        isNodeReached = self.nodeNavi.navigate()
 
-            if isNodeReached == 1 :
-                sentence = "Node Reached."
-                print sentence
-                if self.prev_message != sentence:
-                    if self.voiceQueue.append_high(sentence, time.time()):
-                        self.voiceSema.release()
-                    self.prev_message_time_turn = time.time()
-                    self.prev_message = sentence
-                self.pathListIndex += 1
-                self.alertNodeReached()
-                if self.pathListIndex < (len(self.pathList) - 1) :
-                    self.updatePrevNexCoord()
-                    self.provideNexNodeDirections()
-                    self.angleCorrect = False
-                else :
+        if isNodeReached == 1 :
+##            sentence = "Node Reached."
+##            print sentence
+##                if self.prev_message != sentence:
+##                    if self.voiceQueue.append_high(sentence, time.time()):
+##                        self.voiceSema.release()
+##                    self.prev_message_time_turn = time.time()
+##                    self.prev_message = sentence
+            self.pathListIndex += 1
+            self.alertNodeReached()
+            if self.pathListIndex < (len(self.pathList) - 1) :
+                self.updatePrevNexCoord()
+                self.provideNexNodeDirections()
+                self.angleCorrect = False
+            else :
+                if self.hasAnotherPath is False :
                     sentence = "Navigation complete."
-                    print sentence
-                    if self.prev_message != sentence:
-                        if self.voiceQueue.append_high(sentence, time.time()):
-                            self.voiceSema.release()
-                        self.prev_message_time_turn = time.time()
-                        self.prev_message = sentence
-                    return True
+                else :
+                    sentence = "Reached the end of current building"
+                print sentence
+##                    if self.prev_message != sentence:
+##                        if self.voiceQueue.append_high(sentence, time.time()):
+##                            self.voiceSema.release()
+##                        self.prev_message_time_turn = time.time()
+##                        self.prev_message = sentence
+                return True
         return False
