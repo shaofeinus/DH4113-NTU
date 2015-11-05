@@ -94,6 +94,7 @@ class locationSetting(object) :
 
         if self.isEndLocation:
             print ("Is destination on the same level as the starting location?. If \"YES\", press start. If \"NO\", press back.")
+            self.speaker.wait()
             self.speaker.speak ("Is destination on the same level as the starting location?. If \"YES\", press start. If \"NO\", press back.")
 
             if self.keypad.get_binary_response():

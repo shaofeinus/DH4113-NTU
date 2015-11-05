@@ -343,7 +343,13 @@ class LocationDisplayThread(threading.Thread):
         self.count = 0
 
     def run(self):
+        global isNextPathNeeded
+        global nextPathSema
         while 1:
+            if isNextPathNeeded:
+                self.threadName, "blocking"
+                nextPathSema.acquire()
+
             locationTrackerLock.acquire()
 
             if self.count == 10:
@@ -502,7 +508,14 @@ class LocationUpdateThread(threading.Thread):
             self.totalBaroData = 0
 
     def run(self):
+        global isNextPathNeeded
+        global nextPathSema
+
         while 1:
+            if isNextPathNeeded:
+                self.threadName, "blocking"
+                nextPathSema.acquire()
+
             locationTrackerLock.acquire()
             self.updateAccData()
             self.updateMagData()
@@ -523,7 +536,16 @@ class NavigationThread(threading.Thread):
         global obstacleDetected
         global checkSideObstacle
         global isFirstCleared
+
+        global isNextPathNeeded
+        global nextPathSema
+        global UISema
         while 1:
+            print self.threadName, "running"
+            if isNextPathNeeded:
+                self.threadName, "blocking"
+                nextPathSema.acquire()
+
             # feedback steps walked
             navi.feedbackWalking(locationTracker.getTotalSteps())
             
@@ -550,9 +572,11 @@ class NavigationThread(threading.Thread):
 ##                    navi.updateCurrentSteps(locationTracker.getTotalSteps())
                     
             isNavigationDone = navi.fullNavigate()
-            if isNavigationDone is True :
+            if 1 or isNavigationDone is True :
+                print ("\n\n\n\n\n\nHERE\n\n\n\n\n\n")
                 if navi.hasNextPath() is True :
                     isNextPathNeeded = True
+                    UISema.release()
                     navi.switchToPathList2()
                 else :
                     return
@@ -569,7 +593,14 @@ class ObstacleAvoidanceThread(threading.Thread):
         global obstacleDetected
         global checkSideObstacle
         global isFirstCleared
+
+        global isNextPathNeeded
+        global nextPathSema
         while 1:
+            if isNextPathNeeded:
+                self.threadName, "blocking"
+                nextPathSema.acquire()
+
             irFC = data[6]
             irLS = data[7]
             irRS = data[8]
@@ -675,6 +706,7 @@ class UIThread(threading.Thread):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.threadName = threadName
+        self.first_run = True
 
     def run(self):
         global data
@@ -683,29 +715,47 @@ class UIThread(threading.Thread):
         global endLocation
         global UISpeaker
 
+        global mainThreads
+        global isNextPathNeeded
+        global nextPathSema
+        global UISema
+        while 1:
+            if not isNextPathNeeded:
+                UISema.acquire()
 
-        userInputLock.acquire()
+            userInputLock.acquire()
 
-        # get start location
-        startLocation = search.locationSetting(False, keypad, voiceSema, UISpeaker)
-        startLocation.run()
+            # get start location
+            startLocation = search.locationSetting(False, keypad, voiceSema, UISpeaker)
+            startLocation.run()
 
-        # get end location
-        endLocation = search.locationSetting(True, keypad, voiceSema, UISpeaker)
-        endLocation.setBuildingAndLevel(startLocation.buildingName, startLocation.levelNumber)
-        endLocation.run()
+            # get end location
+            endLocation = search.locationSetting(True, keypad, voiceSema, UISpeaker)
+            endLocation.setBuildingAndLevel(startLocation.buildingName, startLocation.levelNumber)
+            endLocation.run()
 
-        # flush serial port
-        dataFeeder.serialPort.flushInput()
-        dataFeeder.serialPort.flushOutput()
+            # flush serial port
+            dataFeeder.serialPort.flushInput()
+            dataFeeder.serialPort.flushOutput()
 
-        # reset data
-        data = []
-        data = [deque() for x in range(NUM_QUEUED_ID)]
-        data_single = [0 for x in range(NUM_SINGLE_ID)]
-        data.extend(data_single)
+            # reset data
+            data = []
+            data = [deque() for x in range(NUM_QUEUED_ID)]
+            data_single = [0 for x in range(NUM_SINGLE_ID)]
+            data.extend(data_single)
 
-        userInputLock.release()
+            if not self.first_run:
+                UISpeaker.speak("To begin navigation, press start")
+                while 1:
+                    if not keypad.get_binary_response():
+                        break
+            else:
+                self.first_run = False
+
+            isNextPathNeeded = False
+            for thread in mainThreads:
+                nextPathSema.release()
+            userInputLock.release()
 
 ##class CollectIRThread(threading.Thread):
 ##    def __init__(self, threadID, threadName):
@@ -795,6 +845,8 @@ dataInSema = threading.Semaphore(0)
 userInputLock = threading.Lock()
 voiceSema = threading.Semaphore(0)
 voiceStopSema = False
+nextPathSema = threading.Semaphore(0)
+UISema = threading.Semaphore(0)
 
 # Location variables
 startLocation = None
@@ -828,34 +880,8 @@ voiceThreads.append(voiceThread(8, "play sound notification"))
 for thread in voiceThreads:
     thread.start()
 
-if not skip_init:
-    # UI threads
-    UIThreads = []
-    UIThreads.append(UIThread(-2, "Run UI"))
-
-    for thread in UIThreads:
-       thread.start()
-
-    for thread in UIThreads:
-       thread.join()
-
-    locationTracker.setLocation(startLocation.getLocationXCoord(), startLocation.getLocationYCoord())
-else:
-    locationTracker.setLocation(0,0)
-
-# Navigation initialization
-naviCount = 0
-isNextPathNeeded = False
-navi = fullNavi.fullNavi(voiceQueue, voiceSema)
-# navi.generateFullPath(startBuilding, startLevel, start, endBuilding, endLevel, end)
-# navi.generateFullPath("com1", 2, 14, 26)
-
-if skip_init:
-    navi.generateFullPath("com1", 2, 1, 10)
-else:
-    navi.generateFullPath(startLocation.getBuildingName(),
-                         startLocation.getLevelNumber(),
-                         startLocation.getLocationPointIndex(), endLocation.getLocationPointIndex())
+# Path Reset Condition
+isNextPathNeeded = True
 
 # List of threads
 mainThreads = []
@@ -863,22 +889,58 @@ mainThreads = []
 if skip_init:
     mainThreads.append(LocationUpdateThread(3, "location update"))
     mainThreads.append(LocationDisplayThread(4, "location display"))
-    # mainThreads.append(NavigationThread(5, "navigation"))
+    mainThreads.append(NavigationThread(5, "navigation"))
     # mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
     # mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
 else:
     mainThreads.append(LocationUpdateThread(3, "location update"))
     mainThreads.append(LocationDisplayThread(4, "location display"))
     mainThreads.append(NavigationThread(5, "navigation"))
-    mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
+    # mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
 ##    mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
 ##    mainThreads.append(collectIRThread(9, "collect ir data"))
-
 
 for thread in mainThreads:
     thread.start()
 
-for thread in (mainThreads + dataThreads + voiceThreads):
+UIThreads = []
+
+if not skip_init:
+    # UI threads
+    UIThreads.append(UIThread(-2, "Run UI"))
+
+    for thread in UIThreads:
+       thread.start()
+
+    while isNextPathNeeded:
+        pass
+    # for thread in UIThreads:
+    #    thread.join()
+
+    locationTracker.setLocation(startLocation.getLocationXCoord(), startLocation.getLocationYCoord())
+else:
+    locationTracker.setLocation(0,0)
+    isNextPathNeeded = False
+    for thread in mainThreads:
+        nextPathSema.release()
+
+# Navigation initialization
+naviCount = 0
+navi = fullNavi.fullNavi(voiceQueue, voiceSema)
+# navi.generateFullPath(startBuilding, startLevel, start, endBuilding, endLevel, end)
+# navi.generateFullPath("com1", 2, 14, 26)
+
+if skip_init:
+    navi.generateFullPath("com1", 2, 1, "com1", 2, 10)
+else:
+    navi.generateFullPath(startLocation.getBuildingName(),
+                          startLocation.getLevelNumber(),
+                          startLocation.getLocationPointIndex(),
+                          endLocation.getBuildingName(),
+                          endLocation.getLevelNumber(),
+                          endLocation.getLocationPointIndex())
+
+for thread in (mainThreads + dataThreads + voiceThreads + UIThreads):
     thread.join()
 
 
