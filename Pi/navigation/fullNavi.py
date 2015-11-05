@@ -170,7 +170,7 @@ class fullNavi(object) :
         self.hasThreePaths = False
         self.pathFind.setMap(self.startBuilding, self.startLevel)
         self.pathList = self.pathFind.getPath(self.startLocation, self.endLocation)
-          
+        
     def generateTwoPaths(self) :
         self.hasAnotherPath = True
         self.hasTwoPaths = True
@@ -335,8 +335,14 @@ class fullNavi(object) :
 
     # prepare for traversing the second building/level
     def switchToPathList2(self) :
-        sentence = "Switching to new building/level!"
+        sentence = "New building/level!"
         print sentence
+##        print sentence
+##            if self.prev_message != sentence:
+##                if self.voiceQueue.append_high(sentence, time.time()):
+##                    self.voiceSema.release()
+##                self.prev_message_time_turn = time.time()
+##                self.prev_message = sentence
         if self.hasThreePaths is False :
             self.hasAnotherPath = False
         self.pathList = self.pathList2
@@ -348,8 +354,13 @@ class fullNavi(object) :
         self.northAt = 0
         curNode =  self.pathList[self.pathListIndex]
         curNodeName = self.comMap[self.mapNumber].getLocationName(curNode)
-        curNodeSentence = "Reached " + str(curNode+1) + ", " + curNodeName + "."
-        print curNodeSentence
+        sentence = "Reached " + str(curNode+1) + ", " + curNodeName + "."
+        print sentence
+##        if self.prev_message != sentence:
+##            if self.voiceQueue.append_high(sentence, time.time()):
+##                self.voiceSema.release()
+##            self.prev_message_time_turn = time.time()
+##            self.prev_message = sentence
         self.xFirst = int(self.comMap[self.mapNumber].getLocationXCoord(curNode))
         self.yFirst = int(self.comMap[self.mapNumber].getLocationYCoord(curNode))
         if (len(self.pathList) == 1) :
@@ -361,8 +372,13 @@ class fullNavi(object) :
 
         # prepare for traversing the second building/level
     def switchToPathList3(self) :
-        sentence = "Switching to new building/level!"
+        sentence = "New building/level!"
         print sentence
+##        if self.prev_message != sentence:
+##            if self.voiceQueue.append_high(sentence, time.time()):
+##                self.voiceSema.release()
+##            self.prev_message_time_turn = time.time()
+##            self.prev_message = sentence
         self.hasAnotherPath = False
         self.pathList = self.pathList3
         self.mapNumber += 1
@@ -373,7 +389,12 @@ class fullNavi(object) :
         self.northAt = 0
         curNode =  self.pathList[self.pathListIndex]
         curNodeName = self.comMap[self.mapNumber].getLocationName(curNode)
-        curNodeSentence = "Reached " + str(curNode+1) + ", " + curNodeName + "."
+        sentence = "Reached " + str(curNode+1) + ", " + curNodeName + "."
+##        if self.prev_message != sentence:
+##            if self.voiceQueue.append_high(sentence, time.time()):
+##                self.voiceSema.release()
+##            self.prev_message_time_turn = time.time()
+##            self.prev_message = sentence
         self.xFirst = int(self.comMap[self.mapNumber].getLocationXCoord(curNode))
         self.yFirst = int(self.comMap[self.mapNumber].getLocationYCoord(curNode))
         print curNodeSentence

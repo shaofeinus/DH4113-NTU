@@ -532,6 +532,7 @@ class NavigationThread(threading.Thread):
         self.threadName = threadName
 
     def run(self):
+        global navi
         global naviCount
         global obstacleDetected
         global checkSideObstacle
@@ -547,7 +548,7 @@ class NavigationThread(threading.Thread):
                 nextPathSema.acquire()
 
             # feedback steps walked
-            navi.feedbackWalking(locationTracker.getTotalSteps())
+##            navi.feedbackWalking(locationTracker.getTotalSteps())
             
 ##            naviCount += 1
             locationTrackerLock.acquire()
@@ -931,7 +932,7 @@ else:
 naviCount = 0
 navi = fullNavi.fullNavi(voiceQueue, voiceSema)
 # navi.generateFullPath(startBuilding, startLevel, start, endBuilding, endLevel, end)
-# navi.generateFullPath("com1", 2, 14, 26)
+# navi.generateFullPath("com1", 2, 1, "com1", 2, 10)
 
 if skip_init:
     navi.generateFullPath("com1", 2, 1, "com1", 2, 10)
