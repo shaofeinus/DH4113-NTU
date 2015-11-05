@@ -523,6 +523,8 @@ class NavigationThread(threading.Thread):
         global obstacleDetected
         global checkSideObstacle
         global isFirstCleared
+        global isNextPathNeeded
+        
         while 1:
             # feedback steps walked
             navi.feedbackWalking(locationTracker.getTotalSteps())
