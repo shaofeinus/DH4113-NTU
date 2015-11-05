@@ -105,7 +105,7 @@ class LocationTracker:
         compAngleDev = self.compass.getAngleDevInRad()
         gyroAngleDev = self.gyroCompass.getAngleDevInRad()
 
-        if currSteps == 0:
+        if currSteps != 0:
             angleDev = gyroAngleDev
         else:
             angleDev = compAngleDev

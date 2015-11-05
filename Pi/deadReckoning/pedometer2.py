@@ -15,8 +15,8 @@ class Pedometer2:
     ACC_WINDOW_SIZE = ACC_WINDOW_TIME / ACC_DATA_INTERVAL
     SINGLE_DATA_WINDOW_SIZE = 5
 
-    ACC_H_THRESHOLD = 1.1     # In G
-    ACC_L_THRESHOLD = 0.95     # In G
+    ACC_H_THRESHOLD = 1.2 #1.1     # In G
+    ACC_L_THRESHOLD = 0.85 #0.95     # In G
     ACC_REST = 0.97
 
     HIGH_LOW_INTERVAL_MAX = 500  # In ms
