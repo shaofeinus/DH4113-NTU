@@ -22,8 +22,10 @@ class locationSetting(object) :
         self.BUILDING_PROMPT = "Enter building name or number: "
         self.LEVEL_PROMPT = "Enter level number: "
         self.INVALID_BUILDING_LEVEL = "Sorry, the building or level number specified is invalid!"
-        self.SEARCH_PROMPT = "Enter search query for location. For help, enter: \"help\""
-        self.SEARCH_HELP = "To retrieve all nodes, enter ,\"all\". To select a node ID, enter \".\", followed by the node ID"
+        self.SEARCH_PROMPT = "Enter search query for location. For help, enter: \"help\"."
+        self.SEARCH_HELP1 = "To retrieve all nodes, enter, all. "
+        self.SEARCH_HELP2 = "To select a node ID, enter, dot. "
+        self.SEARCH_HELP3 = "Followed by the node ID. "
         self.INVALID_NUMBER = "Please enter a valid number"
         self.INVALID_ID = "Please enter a valid ID"
         self.FINAL_CONFIRMATION = "To confirm, press start. To restart, press back"
@@ -74,8 +76,8 @@ class locationSetting(object) :
                     print self.BUILDING_PROMPT
                     self.buildingName = self.keypad.get_input_str(self.BUILDING_PROMPT)# raw_input("Enter building name or number: ")
 
-                    print "Building is " + self.buildingName + ". To confirm, press start. To cancel, press back"
-                    self.speaker.speak("Building is " + self.buildingName + ". To confirm, press start. To cancel, press back")
+                    print "Building is " + self.buildingName + ". Press start to confirm. Back to cancel"
+                    self.speaker.speak("Building is " + self.buildingName + ". Press start to confirm. Back to cancel")
 
                     if not self.keypad.get_binary_response():
                         break
@@ -84,8 +86,8 @@ class locationSetting(object) :
                 print self.BUILDING_PROMPT
                 self.buildingName = self.keypad.get_input_str(self.BUILDING_PROMPT)# raw_input("Enter building name or number: ")
 
-                print "Building is " + self.buildingName + ". To confirm, press start. To cancel, press back"
-                self.speaker.speak("Building is " + self.buildingName + ". To confirm, press start. To cancel, press back")
+                print "Building is " + self.buildingName + ". Press start to confirm. Back to cancel"
+                self.speaker.speak("Building is " + self.buildingName + ". Press start to confirm. Back to cancel")
 
                 if not self.keypad.get_binary_response():
                     break
@@ -98,8 +100,8 @@ class locationSetting(object) :
                 while True:
                     print self.LEVEL_PROMPT
                     self.levelNumber = self.keypad.get_input_ext_num(self.LEVEL_PROMPT)
-                    print "Level number is " + str(self.levelNumber) + ". To confirm, press start. To cancel, press back"
-                    self.speaker.speak("Level number is " + str(self.levelNumber) + ". To confirm, press start. To cancel, press back")
+                    print "Level number is " + str(self.levelNumber) + ". Press start to confirm. Back to cancel"
+                    self.speaker.speak("Level number is " + str(self.levelNumber) + ". Press start to confirm. Back to cancel")
 
                     if not self.keypad.get_binary_response():
                         break
@@ -107,14 +109,14 @@ class locationSetting(object) :
             while True:
                 print self.LEVEL_PROMPT
                 self.levelNumber = self.keypad.get_input_ext_num(self.LEVEL_PROMPT)
-                print "Level number is " + str(self.levelNumber) + ". To confirm, press start. To cancel, press back"
-                self.speaker.speak("Level number is " + str(self.levelNumber) + ". To confirm, press start. To cancel, press back")
+                print "Level number is " + str(self.levelNumber) + ". Press start to confirm. Back to cancel"
+                self.speaker.speak("Level number is " + str(self.levelNumber) + ". Press start to confirm. Back to cancel")
 
                 if not self.keypad.get_binary_response():
                     break
 
-            # print "Building is " + self.buildingName + ", level is " + str(self.levelNumber) + ". To confirm, press start. To cancel, press back"
-            # self.speaker.speak("Building is " + self.buildingName + ", level is " + str(self.levelNumber) + ". To confirm, press start. To cancel, press back")
+            # print "Building is " + self.buildingName + ", level is " + str(self.levelNumber) + ". Press start to confirm. Back to cancel"
+            # self.speaker.speak("Building is " + self.buildingName + ", level is " + str(self.levelNumber) + ". Press start to confirm. Back to cancel")
             #
             # continueLoop = self.keypad.get_binary_response()
 
@@ -134,8 +136,8 @@ class locationSetting(object) :
                         print self.BUILDING_PROMPT
                         self.buildingName = self.keypad.get_input_str(self.BUILDING_PROMPT)# raw_input("Enter building name or number: ")
 
-                        print "Building is " + self.buildingName + ". To confirm, press start. To cancel, press back"
-                        self.speaker.speak("Building is " + self.buildingName + ". To confirm, press start. To cancel, press back")
+                        print "Building is " + self.buildingName + ". Press start to confirm. Back to cancel"
+                        self.speaker.speak("Building is " + self.buildingName + ". Press start to confirm. Back to cancel")
 
                         if not self.keypad.get_binary_response():
                             break
@@ -144,8 +146,8 @@ class locationSetting(object) :
                     print self.BUILDING_PROMPT
                     self.buildingName = self.keypad.get_input_str(self.BUILDING_PROMPT)# raw_input("Enter building name or number: ")
 
-                    print "Building is " + self.buildingName + ". To confirm, press start. To cancel, press back"
-                    self.speaker.speak("Building is " + self.buildingName + ". To confirm, press start. To cancel, press back")
+                    print "Building is " + self.buildingName + ". Press start to confirm. Back to cancel"
+                    self.speaker.speak("Building is " + self.buildingName + ". Press start to confirm. Back to cancel")
 
                     if not self.keypad.get_binary_response():
                         break
@@ -158,8 +160,8 @@ class locationSetting(object) :
                     while True:
                         print self.LEVEL_PROMPT
                         self.levelNumber = self.keypad.get_input_ext_num(self.LEVEL_PROMPT)
-                        print "Level number is " + str(self.levelNumber) + ". To confirm, press start. To cancel, press back"
-                        self.speaker.speak("Level number is " + str(self.levelNumber) + ". To confirm, press start. To cancel, press back")
+                        print "Level number is " + str(self.levelNumber) + ". Press start to confirm. Back to cancel"
+                        self.speaker.speak("Level number is " + str(self.levelNumber) + ". Press start to confirm. Back to cancel")
 
                         if not self.keypad.get_binary_response():
                             break
@@ -167,8 +169,8 @@ class locationSetting(object) :
                 while True:
                     print self.LEVEL_PROMPT
                     self.levelNumber = self.keypad.get_input_ext_num(self.LEVEL_PROMPT)
-                    print "Level number is " + str(self.levelNumber) + ". To confirm, press start. To cancel, press back"
-                    self.speaker.speak("Level number is " + str(self.levelNumber) + ". To confirm, press start. To cancel, press back")
+                    print "Level number is " + str(self.levelNumber) + ". Press start to confirm. Back to cancel"
+                    self.speaker.speak("Level number is " + str(self.levelNumber) + ". Press start to confirm. Back to cancel")
 
                     if not self.keypad.get_binary_response():
                         break
@@ -176,14 +178,19 @@ class locationSetting(object) :
             isMapSetSuccessfully = self.building.setMap(self.buildingName, self.levelNumber)
 
 
-                # print "Building is " + self.buildingName + ", level is " + str(self.levelNumber) + ". To confirm, press start. To cancel, press back"
-                # self.speaker.speak("Building is " + self.buildingName + ", level is " + str(self.levelNumber) + ". To confirm, press start. To cancel, press back")
+                # print "Building is " + self.buildingName + ", level is " + str(self.levelNumber) + ". Press start to confirm. Back to cancel"
+                # self.speaker.speak("Building is " + self.buildingName + ", level is " + str(self.levelNumber) + ". Press start to confirm. Back to cancel")
                 #
                 # continueLoop = self.keypad.get_binary_response()
 
     def getSearchQueryFromUser(self) :
+        disable = False
         while not self.possibleNodes :
-            node = self.keypad.get_input_str(self.SEARCH_PROMPT)# raw_input("Enter location point, or \'all\' for all nodes: ")
+            if disable:
+                node = self.keypad.poll_for_str()# raw_input("Enter location point, or \'all\' for all nodes: ")
+                disable = False
+            else:
+                node = self.keypad.get_input_str(self.SEARCH_PROMPT)# raw_input("Enter location point, or \'all\' for all nodes: ")
             userInputNode = node.split()
 
             if node == "all" :
@@ -193,8 +200,11 @@ class locationSetting(object) :
                 # print "All nodes will be listed. When you are ready to make your selection, press start."
                 # self.speaker.speak("All nodes will be listed. When you are ready to make your selection, press start.")
             elif node == "help":
-                print self.SEARCH_HELP
-                self.speaker.speak(str(self.SEARCH_HELP))
+                print self.SEARCH_HELP1, self.SEARCH_HELP2, self.SEARCH_HELP3
+                self.speaker.speak(str(self.SEARCH_HELP1 + self.SEARCH_HELP2 + self.SEARCH_HELP3))
+                disable = True
+                # self.speaker.speak(str(self.SEARCH_HELP2))
+                # self.speaker.speak(str(self.SEARCH_HELP3))
             else :
                 temp_node = node.strip()
                 if temp_node[0] == '.':
@@ -238,36 +248,44 @@ class locationSetting(object) :
                     print str(i) + ": " + str(self.building.getLocationName(self.possibleNodes[i]))
                     self.keypad.chr_queue.append("for " + str(self.building.getLocationName(self.possibleNodes[i])) + ", press"  + str(i), time.time())
                     self.voiceSema.release()
+                    # self.speaker.speak("for " + str(self.building.getLocationName(self.possibleNodes[i])) + ", press"  + str(i))
 
-                while True:
-                    num = self.keypad.poll_for_num_cond()
-                    print num
-                    if num == 9 or num == -1:
-                        self.keypad.chr_queue.clear()
-                        break
-
-                # get the user to choose the point he wants from the list of suggestions
-                while isNumberChosen is False :
-                    # self.keypad.chr_queue.append("")
-                    # self.voiceSema.release()
-                    while len(self.keypad.chr_queue) > 0:
-                        pass
-                    self.locationPoint = int(self.keypad.get_input_ext_num("Enter number of correct location: "))# int(raw_input("Enter number of correct location: "))
-
+                while isNumberChosen is False:
+                    self.locationPoint = int(self.keypad.poll_for_ext_num(True))
                     if self.locationPoint < len(self.possibleNodes):
                         isNumberChosen = True
                         break
                     print self.INVALID_NUMBER
                     self.speaker.speak(self.INVALID_NUMBER)
                 self.locationPoint = self.possibleNodes[self.locationPoint]
+                # while True:
+                #     num = self.keypad.poll_for_num_cond()
+                #     if num == 9 or num == -1:
+                #         self.keypad.chr_queue.clear()
+                #         break
+
+                # get the user to choose the point he wants from the list of suggestions
+                # while isNumberChosen is False :
+                #     # self.keypad.chr_queue.append("")
+                #     # self.voiceSema.release()
+                #     while not self.keypad.chr_queue.empty():
+                #         pass
+                #     self.locationPoint = int(self.keypad.get_input_ext_num("Enter number of correct location: "))# int(raw_input("Enter number of correct location: "))
+                #
+                #     if self.locationPoint < len(self.possibleNodes):
+                #         isNumberChosen = True
+                #         break
+                #     print self.INVALID_NUMBER
+                #     self.speaker.speak(self.INVALID_NUMBER)
+                # self.locationPoint = self.possibleNodes[self.locationPoint]
 
             else :
                 self.locationPoint = self.possibleNodes[0]
-            print "Location selected is " + self.building.getLocationName(self.locationPoint) + ". To confirm, press start. To cancel, press back"#self.SELECTION_LOCATION
+            print "Location selected is " + self.building.getLocationName(self.locationPoint) + ". Press start to confirm. Back to cancel"#self.SELECTION_LOCATION
             if self.isEndLocation:
-                self.speaker.speak ("Destination selected is " + self.building.getLocationName(self.locationPoint) + ". To confirm, press start. To cancel, press back")
+                self.speaker.speak ("Destination selected is " + self.building.getLocationName(self.locationPoint) + ". Press start to confirm. Back to cancel")
             else:
-                self.speaker.speak ("Start location selected is " + self.building.getLocationName(self.locationPoint) + ". To confirm, press start. To cancel, press back")
+                self.speaker.speak ("Start location selected is " + self.building.getLocationName(self.locationPoint) + ". Press start to confirm. Back to cancel")
 
             continueLoop = self.keypad.get_binary_response()
             if continueLoop:

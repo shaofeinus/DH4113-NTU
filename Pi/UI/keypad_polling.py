@@ -85,7 +85,7 @@ class keypad(object):
             self.speaker.speak(prompt)
 
             self.chr_queue.flush()
-            self.ext_num_input = self.poll_for_ext_num()
+            self.ext_num_input = self.poll_for_ext_num(False)
 
             print self.ext_num_input
 
@@ -135,13 +135,13 @@ class keypad(object):
 
     def poll_for_num_timed(self):
         timer_start = time.time()
-        GPIO.input(self.hori[1], GPIO.HIGH)
+        GPIO.output(self.hori[1], GPIO.HIGH)
         while True:
             if time.time() - timer_start >= 1:
-                if GPIO.output(self.vert[3]) == GPIO.HIGH:
-                    GPIO.input(self.hori[1], GPIO.LOW)
+                if GPIO.input(self.vert[3]) == GPIO.HIGH:
+                    GPIO.output(self.hori[1], GPIO.LOW)
                     return True
-                GPIO.input(self.hori[1], GPIO.LOW)
+                GPIO.output(self.hori[1], GPIO.LOW)
                 return False
 
 
@@ -209,7 +209,7 @@ class keypad(object):
         return -1
 
 # ===============================Ext Num POLL==========================================
-    def poll_for_ext_num(self):
+    def poll_for_ext_num(self, clearQ):
         x = 0
         first_press = True
         for y in range(len(self.hori)): #check input at each vert
@@ -230,6 +230,8 @@ class keypad(object):
                     if first_press: # button press should stop reading of prompt
                         self.speaker.stop()
                         first_press = False
+                        if clearQ:
+                            self.chr_queue.flush()
                     if self.num_map[y][x] == 11:
                         if self.en_snd:
                             self.chr_queue.append("delete", time.time())
