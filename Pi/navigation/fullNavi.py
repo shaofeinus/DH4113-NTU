@@ -16,8 +16,7 @@ import time
 # getGeneralTurnDirection()
 # reroutePath()
 # hasNextPath()
-# switchToPathList2()
-# switchToPathList3()
+# switchToNextPathList()
 # getNorthDifference()
 # getFirstCoordinates()
 # feedbackWalking(currentSteps)
@@ -191,7 +190,7 @@ class fullNavi(object) :
 
     def generateThreePaths(self) :
         self.hasAnotherPath = True
-        self.hasTwoPaths = False
+        self.hasTwoPaths = True
         self.hasThreePaths = True
         self.pathFind.setMap(self.startBuilding, self.startLevel)
         conList1 = self.comMap[self.mapNumber].getNodeID()
@@ -326,6 +325,13 @@ class fullNavi(object) :
                     self.prev_message_time_turn = time.time()
                     self.prev_message = sentence
                 return True
+
+    def switchToNextPathList(self) :
+        if self.hasTwoPaths is True :
+            self.hasTwoPaths = False
+            self.switchToPathList2()
+        else :
+            self.switchToPathList3()
 
     # prepare for traversing the second building/level
     def switchToPathList2(self) :

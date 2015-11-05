@@ -546,7 +546,7 @@ class NavigationThread(threading.Thread):
             if isNavigationDone is True :
                 if navi.hasNextPath() is True :
                     isNextPathNeeded = True
-                    navi.switchToPathList2()
+                    navi.switchToNextPathList()
                 else :
                     return
             time.sleep(1)
