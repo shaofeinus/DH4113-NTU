@@ -13,8 +13,8 @@ from UI import search
 from UI import keypad_polling
 # from UI import keyboard as keypad_polling
 from UI import pyespeak
-from UI import my_deque
-from UI import UISpeaker
+from UI.my_deque import my_deque
+from UI.UISpeaker import UI_Speaker
 
 __author__ = 'Shao Fei'
 
@@ -58,7 +58,7 @@ class voiceThread(threading.Thread):
             if not voiceQueue.empty():
                 item = voiceQueue.popleft()
                 if item is not None:
-                    speaker.speak(str(voiceQueue.popleft()))
+                    speaker.speak(str(item))
             else:
                 time.sleep(1)
 
@@ -83,19 +83,27 @@ class ProcessDataThread(threading.Thread):
         self.threadName = threadName
 
     def run(self):
+        global data
         while True:
             dataFeeder.process_data(data, dataInSema)
 
-##            print "ir ",
-##            print data[6],
-##            print data[7],
-##            print data[8],
-##            print data[9],
-##            print data[10],
-##            print data[15],
-##            print "sonar ",
-##            print data[12],
-##            print data[13]
+            print "imu",
+            print data[1],
+            print data[2],
+            print data[3],
+            print "baro"
+            print data[4],
+            print "ir ",
+            print data[6],
+            print data[7],
+            print data[8],
+            print data[9],
+            print data[10],
+            print "sonar ",
+            print data[11],
+            print data[12]
+            print data[13],
+
 
 class CalibrationThread(threading.Thread):
     def __init__(self, threadID, threadName):
@@ -134,7 +142,6 @@ class CalibrationThread(threading.Thread):
         validInput = False
         while not validInput:
             # userInput = raw_input("Press enter to calibrate? y/n ")
-
             UISpeaker.speak(str("To calibrate gyroscope, press start."))
             userInput = keypad.get_binary_response()
             print userInput
@@ -680,11 +687,11 @@ class UIThread(threading.Thread):
         userInputLock.acquire()
 
         # get start location
-        startLocation = search.locationSetting(False, keypad, voiceSema, UIspeaker)
+        startLocation = search.locationSetting(False, keypad, voiceSema, UISpeaker)
         startLocation.run()
 
         # get end location
-        endLocation = search.locationSetting(True, keypad, voiceSema, UIspeaker)
+        endLocation = search.locationSetting(True, keypad, voiceSema, UISpeaker)
         endLocation.setBuildingAndLevel(startLocation.buildingName, startLocation.levelNumber)
         endLocation.run()
 
@@ -755,7 +762,7 @@ NUM_SINGLE_ID = 11
 
 
 # Queue for sound
-voiceQueue = my_deque.my_deque()
+voiceQueue = my_deque()
 
 # Data lists for raw data
 data = [deque() for x in range(NUM_QUEUED_ID)]
@@ -778,7 +785,7 @@ dataFeeder = dataFeeder.DataFeeder()
 
 # Speaker object
 speaker = pyespeak.Speaker()
-UISpeaker = UISpeaker.UI_Speaker()
+UISpeaker = UI_Speaker()
 
 # Locks for various variables
 locationTrackerLock = threading.Lock()
@@ -808,11 +815,11 @@ for thread in dataThreads:
 initThreads = []
 initThreads.append(CalibrationThread(-1, "calibrating pedometer and compass"))
 
-for thread in initThreads:
-    thread.start()
-
-for thread in initThreads:
-    thread.join()
+# for thread in initThreads:
+#     thread.start()
+#
+# for thread in initThreads:
+#     thread.join()
 
 # voice threads
 voiceThreads = []
