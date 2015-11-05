@@ -102,6 +102,7 @@ class locationSetting(object) :
                     print self.LEVEL_PROMPT
                     self.levelNumber = self.keypad.get_input_ext_num(self.LEVEL_PROMPT)
                     print "Level number is " + str(self.levelNumber) + ". Press start to confirm. Back to cancel"
+                    self.speaker.wait()
                     self.speaker.speak("Level number is " + str(self.levelNumber) + ". Press start to confirm. Back to cancel")
 
                     if not self.keypad.get_binary_response():
@@ -111,6 +112,7 @@ class locationSetting(object) :
                 print self.LEVEL_PROMPT
                 self.levelNumber = self.keypad.get_input_ext_num(self.LEVEL_PROMPT)
                 print "Level number is " + str(self.levelNumber) + ". Press start to confirm. Back to cancel"
+                self.speaker.wait()
                 self.speaker.speak("Level number is " + str(self.levelNumber) + ". Press start to confirm. Back to cancel")
 
                 if not self.keypad.get_binary_response():
@@ -126,9 +128,11 @@ class locationSetting(object) :
         while isMapSetSuccessfully is False :
             # get building name and level number input from user (keypad code)
             print self.INVALID_BUILDING_LEVEL
+            self.speaker.wait()
             self.speaker.speak(self.INVALID_BUILDING_LEVEL)
 
             if self.isEndLocation:
+                self.speaker.wait()
                 print "Is destination in the same building as the starting location?. If \"YES\", press start. If \"NO\", press back."
                 self.speaker.speak ("Is destination in the same building as the starting location?. If \"YES\", press start. If \"NO\", press back.")
 
@@ -138,6 +142,7 @@ class locationSetting(object) :
                         self.buildingName = self.keypad.get_input_str(self.BUILDING_PROMPT)# raw_input("Enter building name or number: ")
 
                         print "Building is " + self.buildingName + ". Press start to confirm. Back to cancel"
+                        self.speaker.wait()
                         self.speaker.speak("Building is " + self.buildingName + ". Press start to confirm. Back to cancel")
 
                         if not self.keypad.get_binary_response():
@@ -148,33 +153,21 @@ class locationSetting(object) :
                     self.buildingName = self.keypad.get_input_str(self.BUILDING_PROMPT)# raw_input("Enter building name or number: ")
 
                     print "Building is " + self.buildingName + ". Press start to confirm. Back to cancel"
+                    self.speaker.wait()
                     self.speaker.speak("Building is " + self.buildingName + ". Press start to confirm. Back to cancel")
 
                     if not self.keypad.get_binary_response():
                         break
 
-            if self.isEndLocation:
-                print ("Is destination on the same level as the starting location?. If \"YES\", press start. If \"NO\", press back.")
-                self.speaker.speak ("Is destination on the same level as the starting location?. If \"YES\", press start. If \"NO\", press back.")
+            while True:
+                print self.LEVEL_PROMPT
+                self.levelNumber = self.keypad.get_input_ext_num(self.LEVEL_PROMPT)
+                print "Level number is " + str(self.levelNumber) + ". Press start to confirm. Back to cancel"
+                self.speaker.wait()
+                self.speaker.speak("Level number is " + str(self.levelNumber) + ". Press start to confirm. Back to cancel")
 
-                if self.keypad.get_binary_response():
-                    while True:
-                        print self.LEVEL_PROMPT
-                        self.levelNumber = self.keypad.get_input_ext_num(self.LEVEL_PROMPT)
-                        print "Level number is " + str(self.levelNumber) + ". Press start to confirm. Back to cancel"
-                        self.speaker.speak("Level number is " + str(self.levelNumber) + ". Press start to confirm. Back to cancel")
-
-                        if not self.keypad.get_binary_response():
-                            break
-            else:
-                while True:
-                    print self.LEVEL_PROMPT
-                    self.levelNumber = self.keypad.get_input_ext_num(self.LEVEL_PROMPT)
-                    print "Level number is " + str(self.levelNumber) + ". Press start to confirm. Back to cancel"
-                    self.speaker.speak("Level number is " + str(self.levelNumber) + ". Press start to confirm. Back to cancel")
-
-                    if not self.keypad.get_binary_response():
-                        break
+                if not self.keypad.get_binary_response():
+                    break
 
             isMapSetSuccessfully = self.building.setMap(self.buildingName, self.levelNumber)
 
