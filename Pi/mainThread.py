@@ -573,11 +573,14 @@ class NavigationThread(threading.Thread):
                     
             isNavigationDone = navi.fullNavigate()
             if 1 or isNavigationDone is True :
+                time.sleep(5)
                 print ("\n\n\n\n\n\nHERE\n\n\n\n\n\n")
                 if navi.hasNextPath() is True :
                     isNextPathNeeded = True
-                    UISema.release()
                     navi.switchToNextPathList()
+                    # navi.getNorthDifference()
+                    # navi.getFirstCoordinates()
+                    UISema.release()
                 else :
                     return
             time.sleep(1)
