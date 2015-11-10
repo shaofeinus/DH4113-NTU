@@ -16,7 +16,6 @@ from UI import pyespeak
 from UI.my_deque import my_deque
 from UI.UISpeaker import UI_Speaker
 
-__author__ = 'Shao Fei'
 
 #to print sound just call voiceQueue.append(sentence)
 
@@ -590,7 +589,7 @@ class NavigationThread(threading.Thread):
                         nextPathSema.release()
                 else :
                     return
-            time.sleep(1)
+            time.sleep(1.5)
 
            
 class ObstacleAvoidanceThread(threading.Thread):
