@@ -32,7 +32,8 @@ class mapParser (object) :
                 self.northAt = 0
                 self.numElements = 0
                 self.matrix = []
-                self.loadedMaps = ["com1L2.json", "com2L2.json", "com2L3.json"]
+                self.loadedMaps = ["com1L2.json", "com2L2.json", "com2L3.json",
+                                   "1L2.json", "2L2.json", "2L3.json"]
                 # list of coordinates where the map merges with another map
                 # (startMap, endMap, x, y)
                 # 0 = com1L2, 1 = com2L2, 2 = com2L3

@@ -11,17 +11,15 @@ from communication import dataFeeder
 from collections import deque
 from UI import search
 from UI import keypad_polling
-# from UI import keyboard as keypad_polling
 from UI import pyespeak
-from UI import my_deque
-from UI import UISpeaker
+from UI.my_deque import my_deque
+from UI.UISpeaker import UI_Speaker
 
-__author__ = 'Shao Fei'
 
 #to print sound just call voiceQueue.append(sentence)
 
 skip_pad = keypad_polling.keypad(None, None, None)
-skip_init = skip_pad.poll_for_num_timed()
+skip_init = skip_pad.poll_for_num_timed(1)
 del skip_pad
 
 # VoiceQueue has 2 levels of priority: HIGH is enqueued by append_high, and NORMAL is enqueued by append
@@ -58,7 +56,7 @@ class voiceThread(threading.Thread):
             if not voiceQueue.empty():
                 item = voiceQueue.popleft()
                 if item is not None:
-                    speaker.speak(str(voiceQueue.popleft()))
+                    speaker.speak(str(item))
             else:
                 time.sleep(1)
 
@@ -83,19 +81,27 @@ class ProcessDataThread(threading.Thread):
         self.threadName = threadName
 
     def run(self):
+        global data
         while True:
             dataFeeder.process_data(data, dataInSema)
 
-##            print "ir ",
-##            print data[6],
-##            print data[7],
-##            print data[8],
-##            print data[9],
-##            print data[10],
-##            print data[15],
-##            print "sonar ",
-##            print data[12],
-##            print data[13]
+            print "imu",
+            print data[1],
+            print data[2],
+            print data[3],
+            print "baro"
+            print data[4],
+            print "ir ",
+            print data[6],
+            print data[7],
+            print data[8],
+            print data[9],
+            print data[10],
+            print "sonar ",
+            print data[11],
+            print data[12]
+            print data[13],
+
 
 class CalibrationThread(threading.Thread):
     def __init__(self, threadID, threadName):
@@ -134,7 +140,6 @@ class CalibrationThread(threading.Thread):
         validInput = False
         while not validInput:
             # userInput = raw_input("Press enter to calibrate? y/n ")
-
             UISpeaker.speak(str("To calibrate gyroscope, press start."))
             userInput = keypad.get_binary_response()
             print userInput
@@ -336,7 +341,13 @@ class LocationDisplayThread(threading.Thread):
         self.count = 0
 
     def run(self):
+        global isNextPathNeeded
+        global nextPathSema
         while 1:
+            if isNextPathNeeded:
+                print self.threadName, "blocking"
+                nextPathSema.acquire()
+
             locationTrackerLock.acquire()
 
             if self.count == 10:
@@ -495,7 +506,14 @@ class LocationUpdateThread(threading.Thread):
             self.totalBaroData = 0
 
     def run(self):
+        global isNextPathNeeded
+        global nextPathSema
+
         while 1:
+            if isNextPathNeeded:
+                print self.threadName, "blocking"
+                nextPathSema.acquire()
+
             locationTrackerLock.acquire()
             self.updateAccData()
             self.updateMagData()
@@ -512,13 +530,23 @@ class NavigationThread(threading.Thread):
         self.threadName = threadName
 
     def run(self):
+        global navi
+        global skip_init
         global naviCount
         global obstacleDetected
         global checkSideObstacle
         global isFirstCleared
+
+        global isNextPathNeeded
+        global nextPathSema
         while 1:
+            if isNextPathNeeded:
+                print self.threadName, "blocking"
+                nextPathSema.acquire()
+
+            print "I GOT AWAY"
             # feedback steps walked
-            navi.feedbackWalking(locationTracker.getTotalSteps())
+##            navi.feedbackWalking(locationTracker.getTotalSteps())
             
 ##            naviCount += 1
             locationTrackerLock.acquire()
@@ -543,13 +571,24 @@ class NavigationThread(threading.Thread):
 ##                    navi.updateCurrentSteps(locationTracker.getTotalSteps())
                     
             isNavigationDone = navi.fullNavigate()
-            if isNavigationDone is True :
+            if 1 or isNavigationDone is True :
+                time.sleep(5)
+                print ("\n\n\n\n\n\nLE SWITCHEROO\n\n\n\n\n\n")
                 if navi.hasNextPath() is True :
                     isNextPathNeeded = True
-                    navi.switchToPathList2()
+                    navi.switchToNextPathList()
+                    # navi.getNorthDifference()
+                    # navi.getFirstCoordinates()
+                    print "press start to continue"
+                    UISpeaker.speak("Now entering new map. Press start to continue.")
+                    while keypad.get_binary_response():
+                        pass
+                    isNextPathNeeded = False
+                    for thread in mainThreads:
+                        nextPathSema.release()
                 else :
                     return
-            time.sleep(1)
+            time.sleep(1.5)
 
            
 class ObstacleAvoidanceThread(threading.Thread):
@@ -562,7 +601,14 @@ class ObstacleAvoidanceThread(threading.Thread):
         global obstacleDetected
         global checkSideObstacle
         global isFirstCleared
+
+        global isNextPathNeeded
+        global nextPathSema
         while 1:
+            if isNextPathNeeded:
+                print self.threadName, "blocking"
+                nextPathSema.acquire()
+
             irFC = data[6]
             irLS = data[7]
             irRS = data[8]
@@ -668,6 +714,7 @@ class UIThread(threading.Thread):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.threadName = threadName
+        self.first_run = True
 
     def run(self):
         global data
@@ -675,16 +722,16 @@ class UIThread(threading.Thread):
         global startLocation
         global endLocation
         global UISpeaker
-
+        global navi
 
         userInputLock.acquire()
 
         # get start location
-        startLocation = search.locationSetting(False, keypad, voiceSema, UIspeaker)
+        startLocation = search.locationSetting(False, keypad, voiceSema, UISpeaker)
         startLocation.run()
 
         # get end location
-        endLocation = search.locationSetting(True, keypad, voiceSema, UIspeaker)
+        endLocation = search.locationSetting(True, keypad, voiceSema, UISpeaker)
         endLocation.setBuildingAndLevel(startLocation.buildingName, startLocation.levelNumber)
         endLocation.run()
 
@@ -755,7 +802,7 @@ NUM_SINGLE_ID = 11
 
 
 # Queue for sound
-voiceQueue = my_deque.my_deque()
+voiceQueue = my_deque()
 
 # Data lists for raw data
 data = [deque() for x in range(NUM_QUEUED_ID)]
@@ -778,7 +825,7 @@ dataFeeder = dataFeeder.DataFeeder()
 
 # Speaker object
 speaker = pyespeak.Speaker()
-UISpeaker = UISpeaker.UI_Speaker()
+UISpeaker = UI_Speaker()
 
 # Locks for various variables
 locationTrackerLock = threading.Lock()
@@ -788,6 +835,7 @@ dataInSema = threading.Semaphore(0)
 userInputLock = threading.Lock()
 voiceSema = threading.Semaphore(0)
 voiceStopSema = False
+nextPathSema = threading.Semaphore(0)
 
 # Location variables
 startLocation = None
@@ -808,11 +856,11 @@ for thread in dataThreads:
 initThreads = []
 initThreads.append(CalibrationThread(-1, "calibrating pedometer and compass"))
 
-for thread in initThreads:
-    thread.start()
-
-for thread in initThreads:
-    thread.join()
+# for thread in initThreads:
+#     thread.start()
+#
+# for thread in initThreads:
+#     thread.join()
 
 # voice threads
 voiceThreads = []
@@ -821,9 +869,13 @@ voiceThreads.append(voiceThread(8, "play sound notification"))
 for thread in voiceThreads:
     thread.start()
 
+# Path Reset Condition
+isNextPathNeeded = False
+
+UIThreads = []
+
 if not skip_init:
     # UI threads
-    UIThreads = []
     UIThreads.append(UIThread(-2, "Run UI"))
 
     for thread in UIThreads:
@@ -832,23 +884,27 @@ if not skip_init:
     for thread in UIThreads:
        thread.join()
 
+if not skip_init:
     locationTracker.setLocation(startLocation.getLocationXCoord(), startLocation.getLocationYCoord())
 else:
     locationTracker.setLocation(0,0)
 
 # Navigation initialization
 naviCount = 0
-isNextPathNeeded = False
 navi = fullNavi.fullNavi(voiceQueue, voiceSema)
 # navi.generateFullPath(startBuilding, startLevel, start, endBuilding, endLevel, end)
-# navi.generateFullPath("com1", 2, 14, 26)
+# navi.generateFullPath("com1", 2, 1, "com1", 2, 10)
 
 if skip_init:
-    navi.generateFullPath("com1", 2, 1, 10)
+    navi.generateFullPath("com1", 2, 1, "com2", 3, 10)
 else:
     navi.generateFullPath(startLocation.getBuildingName(),
-                         startLocation.getLevelNumber(),
-                         startLocation.getLocationPointIndex(), endLocation.getLocationPointIndex())
+        startLocation.getLevelNumber(),
+        startLocation.getLocationPointIndex(),
+        endLocation.getBuildingName(),
+        endLocation.getLevelNumber(),
+        endLocation.getLocationPointIndex())
+    print "path generated"
 
 # List of threads
 mainThreads = []
@@ -856,22 +912,22 @@ mainThreads = []
 if skip_init:
     mainThreads.append(LocationUpdateThread(3, "location update"))
     mainThreads.append(LocationDisplayThread(4, "location display"))
-    # mainThreads.append(NavigationThread(5, "navigation"))
+    mainThreads.append(NavigationThread(5, "navigation"))
     # mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
     # mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
 else:
     mainThreads.append(LocationUpdateThread(3, "location update"))
     mainThreads.append(LocationDisplayThread(4, "location display"))
     mainThreads.append(NavigationThread(5, "navigation"))
-    mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
+    # mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
 ##    mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
 ##    mainThreads.append(collectIRThread(9, "collect ir data"))
-
 
 for thread in mainThreads:
     thread.start()
 
-for thread in (mainThreads + dataThreads + voiceThreads):
+
+for thread in (mainThreads + dataThreads + voiceThreads + UIThreads):
     thread.join()
 
 

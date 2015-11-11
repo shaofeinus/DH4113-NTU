@@ -9,8 +9,14 @@ __author__ = 'Dan'
 class keypad(object):
     def __init__(self, chr_queue, voiceSema, speaker):
         #OUTPUT TABLES
+        #   F E D
+        # K
+        # J
+        # H
+        # G
+
         self.hori = [25, 8, 7] #F, E, D
-        self.vert = [27, 22, 23, 24] # K, J, I, H
+        self.vert = [27, 22, 23, 24] # K, J, H, G
         self.num_map = [[0,1,2],[3,4,5],[6,7,8],[9,10,11]]
         self.key_map = [['.', ', ', '?', '!'], ['a', 'b', 'c'], ['d', 'e', 'f'],
                 ['g', 'h', 'i'], ['j', 'k', 'l'], ['m', 'n', 'o'],
@@ -59,7 +65,7 @@ class keypad(object):
             self.speaker.speak(prompt)
             self.chr_queue.flush()
             self.str_input = self.poll_for_str()
-            print "Input is " + self.str_input + ". To confirm, press start. To cancel, press back"
+            # print "Input is " + self.str_input + ". To confirm, press start. To cancel, press back"
 
             return self.str_input
 
@@ -79,13 +85,13 @@ class keypad(object):
             self.speaker.speak(prompt)
 
             self.chr_queue.flush()
-            self.ext_num_input = self.poll_for_ext_num()
+            self.ext_num_input = self.poll_for_ext_num(False)
 
             print self.ext_num_input
 
             return self.ext_num_input
 
-            print "Input is " + str(self.ext_num_input) + ". To confirm, press start. To cancel, press back"
+            # print "Input is " + str(self.ext_num_input) + ". To confirm, press start. To cancel, press back"
             if self.en_snd:
                 self.speaker.speak("Input is " + str(self.ext_num_input) + ". To confirm, press start. To cancel, press back")
             ans = 0
@@ -127,25 +133,33 @@ class keypad(object):
             if userInput == 9:
                 return
 
-    def poll_for_num_timed(self):
+    def poll_for_num_timed(self, delay):
         timer_start = time.time()
-        x = 0
+        GPIO.output(self.hori[1], GPIO.HIGH)
         while True:
-            self.GPIO.output(self.hori[x], self.GPIO.HIGH) # test for closed switch by taking turns setting each hori
-            num_pressed = -3 # reset num_pressed
-            for y in range(len(self.vert)): #check input at each vert
-                if self.GPIO.input(self.vert[y]) == self.GPIO.HIGH: # closed switch detected
-
-                    hold_timer_start = time.time()
-                    while GPIO.input(self.vert[y]) == GPIO.HIGH and self.num_map[y][x] == 10:
-                        if time.time() - hold_timer_start >= self.HOLD_DELAY: #checks if button is help sufficiently long
-                            return True
-
-            self.GPIO.output(self.hori[x], self.GPIO.LOW)
-            x = (x + 1) % len(self.hori)
-            if time.time() - timer_start > 5:
+            if time.time() - timer_start >= delay:
+                if GPIO.input(self.vert[3]) == GPIO.HIGH:
+                    GPIO.output(self.hori[1], GPIO.LOW)
+                    return True
+                GPIO.output(self.hori[1], GPIO.LOW)
                 return False
-            time.sleep(self.SLEEP_DELAY)
+
+
+            # self.GPIO.output(self.hori[x], self.GPIO.HIGH) # test for closed switch by taking turns setting each hori
+            # num_pressed = -3 # reset num_pressed
+            # for y in range(len(self.vert)): #check input at each vert
+            #     if self.GPIO.input(self.vert[y]) == self.GPIO.HIGH: # closed switch detected
+            #
+            #         hold_timer_start = time.time()
+            #         while GPIO.input(self.vert[y]) == GPIO.HIGH and self.num_map[y][x] == 10:
+            #             if time.time() - hold_timer_start >= self.HOLD_DELAY: #checks if button is help sufficiently long
+            #                 return True
+            #
+            # self.GPIO.output(self.hori[x], self.GPIO.LOW)
+            # x = (x + 1) % len(self.hori)
+            # if time.time() - timer_start > 5:
+            #     return False
+            # time.sleep(self.SLEEP_DELAY)
 
 # ===============================NUM POLL==========================================
     def poll_for_num(self):
@@ -176,7 +190,7 @@ class keypad(object):
         for y in range(len(self.hori)): #check input at each vert
             self.GPIO.output(self.hori[y], self.GPIO.LOW)
         #Polling Loops
-        while len(self.chr_queue) > 0:
+        while not self.chr_queue.empty():
             self.GPIO.output(self.hori[x], self.GPIO.HIGH) # test for closed switch by taking turns setting each hori
             num_pressed = -3 # reset num_pressed
             for y in range(len(self.vert)): #check input at each vert
@@ -195,7 +209,7 @@ class keypad(object):
         return -1
 
 # ===============================Ext Num POLL==========================================
-    def poll_for_ext_num(self):
+    def poll_for_ext_num(self, clearQ):
         x = 0
         first_press = True
         for y in range(len(self.hori)): #check input at each vert
@@ -216,6 +230,8 @@ class keypad(object):
                     if first_press: # button press should stop reading of prompt
                         self.speaker.stop()
                         first_press = False
+                        if clearQ:
+                            self.chr_queue.flush()
                     if self.num_map[y][x] == 11:
                         if self.en_snd:
                             self.chr_queue.append("delete", time.time())
@@ -360,7 +376,8 @@ class keypad(object):
             self.curr_chr = '' #clear curr_chr
             self.num_count = 0 #reset count on key map
             self.prev_num = 21 #update keypress history
-            self.end_flag = True
+            if len(self.out_str) > 0:
+                self.end_flag = True
             self.chr_queue.flush()
             self.chr_queue.append("", time.time())
         else:

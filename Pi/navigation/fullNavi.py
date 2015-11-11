@@ -12,12 +12,13 @@ import time
 # 0 for com1L2, 1 for com2L2, 2 for com2L3
 # updateCurLocation(x, y, heading)
 # updateEncounterSteps(numSteps)
-# isInitialAngleCorrect()
 # fullNavigate()
 # getGeneralTurnDirection()
 # reroutePath()
 # hasNextPath()
-# switchToPathList2()
+# switchToNextPathList()
+# getNorthDifference()
+# getFirstCoordinates()
 # feedbackWalking(currentSteps)
 
 
@@ -33,10 +34,14 @@ class fullNavi(object) :
         
         self.pathFind = pathFinder()
         self.hasAnotherPath = False
+        self.hasTwoPaths = False
+        self.hasThreePaths = False
         self.startBuilding = None
         self.endBuilding = None
         self.startLevel = 0
         self.endLevel = 0
+        self.midBuilding = None
+        self.midLevel = None
         self.mapNumber = 0          # index of map in comMap list
         self.startLocation = 0
         self.endLocation = 0
@@ -56,6 +61,15 @@ class fullNavi(object) :
         # path lists
         self.pathList = []
         self.pathList2 = []
+        self.pathList3 = []
+        # north of cuurent map
+        self.curMapNorth = 0
+        self.northDifference = 0
+
+        # coordinates of first node on current map
+        self.xFirst = None
+        self.yFirst = None
+
         self.pathListIndex = 0
         self.northAt = 0            # 0 to 360 degrees
         self.prevX = 0              # cm
@@ -98,9 +112,11 @@ class fullNavi(object) :
     def hasNextPath (self) :
         return self.hasAnotherPath
 
-    # returns false if at a node, but not facing in the direction of the next node
-    def isInitialAngleCorrect(self):
-        return self.angleCorrect
+    def getNorthDifference(self) :
+        return self.northDifference
+
+    def getFirstCoordinates(self) :
+        return (self.xFirst, self.yFirst)
 
     def generateFullPath(self, startBuilding, startLevel, start,
                          endBuilding, endLevel, end) :
@@ -117,29 +133,48 @@ class fullNavi(object) :
 
         if((startBuilding == endBuilding) and (startLevel == endLevel)) :
             self.generateOnePath()
+        elif ((startBuilding != endBuilding) and (startLevel != endLevel)) :
+            self.midBuilding = "com2"
+            self.midLevel = "2"
+            self.generateThreePaths()
         else :
             self.generateTwoPaths()
-##        self.northAt = self.comMap[self.mapNumber].getNorthAt()
+
+        # print pathlists
+        print "[",
+        for i in self.pathList :
+            print str(i+1) + ", ",
+        print "]"
+    
+        print "[",
+        for i in self.pathList2 :
+            print str(i+1) + ", ",
+        print "]"
+
+        print "[",
+        for i in self.pathList3 :
+            print str(i+1) + ", ",
+        print "]"
+        
         self.northAt = 0
+        self.curMapNorth = self.comMap[self.mapNumber].getNorthAt()
         if (len(self.pathList) == 1) :
             self.alertNodeReached()
             return
         self.updatePrevNexCoord()
         self.provideNexNodeDirections()
-        self.angleCorrect = False
 
     def generateOnePath(self) :
         self.hasAnotherPath = False
+        self.hasTwoPaths = False
+        self.hasThreePaths = False
         self.pathFind.setMap(self.startBuilding, self.startLevel)
         self.pathList = self.pathFind.getPath(self.startLocation, self.endLocation)
-        print "Path: " + str(self.pathList)
-        print "[",
-        for i in self.pathList :
-            print str(i+1) + ", ",
-        print "]"
-          
+        
     def generateTwoPaths(self) :
         self.hasAnotherPath = True
+        self.hasTwoPaths = True
+        self.hasThreePaths = False
         self.pathFind.setMap(self.startBuilding, self.startLevel)
         conList1 = self.comMap[self.mapNumber].getNodeID()
         # append 2nd map
@@ -149,21 +184,34 @@ class fullNavi(object) :
         
         midEnd, midStart = self.getBuildingConnection(conList1, conList2)
         if (midEnd != 9999 and midStart != 9999) :
-            print str(midEnd) + " " + str(midStart) + " " + str(self.endLocation)
             self.pathList = self.pathFind.getPath(self.startLocation, midEnd)
             self.pathFind.setMap(self.endBuilding, self.endLevel)
             self.pathList2 = self.pathFind.getPath(midStart, self.endLocation)
 
-        print "[",
-        for i in self.pathList :
-            print str(i+1) + ", ",
-        print "]"
-    
-        print "[",
-        for i in self.pathList2 :
-            print str(i+1) + ", ",
-        print "]"        
+    def generateThreePaths(self) :
+        self.hasAnotherPath = True
+        self.hasTwoPaths = True
+        self.hasThreePaths = True
+        self.pathFind.setMap(self.startBuilding, self.startLevel)
+        conList1 = self.comMap[self.mapNumber].getNodeID()
+        # append 2nd map
+        self.comMap.append(mapParser())
+        self.comMap[self.mapNumber + 1].setMap(self.midBuilding, self.midLevel)
+        conList2 = self.comMap[self.mapNumber + 1].getNodeID()
+        # append 3rd map
+        self.comMap.append(mapParser())
+        self.comMap[self.mapNumber + 2].setMap(self.endBuilding, self.endLevel)
+        conList3 = self.comMap[self.mapNumber + 2].getNodeID()
         
+        midEnd1, midStart1 = self.getBuildingConnection(conList1, conList2)
+        midEnd2, midStart2 = self.getBuildingConnection(conList2, conList3)
+        if (midEnd1 != 9999 and midStart1 != 9999) :
+            self.pathList = self.pathFind.getPath(self.startLocation, midEnd1)
+            self.pathFind.setMap(self.midBuilding, self.midLevel)
+            self.pathList2 = self.pathFind.getPath(midStart1, midEnd2)
+            self.pathFind.setMap(self.endBuilding, self.endLevel)
+            self.pathList3 = self.pathFind.getPath(midStart2, self.endLocation)
+          
 
     # returns the index of the connection node, 9999 if not found
     def getBuildingConnection(self, list1, list2) :
@@ -267,42 +315,99 @@ class fullNavi(object) :
             if self.pathListIndex < (len(self.pathList) - 1) :
                 self.updatePrevNexCoord()
                 self.provideNexNodeDirections()
-                self.angleCorrect = False
             else :
                 sentence = "Navigation complete."
                 print sentence
-                if self.prev_message != sentence:
-                    if self.voiceQueue.append_high(sentence, time.time()):
-                        self.voiceSema.release()
-                    self.prev_message_time_turn = time.time()
-                    self.prev_message = sentence
+##                if self.prev_message != sentence:
+##                    if self.voiceQueue.append_high(sentence, time.time()):
+##                        self.voiceSema.release()
+##                    self.prev_message_time_turn = time.time()
+##                    self.prev_message = sentence
                 return True
+
+    def switchToNextPathList(self) :
+        if self.hasTwoPaths is True :
+            self.hasTwoPaths = False
+            self.switchToPathList2()
+        else :
+            self.switchToPathList3()
 
     # prepare for traversing the second building/level
     def switchToPathList2(self) :
-        sentence = "Switching to new building/level!"
+        sentence = "New building/level!"
         print sentence
-        self.hasAnotherPath = False
+##        if self.prev_message != sentence:
+##            if self.voiceQueue.append_high(sentence, time.time()):
+##                self.voiceSema.release()
+##            self.prev_message_time_turn = time.time()
+##            self.prev_message = sentence
+        if self.hasThreePaths is False :
+            self.hasAnotherPath = False
         self.pathList = self.pathList2
         self.mapNumber += 1
         self.pathListIndex = 0
-##        self.northAt = self.comMap[self.mapNumber].getNorthAt()
+        nexMapNorth = self.comMap[self.mapNumber].getNorthAt()
+        self.northDifference = nexMapNorth - self.curMapNorth
+        self.curMapNorth = nexMapNorth
         self.northAt = 0
         curNode =  self.pathList[self.pathListIndex]
         curNodeName = self.comMap[self.mapNumber].getLocationName(curNode)
-        nextNodeSentence = "Reached " + str(curNode+1) + ", " + curNodeName + "."
-        print nextNodeSentence
+        sentence = "At " + str(curNode+1) + ", " + curNodeName + "."
+        print sentence
+##        if self.prev_message != sentence:
+##            if self.voiceQueue.append_high(sentence, time.time()):
+##                self.voiceSema.release()
+##            self.prev_message_time_turn = time.time()
+##            self.prev_message = sentence
+        self.xFirst = int(self.comMap[self.mapNumber].getLocationXCoord(curNode))
+        self.yFirst = int(self.comMap[self.mapNumber].getLocationYCoord(curNode))
         if (len(self.pathList) == 1) :
             self.alertNodeReached()
             return
         self.updatePrevNexCoord()
         self.provideNexNodeDirections()
-        self.angleCorrect = False
+
+
+        # prepare for traversing the second building/level
+    def switchToPathList3(self) :
+        sentence = "New building/level!"
+        print sentence
+##        if self.prev_message != sentence:
+##            if self.voiceQueue.append_high(sentence, time.time()):
+##                self.voiceSema.release()
+##            self.prev_message_time_turn = time.time()
+##            self.prev_message = sentence
+        self.hasAnotherPath = False
+        self.pathList = self.pathList3
+        self.mapNumber += 1
+        self.pathListIndex = 0
+        nexMapNorth = self.comMap[self.mapNumber].getNorthAt()
+        self.northDifference = nexMapNorth - self.curMapNorth
+        self.curMapNorth = nexMapNorth
+        self.northAt = 0
+        curNode =  self.pathList[self.pathListIndex]
+        curNodeName = self.comMap[self.mapNumber].getLocationName(curNode)
+        sentence = "At " + str(curNode+1) + ", " + curNodeName + "."
+        print sentence
+##        if self.prev_message != sentence:
+##            if self.voiceQueue.append_high(sentence, time.time()):
+##                self.voiceSema.release()
+##            self.prev_message_time_turn = time.time()
+##            self.prev_message = sentence
+        self.xFirst = int(self.comMap[self.mapNumber].getLocationXCoord(curNode))
+        self.yFirst = int(self.comMap[self.mapNumber].getLocationYCoord(curNode))
+        print curNodeSentence
+        if (len(self.pathList) == 1) :
+            self.alertNodeReached()
+            return
+        self.updatePrevNexCoord()
+        self.provideNexNodeDirections()
 
         
     # returns true if navigation is complete
     def fullNavigate(self) :
-        if (len(self.pathList) == 1) :
+        if (((len(self.pathList) == 1) or
+             (self.pathListIndex >= (len(self.pathList) - 1)))) :
             self.alertNodeReached()
             return True
         
@@ -312,29 +417,28 @@ class fullNavi(object) :
         isNodeReached = self.nodeNavi.navigate()
 
         if isNodeReached == 1 :
-##            sentence = "Node Reached."
-##            print sentence
-##                if self.prev_message != sentence:
-##                    if self.voiceQueue.append_high(sentence, time.time()):
-##                        self.voiceSema.release()
-##                    self.prev_message_time_turn = time.time()
-##                    self.prev_message = sentence
+            sentence = "Node Reached."
+            print sentence
+##            if self.prev_message != sentence:
+##                if self.voiceQueue.append_high(sentence, time.time()):
+##                    self.voiceSema.release()
+##                self.prev_message_time_turn = time.time()
+##                self.prev_message = sentence
             self.pathListIndex += 1
             self.alertNodeReached()
             if self.pathListIndex < (len(self.pathList) - 1) :
                 self.updatePrevNexCoord()
                 self.provideNexNodeDirections()
-                self.angleCorrect = False
             else :
                 if self.hasAnotherPath is False :
                     sentence = "Navigation complete."
                 else :
-                    sentence = "Reached the end of current building"
+                    sentence = "Reached end of building"
                 print sentence
-##                    if self.prev_message != sentence:
-##                        if self.voiceQueue.append_high(sentence, time.time()):
-##                            self.voiceSema.release()
-##                        self.prev_message_time_turn = time.time()
-##                        self.prev_message = sentence
+##                if self.prev_message != sentence:
+##                    if self.voiceQueue.append_high(sentence, time.time()):
+##                        self.voiceSema.release()
+##                    self.prev_message_time_turn = time.time()
+##                    self.prev_message = sentence
                 return True
         return False
