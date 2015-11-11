@@ -38,7 +38,7 @@ class mapParser (object) :
                 # (startMap, endMap, x, y)
                 # 0 = com1L2, 1 = com2L2, 2 = com2L3
                 self.conList = [(0, 1, 11815, 406), (1, 0, 61, 4024),
-                                (1, 2, 3719, 2622), (2, 1, 3719, 2622)]
+                                (1, 2, 4329, 2317), (2, 1, 4207, 2134)]
 
         def clear(self) :
                 self.buildingMap = {}
