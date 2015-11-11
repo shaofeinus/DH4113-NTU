@@ -13,7 +13,7 @@ __author__ = 'Shao Fei'
 # Compass reading is in radians clockwise from North
 class Compass:
 
-    WINDOW_SIZE = 10
+    WINDOW_SIZE = 1
 
     def __init__(self):
         self.currHeading = 0.0
@@ -26,11 +26,23 @@ class Compass:
         self.calibrator = compassCalibrator.CompassCalibrator()
         self.firstTimeCount = 0
         self.prevHeadingInRad = 0.0
+        self.currDev = 0.0
 
     def queueMagReadings(self, xReading, yReading, zReading):
         self.magXWindow.append(xReading)
         self.magYWindow.append(yReading)
         self.magZWindow.append(zReading)
+        self.updateAngleDevInRad()
+
+    def updateAngleDevInRad(self):
+        # new heading is wrt to map north
+        newHeading = self.calculateHeadingInRad()
+
+        self.currDev += newHeading - self.prevHeadingInRad
+        self.prevHeadingInRad = newHeading
+
+        # Converts to [0, 2 pi]
+        self.currDev = self.getHeadingInPRad(self.currDev)
 
     def queueAccReadings(self, xReading, yReading, zReading):
         if len(self.accXWindow) == self.WINDOW_SIZE:
@@ -106,9 +118,9 @@ class Compass:
         # accZ = float(sum(self.accZWindow))/len(self.accZWindow)
 
         if not len(self.magXWindow) == 0:
-            magX = float(sum(self.magXWindow))/len(self.magXWindow)
-            magY = float(sum(self.magYWindow))/len(self.magYWindow)
-            magZ = float(sum(self.magZWindow))/len(self.magZWindow)
+            magX = float(sum(self.magXWindow))/float(len(self.magXWindow))
+            magY = float(sum(self.magYWindow))/float(len(self.magYWindow))
+            magZ = float(sum(self.magZWindow))/float(len(self.magZWindow))
 
             # Heading in [0, 2 * pi]
             currHeading = self.calibrator.calculateDeviceHeading(float(magX), float(magY), float(magZ))
@@ -155,17 +167,22 @@ class Compass:
     # New function
     def getAngleDevInRad(self):
 
-        # new heading is wrt to map north
-        newHeading = self.calculateHeadingInRad()
+        # # new heading is wrt to map north
+        # newHeading = self.calculateHeadingInRad()
+        #
+        # currDev = newHeading - self.prevHeadingInRad
+        # self.prevHeadingInRad = newHeading
+        #
+        # # Converts to [0, 2 pi]
+        # currDev = self.getHeadingInPRad(currDev)
 
-        currDev = newHeading - self.prevHeadingInRad
-        self.prevHeadingInRad = newHeading
+        ans = self.currDev
+        self.currDev = 0
 
-        # Converts to [0, 2 pi]
-        currDev = self.getHeadingInPRad(currDev)
-        return currDev
+        return ans
 
     # Public
+    # Parameter is [0, 2 pi]
     # Reading is in degrees of [-180, 180] clockwise from North
     @staticmethod
     def getHeadingInDeg(rad):

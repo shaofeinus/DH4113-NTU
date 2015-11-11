@@ -12,6 +12,7 @@ __author__ = 'Shao Fei'
 class LocationTracker:
 
     STEP_DISTANCE = 45.0     # in cm
+    MOVE_ANGLE_TOLERANCE = 2 * math.pi / 36
 
     def __init__(self, initX, initY, northAt):
         self.currX = initX      # Points eastwards
@@ -27,7 +28,9 @@ class LocationTracker:
         self.headingWRTMapInRad = 0
         self.headingWRTMapInDeg = 0
         self.headingWRTNorthInRad = 0
-        self.headingWRTNorthInDeg = 0
+        self.isFirstStep = True
+        self.prevGyroDev = 0
+        self.prevCompDev = 0
         self.calibrationTools = calibrationTools.CalibrationTools()
 
     # Public
@@ -105,10 +108,21 @@ class LocationTracker:
         compAngleDev = self.compass.getAngleDevInRad()
         gyroAngleDev = self.gyroCompass.getAngleDevInRad()
 
-        if currSteps == 0:
+        if currSteps != 0:
             angleDev = gyroAngleDev
+            mode = 'gyro'
         else:
+            self.isFirstStep = True
             angleDev = compAngleDev
+            mode = 'compass'
+
+        if currSteps != 0 and self.isFirstStep:
+            self.isFirstStep = False
+            self.updateCurrHeading(self.headingWRTNorthInRad - self.prevCompDev + self.prevGyroDev)
+            mode = 'change prev dev'
+
+        self.prevGyroDev = gyroAngleDev
+        self.prevCompDev = compAngleDev
 
         self.updateCurrHeading(angleDev + self.headingWRTNorthInRad)
 
@@ -116,22 +130,27 @@ class LocationTracker:
         # self.headingWRTNorthInRad = self.compass.getHeadingInRad()
         # self.headingWRTNorthInDeg = self.compass.Compass.getHeadingInDeg(self.headingWRTNorthInRad)
 
-        # x points to the East
-        xCurrDistance = currDistance * math.sin(self.headingWRTNorthInRad)
-        # y points to the North
-        yCurrDistance = currDistance * math.cos(self.headingWRTNorthInRad)
+        if currSteps != 0:
+            headingToUse = 0 + round(self.headingWRTNorthInRad / self.MOVE_ANGLE_TOLERANCE) * self.MOVE_ANGLE_TOLERANCE
+            # x points to the East
+            xCurrDistance = currDistance * math.sin(headingToUse)
+            # y points to the North
+            yCurrDistance = currDistance * math.cos(headingToUse)
 
-        self.currX += xCurrDistance
-        self.currY += yCurrDistance
-        self.totalDistance += currDistance
+            self.currX += xCurrDistance
+            self.currY += yCurrDistance
+            self.totalDistance += currDistance
 
         f = open('locationdata.csv', 'a')
         if self.firstUpdate:
-            f.write('distance covered,degrees from top of map,rad,currX,currY\n')
+            f.write('distance covered,angle,gyro dev, comp dev, mode,steps,currX,currY\n')
             self.firstUpdate = False
 
         f.write(str(currDistance) + ',' +
                 str(self.headingWRTNorthInDeg) + ',' +
+                str(self.compass.getHeadingInDeg(gyroAngleDev)) + ',' +
+                str(self.compass.getHeadingInDeg(compAngleDev)) + ',' +
+                str(mode) + ',' +
                 str(self.totalSteps) + ',' +
                 str(self.currX) + ',' +
                 str(self.currY) + '\n')

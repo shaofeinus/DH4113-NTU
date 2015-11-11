@@ -11,7 +11,6 @@ from communication import dataFeeder
 from collections import deque
 from UI import search
 from UI import keypad_polling
-# from UI import keyboard as keypad_polling
 from UI import pyespeak
 from UI.my_deque import my_deque
 from UI.UISpeaker import UI_Speaker
@@ -20,7 +19,7 @@ from UI.UISpeaker import UI_Speaker
 #to print sound just call voiceQueue.append(sentence)
 
 skip_pad = keypad_polling.keypad(None, None, None)
-skip_init = skip_pad.poll_for_num_timed()
+skip_init = skip_pad.poll_for_num_timed(1)
 del skip_pad
 
 # VoiceQueue has 2 levels of priority: HIGH is enqueued by append_high, and NORMAL is enqueued by append

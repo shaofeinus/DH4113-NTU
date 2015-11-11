@@ -6,10 +6,10 @@ __author__ = 'Shao Fei'
 
 class GyroCompass:
 
-    WINDOW_SIZE = 10
+    WINDOW_SIZE = 1
     TIME_INTERVAL = 20.0 / 1000     # In sec
-    RATE_OF_DRIFT = -9.0E-10    #0.0
-    INITIAL_DRIFT = -6.0E-7     #-1.0E-5
+    RATE_OF_DRIFT = 0.0 #-9.0E-10    #0.0
+    INITIAL_DRIFT = 0.0 #-6.0E-7     #-1.0E-5
 
     def __init__(self):
         self.angleDeviation = 0.0      # [0, 2 pi]
