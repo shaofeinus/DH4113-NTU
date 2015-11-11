@@ -9,12 +9,11 @@ from navigation import obstacleAvoidance
 from communication import dataFeeder
 # from communication import dataFeederDum
 from collections import deque
-from UI import voiceCommands
 from UI import search
 from UI import keypad_polling
 from UI import pyespeak
-from my_deque import my_deque
-from UISpeaker import UI_Speaker
+from UI.my_deque import my_deque
+from UI.UISpeaker import UI_Speaker
 
 __author__ = 'Shao Fei'
 
@@ -190,7 +189,7 @@ class CalibrationThread(threading.Thread):
         for i in range(0, 3):
             num = 3 - i
             print num
-            UISpeaker.speak(str(num))
+            # UISpeaker.speak(str(num))
             time.sleep(1)
 
         # print 'Calibrating'
@@ -214,6 +213,8 @@ class CalibrationThread(threading.Thread):
 
         while not self.isDone['nOffset']:
             self.calibrateNOffset()
+
+        locationTracker.compass.prevHeadingInRad = self.calibrator.NOffsetAngle
 
         userInputLock.acquire()
         temp = 'Your are ' + str(int(self.calibrator.getNOffsetAngle() / (2 * math.pi) * 360)) + ' from N. To continue, press start'
@@ -329,9 +330,8 @@ class LocationDisplayThread(threading.Thread):
     def run(self):
         while 1:
             locationTrackerLock.acquire()
-
-            if self.count == 10:
-                locationTracker.updateLocation()
+            locationTracker.updateLocation()
+            if self.count == 1:
                 print "Total Steps:", locationTracker.getTotalSteps()
                 print "Total Distance:", locationTracker.getTotalDistance()
                 print "Deviation from N:", locationTracker.getHeadingInDeg()
@@ -342,9 +342,9 @@ class LocationDisplayThread(threading.Thread):
             else:
                 self.count += 1
 
-            locationTracker.gyroCompass.updateOffset()
+            # locationTracker.gyroCompass.updateOffset()
             locationTrackerLock.release()
-            time.sleep(0.1)
+            time.sleep(0.5)
 
 
 class LocationUpdateThread(threading.Thread):
@@ -454,13 +454,13 @@ class LocationUpdateThread(threading.Thread):
 
         if self.totalGyroData == 4:
 
-            if self.count == 9:
-                # f = open('gyro.csv', 'a')
-                # f.write(str(self.timeInMillisGyro) + ',' + str(self.gyroX) + ',' + str(self.gyroY) + ',' + str(self.gyroZ) + '\n')
-                # f.close()
-                self.count = 0
-            else:
-                self.count += 1
+            # if self.count == 0:
+            #     f = open('gyro.csv', 'a')
+            #     f.write(str(self.timeInMillisGyro) + ',' + str(self.gyroX) + ',' + str(self.gyroY) + ',' + str(self.gyroZ) + '\n')
+            #     f.close()
+            #     self.count = 0
+            # else:
+            #     self.count += 1
 
             # print self.gyroX, self.gyroY, self.gyroZ
             # self.calibrationTools.adaptGyroOffset(self.gyroX, self.gyroY, self.gyroZ)
@@ -764,7 +764,7 @@ dataFeeder = dataFeeder.DataFeeder()
 
 # Speaker object
 speaker = pyespeak.Speaker()
-UISpeaker = UI_Speaker()
+# UISpeaker = UI_Speaker()
 
 # Locks for various variables
 locationTrackerLock = threading.Lock()
@@ -794,11 +794,11 @@ for thread in dataThreads:
 initThreads = []
 initThreads.append(CalibrationThread(-1, "calibrating pedometer and compass"))
 
-##for thread in initThreads:
-##    thread.start()
-##
-##for thread in initThreads:
-##    thread.join()
+for thread in initThreads:
+   thread.start()
+
+for thread in initThreads:
+   thread.join()
 
 # voice threads
 voiceThreads = []
@@ -812,7 +812,7 @@ naviCount = 0
 navi = fullNavi.fullNavi(voiceQueue, voiceSema)
 # navi.generateFullPath("com1", 2, 14, 26)
 
-navi.generateFullPath("com1", 2, 1, 10)
+# navi.generateFullPath("com1", 2, 1, 10)
 
 # List of threads
 mainThreads = []
@@ -820,7 +820,7 @@ mainThreads = []
 mainThreads.append(LocationUpdateThread(3, "location update"))
 mainThreads.append(LocationDisplayThread(4, "location display"))
 # mainThreads.append(NavigationThread(5, "navigation"))
-mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
+# mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
 ##mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
 # mainThreads.append(collectIRThread(9, "collect ir data"))
 

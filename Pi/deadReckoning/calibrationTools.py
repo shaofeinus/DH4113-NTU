@@ -6,38 +6,52 @@ __author__ = 'Shao Fei'
 
 class CalibrationTools:
 
-    G_RAW_RANGE = (-32768, 32767)
+    G_RAW_RANGE = (-32767, 32767)
     G_ACTUAL_RANGE = (-2.0, 2.0)
     ACC_Z_OFFSET = -1150
     ACC_X_OFFSET = 0
     ACC_Y_OFFSET = -200
     X_ACC_SCALE_FACTOR = 32767.0 / 32000.0
     Y_ACC_SCALE_FACTOR = 32767.0 / 32150.0
-    Z_ACC_SCALE_FACTOR = 32767.0 / 32600
+    Z_ACC_SCALE_FACTOR = 32767.0 / 32600.0
 
-    MAG_X_RANGE = (-4068, 4759)
-    MAG_Y_RANGE = (-4365, 4465)
-    MAG_Z_RANGE = (-4363, 3878)
+    # MAG_X_RANGE = (-4068, 4759)
+    # MAG_Y_RANGE = (-4365, 4465)
+    # MAG_Z_RANGE = (-4363, 3878)
+    MAG_X_RANGE = (-4239, 5043)
+    MAG_Y_RANGE = (-4571, 4820)
+    MAG_Z_RANGE = (-4814, 3937)
+
+    # MAG_X_OFFSET = (MAG_X_RANGE[1] + MAG_X_RANGE[0]) / 2.0
+    # MAG_Y_OFFSET = (MAG_Y_RANGE[1] + MAG_Y_RANGE[0]) / 2.0
+    # MAG_Z_OFFSET = (MAG_Z_RANGE[1] + MAG_Z_RANGE[0]) / 2.0
+    # MAG_X_OFFSET_RANGE = (MAG_X_RANGE[0] - MAG_X_OFFSET, MAG_X_RANGE[1] - MAG_X_OFFSET)
+    # MAG_Y_OFFSET_RANGE = (MAG_Y_RANGE[0] - MAG_Y_OFFSET, MAG_Y_RANGE[1] - MAG_Y_OFFSET)
+    # MAG_Z_OFFSET_RANGE = (MAG_Z_RANGE[0] - MAG_Z_OFFSET, MAG_Z_RANGE[1] - MAG_Z_OFFSET)
+
+    MAG_X_SCALE_FACTOR = 1.0
+    MAG_Y_SCALE_FACTOR = 1.0
+    MAG_Z_SCALE_FACTOR = 0.935
+
+    MAG_X_OFFSET = 350
+    MAG_Y_OFFSET = 130
+    MAG_Z_OFFSET = -440
 
     AV_RAW_RANGE = (-28000, 28000)
     AV_ACTUAL_RANGE = (-245.0 / 180.0 * math.pi, 245.0 / 180.0 * math.pi)
-    GY_X_OFFSET = 76.38
-    GY_Y_OFFSET = 553.19
-    GY_Z_OFFSET = -57.45
+    GY_X_OFFSET = 0.0
+    GY_Y_OFFSET = 0.0
+    GY_Z_OFFSET = 0.0
     GY_X_SCALE_FACTOR = 1.0
     GY_Y_SCALE_FACTOR = 1.0
     GY_Z_SCALE_FACTOR = 1.0
-    GY_OFFSET_MA_WINDOW_SIZE = 100
-    GY_RECALIBRATE_THRESHOLD = 10
+    GY_OFFSET_MA_WINDOW_SIZE = 150
+    GY_RECALIBRATE_THRESHOLD = 50
 
     def __init__(self):
-        self.gyroXOffsetWindow = deque(maxlen=self.GY_OFFSET_MA_WINDOW_SIZE)
-        self.gyroYOffsetWindow = deque(maxlen=self.GY_OFFSET_MA_WINDOW_SIZE)
-        self.gyroZOffsetWindow = deque(maxlen=self.GY_OFFSET_MA_WINDOW_SIZE)
-        self.counter = 0
-        self.gxLast = self.GY_X_OFFSET
-        self.gyLast = self.GY_Y_OFFSET
-        self.gzLast = self.GY_Z_OFFSET
+        self.gyXOffsetWindow = deque(maxlen=self.GY_OFFSET_MA_WINDOW_SIZE)
+        self.gyYOffsetWindow = deque(maxlen=self.GY_OFFSET_MA_WINDOW_SIZE)
+        self.gyZOffsetWindow = deque(maxlen=self.GY_OFFSET_MA_WINDOW_SIZE)
 
     # x y z are the actual x y z axis of the the IMU
     # returns in Gs
@@ -51,15 +65,9 @@ class CalibrationTools:
         accY *= self.Y_ACC_SCALE_FACTOR
         accZ *= self.Z_ACC_SCALE_FACTOR
 
-        accX = (float(accX - self.G_RAW_RANGE[0]) / float(self.G_RAW_RANGE[1] - self.G_RAW_RANGE[0])) * \
-               (self.G_ACTUAL_RANGE[1] - self.G_ACTUAL_RANGE[0]) + \
-               (self.G_ACTUAL_RANGE[0])
-        accY = (float(accY - self.G_RAW_RANGE[0]) / float(self.G_RAW_RANGE[1] - self.G_RAW_RANGE[0])) * \
-               (self.G_ACTUAL_RANGE[1] - self.G_ACTUAL_RANGE[0]) + \
-               (self.G_ACTUAL_RANGE[0])
-        accZ = (float(accZ - self.G_RAW_RANGE[0]) / float(self.G_RAW_RANGE[1] - self.G_RAW_RANGE[0])) * \
-               (self.G_ACTUAL_RANGE[1] - self.G_ACTUAL_RANGE[0]) + \
-               (self.G_ACTUAL_RANGE[0])
+        accX = float(accX) * self.G_ACTUAL_RANGE[1] / self.G_RAW_RANGE[1]
+        accY = float(accY) * self.G_ACTUAL_RANGE[1] / self.G_RAW_RANGE[1]
+        accZ = float(accZ) * self.G_ACTUAL_RANGE[1] / self.G_RAW_RANGE[1]
 
         return accX, accY, accZ
 
@@ -68,14 +76,18 @@ class CalibrationTools:
     def transformMag(self, magX, magY, magZ):
 
         # Hard iron correction
-        magX -= (self.MAG_X_RANGE[1] + self.MAG_X_RANGE[0]) / 2.0
-        magY -= (self.MAG_Y_RANGE[1] + self.MAG_Y_RANGE[0]) / 2.0
-        magZ -= (self.MAG_Z_RANGE[1] + self.MAG_Z_RANGE[0]) / 2.0
+        magX -= self.MAG_X_OFFSET
+        magY -= self.MAG_Y_OFFSET
+        magZ -= self.MAG_Z_OFFSET
 
         # Soft iron correction
-        magX = float(magX - self.MAG_X_RANGE[0]) / float(self.MAG_X_RANGE[1] - self.MAG_X_RANGE[0]) * 2.0 - 1.0
-        magY = float(magY - self.MAG_Y_RANGE[0]) / float(self.MAG_Y_RANGE[1] - self.MAG_Y_RANGE[0]) * 2.0 - 1.0
-        magZ = float(magZ - self.MAG_Z_RANGE[0]) / float(self.MAG_Z_RANGE[1] - self.MAG_Z_RANGE[0]) * 2.0 - 1.0
+        # magX = float(magX) / self.MAG_X_OFFSET_RANGE[1]
+        # magY = float(magY) / self.MAG_Y_OFFSET_RANGE[1]
+        # magZ = float(magZ) / self.MAG_Z_OFFSET_RANGE[1]
+
+        magX = float(magX) / self.MAG_X_SCALE_FACTOR
+        magY = float(magY) / self.MAG_Y_SCALE_FACTOR
+        magZ = float(magZ) / self.MAG_Z_SCALE_FACTOR
 
         return magX, magY, magZ
 
@@ -83,52 +95,38 @@ class CalibrationTools:
     # returns in rad/s
     def transformGyro(self, gyX, gyY, gyZ):
 
-        # self.adaptGyroOffset(self, gyX, gyY, gyZ)
-
-        # if self.counter == 10:
-        #     print 'curr offset:', self.GY_X_OFFSET, 'curr gyX:', gyX
-        #     self.counter = 0
-        # else:
-        #     self.counter += 1
-
-        # f = open('gyro_offset.csv', 'a')
-        # f.write(str(self.GY_X_OFFSET) + ',' + str(gyX) + '\n')
-        # f.close()
-
-        # self.GY_X_OFFSET = 0.9999*self.GY_X_OFFSET + 0.0001*gyX
-        # self.GY_Y_OFFSET = 0.9999*self.GY_Y_OFFSET + 0.0001*gyY
-        # self.GY_Z_OFFSET = 0.9999*self.GY_Z_OFFSET + 0.0001*gyZ
-
-        # self.GY_X_OFFSET += 0.00001 * (gyX - self.GY_X_OFFSET)
-        # self.GY_Y_OFFSET += 0.00001 * (gyY - self.GY_Y_OFFSET)
-        # self.GY_Z_OFFSET += 0.00001 * (gyZ - self.GY_Z_OFFSET)
+        self.adaptGyroOffset(gyX, gyY, gyZ)
 
         gyX -= self.GY_X_OFFSET
         gyY -= self.GY_Y_OFFSET
         gyZ -= self.GY_Z_OFFSET
 
-        gyX *= self.GY_X_SCALE_FACTOR
-        gyY *= self.GY_Y_SCALE_FACTOR
-        gyZ *= self.GY_Z_SCALE_FACTOR
+        # gyX *= self.GY_X_SCALE_FACTOR
+        # gyY *= self.GY_Y_SCALE_FACTOR
+        # gyZ *= self.GY_Z_SCALE_FACTOR
 
-        gyX = (float(gyX - self.AV_RAW_RANGE[0]) / float(self.AV_RAW_RANGE[1] - self.AV_RAW_RANGE[0])) * \
-              (self.AV_ACTUAL_RANGE[1] - self.AV_ACTUAL_RANGE[0]) + \
-              (self.AV_ACTUAL_RANGE[0])
-        gyY = (float(gyY - self.AV_RAW_RANGE[0]) / float(self.AV_RAW_RANGE[1] - self.AV_RAW_RANGE[0])) * \
-              (self.AV_ACTUAL_RANGE[1] - self.AV_ACTUAL_RANGE[0]) + \
-              (self.AV_ACTUAL_RANGE[0])
-        gyZ = (float(gyZ - self.AV_RAW_RANGE[0]) / float(self.AV_RAW_RANGE[1] - self.AV_RAW_RANGE[0])) * \
-              (self.AV_ACTUAL_RANGE[1] - self.AV_ACTUAL_RANGE[0]) + \
-              (self.AV_ACTUAL_RANGE[0])
-
-        # TODO: convert to rad/s
+        gyX = float(gyX) * self.AV_ACTUAL_RANGE[1] / self.AV_RAW_RANGE[1]
+        gyY = float(gyY) * self.AV_ACTUAL_RANGE[1] / self.AV_RAW_RANGE[1]
+        gyZ = float(gyZ) * self.AV_ACTUAL_RANGE[1] / self.AV_RAW_RANGE[1]
 
         return gyX, gyY, gyZ
+
+    def adaptGyroOffset(self, gyX, gyY, gyZ):
+        if math.fabs(gyX - self.GY_X_OFFSET) < self.GY_RECALIBRATE_THRESHOLD:
+            self.gyXOffsetWindow.append(gyX)
+        if math.fabs(gyY - self.GY_Y_OFFSET) < self.GY_RECALIBRATE_THRESHOLD:
+            self.gyYOffsetWindow.append(gyY)
+        if math.fabs(gyZ - self.GY_Z_OFFSET) < self.GY_RECALIBRATE_THRESHOLD:
+            self.gyZOffsetWindow.append(gyZ)
+
+        self.GY_X_OFFSET = float(sum(self.gyXOffsetWindow)) / float(len(self.gyXOffsetWindow))
+        self.GY_Y_OFFSET = float(sum(self.gyYOffsetWindow)) / float(len(self.gyYOffsetWindow))
+        self.GY_Z_OFFSET = float(sum(self.gyZOffsetWindow)) / float(len(self.gyZOffsetWindow))
 
     def initGyroOffset(self, gyX, gyY, gyZ):
         self.GY_X_OFFSET = gyX
         self.GY_Y_OFFSET = gyY
         self.GY_Z_OFFSET = gyZ
-        self.gxLast = gyX
-        self.gyLast = gyY
-        self.gzLast = gyZ
+        self.gyXOffsetWindow.append(gyX)
+        self.gyYOffsetWindow.append(gyY)
+        self.gyZOffsetWindow.append(gyZ)

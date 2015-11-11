@@ -10,7 +10,7 @@ class CompassCalibrator:
     WINDOW_SIZE = 300
     MIN_DATA_NUM = 200
     ACC_TOLERANCE = 0.5         # In G
-    MAG_TOLERANCE = 0.5         # In fraction of max
+    MAG_TOLERANCE = 1000.0         # In fraction of max
     GYRO_TOLERANCE = 1000.0     # In raw
 
     DECLINATION_OFFSET = 4.072 / 1000
@@ -230,10 +230,10 @@ class CompassCalibrator:
         if heading < 0:
             heading += 2 * math.pi
 
-        if self.NOffsetAngle > heading:
-            heading = 2 * math.pi - (self.NOffsetAngle - heading)
-        else:
-            heading -= self.NOffsetAngle
+        # if self.NOffsetAngle > heading:
+        #     heading = 2 * math.pi - (self.NOffsetAngle - heading)
+        # else:
+        #     heading -= self.NOffsetAngle
 
         return heading
 
