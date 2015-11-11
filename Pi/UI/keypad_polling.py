@@ -133,11 +133,11 @@ class keypad(object):
             if userInput == 9:
                 return
 
-    def poll_for_num_timed(self):
+    def poll_for_num_timed(self, delay):
         timer_start = time.time()
         GPIO.output(self.hori[1], GPIO.HIGH)
         while True:
-            if time.time() - timer_start >= 1:
+            if time.time() - timer_start >= delay:
                 if GPIO.input(self.vert[3]) == GPIO.HIGH:
                     GPIO.output(self.hori[1], GPIO.LOW)
                     return True
