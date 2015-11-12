@@ -60,7 +60,7 @@ class voiceThread(threading.Thread):
                     UISpeaker.wait()
                     UISpeaker.speak(str(item))
             else:
-                time.sleep(0.2)
+                time.sleep(self.sleepTime)
 
 class ReceiveDataThread(threading.Thread):
     def __init__(self, threadID, threadName):
