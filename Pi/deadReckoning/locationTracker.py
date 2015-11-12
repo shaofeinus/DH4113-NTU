@@ -167,3 +167,13 @@ class LocationTracker:
 
         self.headingWRTNorthInRad = angleInRad
         self.headingWRTNorthInDeg = compass.Compass.getHeadingInDeg(self.headingWRTNorthInRad)
+
+    # Called by Navigation
+    # Offset parameter in Deg
+    def updateMapNorth(self, degOffset):
+        if degOffset < 0:
+            radOffset = 2 * math.pi + degOffset / 180.0 * math.pi
+        else:
+            radOffset = degOffset / 180.0 * math.pi
+
+        self.updateCurrHeading(radOffset + self.headingWRTNorthInRad)

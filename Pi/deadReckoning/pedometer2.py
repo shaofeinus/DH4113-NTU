@@ -201,9 +201,9 @@ class Pedometer2:
             accG = self.accWindow.popleft()
 
             # For data extraction
-            f = open('pedodata.csv', 'a')
-            f.write(str(accG) + "\n")
-            f.close()
+            # f = open('pedodata.csv', 'a')
+            # f.write(str(accG) + "\n")
+            # f.close()
 
             # If current accG exceeds H threshold, update prev H time
             # Prev H time is only reset when a step is recognised

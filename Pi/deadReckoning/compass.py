@@ -88,10 +88,8 @@ class Compass:
     # Public
     # New function
     def getAngleDevInRad(self):
-
         ans = self.currDev
         self.currDev = 0
-
         return ans
 
     # Public
@@ -118,7 +116,7 @@ class Compass:
             return 2 * math.pi + rad
         else:
             return rad
-
+# --------------------------------------------------------------------------------------------------------------------#
     # Public
     # Get absolute heading
     # Reading is in radians of [0, 2 * pi] clockwise from North
