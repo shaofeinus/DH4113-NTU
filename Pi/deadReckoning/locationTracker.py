@@ -177,3 +177,9 @@ class LocationTracker:
             radOffset = degOffset / 180.0 * math.pi
 
         self.updateCurrHeading(radOffset + self.headingWRTNorthInRad)
+
+    # Called by Navigation
+    # Coordinate parameters in com
+    def setLocation(self, xCoordinate, yCoordinate):
+        self.currX = xCoordinate
+        self.currY = yCoordinate
