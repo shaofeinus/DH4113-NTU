@@ -28,25 +28,15 @@ class locationSetting(object) :
         self.SEARCH_HELP3 = "Followed by the node ID. "
         self.INVALID_NUMBER = "Please enter a valid number"
         self.INVALID_ID = "Please enter a valid ID"
-        self.FINAL_CONFIRMATION = "To confirm, press start. To restart, press back"
-        #self.run()
 
     def run(self) :
         self.getBuildingFromUser()
         self.getSearchQueryFromUser()
         self.getExactLocationFromUser()
-        # self.confirmLocationWithUser()
 
     def setBuildingAndLevel(self, building, level):
         self.buildingName = building
         self.levelNumber = level
-
-    def restart(self) :
-        self.buildingName = None
-        self.levelNumber = None
-        self.locationPoint = None
-        self.possibleNodes = []
-
 
     def getBuildingName(self) :
         return self.buildingName
@@ -129,8 +119,6 @@ class locationSetting(object) :
                 self.possibleNodes = []
                 for i in xrange(self.building.numElements) :
                     self.possibleNodes.append(i)
-                # print "All nodes will be listed. When you are ready to make your selection, press start."
-                # self.speaker.speak("All nodes will be listed. When you are ready to make your selection, press start.")
             elif node == "help":
                 print self.SEARCH_HELP1, self.SEARCH_HELP2, self.SEARCH_HELP3
                 self.speaker.speak(str(self.SEARCH_HELP1 + self.SEARCH_HELP2 + self.SEARCH_HELP3))
@@ -160,16 +148,14 @@ class locationSetting(object) :
                             self.possibleNodes.append(i)
                     if len(self.possibleNodes) > 0:
                         print "All search results will be listed."
-                        # self.speaker.speak("All search results will be listed.")
-                        # self.speaker.wait()
                     else:
                         print "No results found"
                         self.speaker.speak("No results found")
                         self.speaker.wait()
 
     def getExactLocationFromUser(self) :
-        continueLoop = True
-        while continueLoop:
+        # continueLoop = True
+        while True: #continueLoop:
             if len(self.possibleNodes) > 1 : #all is entered, or search query
                 isNumberChosen = False
 
@@ -195,19 +181,8 @@ class locationSetting(object) :
             else:
                 self.speaker.speak ("Start location selected is " + self.building.getLocationName(self.locationPoint) + ". Press start to confirm. Back to cancel")
 
-            continueLoop = self.keypad.get_binary_response()
-            if continueLoop:
-                self.possibleNodes = []
-                self.getSearchQueryFromUser()
-            self.locationPoint += 1
-
-    def confirmLocationWithUser(self) :
-        print "You have selected building " + str(self.buildingName) + ", level " + str(self.levelNumber) + ", at \"" + str(self.building.getLocationName(self.locationPoint)) + "\""
-        self.speaker.speak("You have selected building " + str(self.buildingName) + ", level " + str(self.levelNumber) + ", at " + str(self.building.getLocationName(self.locationPoint)))
-
-        print self.FINAL_CONFIRMATION
-        self.speaker.speak(self.FINAL_CONFIRMATION)
-
-        if self.keypad.get_binary_response():
-            self.restart()
-            self.run()
+            if not self.keypad.get_binary_response():
+                self.locationPoint += 1
+                break
+            self.possibleNodes = []
+            self.getSearchQueryFromUser()
