@@ -30,7 +30,7 @@ class fullNavi(object) :
         self.prev_message = ""
         self.voiceQueue = voiceQueue
         self.voiceSema = voiceSema
-        self.ANGLE_TOLERANCE = 15
+        self.ANGLE_TOLERANCE = 0
         
         self.pathFind = pathFinder()
         self.hasAnotherPath = False

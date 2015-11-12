@@ -39,7 +39,7 @@ class navigation (object) :
         # vicinity tolerance
         self.maxTolerance = 200       # cm
         # angle tolerance
-        self.angleTolerance = 17     # degrees
+        self.angleTolerance = 0     # degrees
         # distance from node for updates
         self.nearingCount = 500
 
