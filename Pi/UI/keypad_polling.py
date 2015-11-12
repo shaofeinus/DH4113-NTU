@@ -376,6 +376,7 @@ class keypad(object):
             self.curr_chr = '' #clear curr_chr
             self.num_count = 0 #reset count on key map
             self.prev_num = 21 #update keypress history
+            self.voiceSema.release()
             if len(self.out_str) > 0:
                 self.end_flag = True
             self.chr_queue.flush()
