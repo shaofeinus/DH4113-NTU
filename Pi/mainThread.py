@@ -735,35 +735,35 @@ class UIThread(threading.Thread):
 
         userInputLock.release()
 
-##class CollectIRThread(threading.Thread):
-##    def __init__(self, threadID, threadName):
-##        threading.Thread.__init__(self)
-##        self.threadID = threadID
-##        self.threadName = threadName
-##
-##    def run(self):
-##        global irCount
-##        global irSum
-##        while 1:
-##            if irCount == 0 :
-##                print "Starting!"
-##                time.sleep(2)
-##            irCount += 1
-##            irSum += data[15]
-##            if irCount == 15 :
-##                irSum /= 15
-##                with open("Output.txt", "a") as text_file:
-##                    text_file.write("\n")
-##                    text_file.write(str(irSum))
-##                    print irSum
-##                irCount = 0
-##                irSum = 0
-##                print "NEXT VALUE PLEASE"
-##                time.sleep(2)
-##            time.sleep(0.1)
-##
-##irCount = 0
-##irSum = 0
+    class CollectIRThread(threading.Thread):
+        def __init__(self, threadID, threadName):
+           threading.Thread.__init__(self)
+           self.threadID = threadID
+           self.threadName = threadName
+
+        def run(self):
+           global irCount
+           global irSum
+           while 1:
+               if irCount == 0 :
+                   print "Starting!"
+                   time.sleep(2)
+               irCount += 1
+               irSum += data[15]
+               if irCount == 15 :
+                   irSum /= 15
+                   with open("Output.txt", "a") as text_file:
+                       text_file.write("\n")
+                       text_file.write(str(irSum))
+                       print irSum
+                   irCount = 0
+                   irSum = 0
+                   print "NEXT VALUE PLEASE"
+                   time.sleep(2)
+               time.sleep(0.1)
+
+    irCount = 0
+    irSum = 0
 
 # --------------------- START OF MAIN ----------------------- #
 
@@ -909,7 +909,7 @@ else:
     mainThreads.append(NavigationThread(5, "navigation"))
     mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
 ##    mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
-##    mainThreads.append(collectIRThread(9, "collect ir data"))
+    mainThreads.append(collectIRThread(9, "collect ir data"))
 
 for thread in mainThreads:
     thread.start()
