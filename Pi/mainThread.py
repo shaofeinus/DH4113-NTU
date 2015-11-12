@@ -559,8 +559,14 @@ class NavigationThread(threading.Thread):
                 if navi.hasNextPath() is True :
                     isNextPathNeeded = True
                     navi.switchToNextPathList()
+                    # update location tracker initial info
+
+                    locationTrackerLock.acquire()
+                    locationTracker.updateMapNorth(navi.getNorthDifference())
                     # navi.getNorthDifference()
                     # navi.getFirstCoordinates()
+                    locationTrackerLock.release()
+
                     print "press start to continue"
                     UISpeaker.speak("Now entering new map. Press start to continue.")
                     while keypad.get_binary_response():
