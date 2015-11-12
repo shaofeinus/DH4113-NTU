@@ -14,6 +14,8 @@ class obstacleAvoidance (object) :
     def __init__(self) :       
         self.FRONT_OBSTACLE_DISTANCE = 90
         self.FRONT_OBSTACLE_BUFFER = 100
+        self.BOTTOM_OBSTACLE_DISTANCE = 70
+        self.BOTTOM_OBSTACLE_BUFFER = 75
         self.SIDE_OBSTACLE_IR = 75
         self.SIDE_OBSTACLE_SONAR = 70
         self.UPSTEP_THRESHHOLD = 500
@@ -263,14 +265,14 @@ class obstacleAvoidance (object) :
             sonarAverage += i
         sonarAverage /= self.frontNumHistory
         if isAlreadyDetected == 0 :
-            if (sonarAverage < self.FRONT_OBSTACLE_DISTANCE) :
+            if (sonarAverage < self.BOTTOM_OBSTACLE_DISTANCE) :
                 print "left leg sonar: " + str(sonarAverage)
                 print self.sonarLS
                 return True
             else :
                 return False
         else :
-            if (sonarAverage < self.FRONT_OBSTACLE_BUFFER) :
+            if (sonarAverage < self.BOTTOM_OBSTACLE_BUFFER) :
                 print "left leg sonar: " + str(sonarAverage)
                 print self.sonarLS
                 return True
@@ -283,14 +285,14 @@ class obstacleAvoidance (object) :
             sonarAverage += i
         sonarAverage /= self.frontNumHistory
         if isAlreadyDetected == 0 :
-            if (sonarAverage < self.FRONT_OBSTACLE_DISTANCE) :
+            if (sonarAverage < self.BOTTOM_OBSTACLE_DISTANCE) :
                 print "right leg sonar: " + str(sonarAverage)
                 print self.sonarRS
                 return True
             else :
                 return False
         else :
-            if (sonarAverage < self.FRONT_OBSTACLE_BUFFER) :
+            if (sonarAverage < self.BOTTOM_OBSTACLE_BUFFER) :
                 print "right leg sonar: " + str(sonarAverage)
                 print self.sonarRS
                 return True
