@@ -559,12 +559,12 @@ class NavigationThread(threading.Thread):
                 if navi.hasNextPath() is True :
                     isNextPathNeeded = True
                     navi.switchToNextPathList()
-                    # update location tracker initial info
 
+                    # update location tracker initial info
                     locationTrackerLock.acquire()
                     locationTracker.updateMapNorth(navi.getNorthDifference())
-                    # navi.getNorthDifference()
-                    # navi.getFirstCoordinates()
+                    (initX, initY) = navi.getFirstCoordinates()
+                    locationTracker.setLocation(initX, initY)                    
                     locationTrackerLock.release()
 
                     print "press start to continue"
