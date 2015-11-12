@@ -45,6 +45,7 @@ class voiceThread(threading.Thread):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.threadName = threadName
+        self.sleepTime = 0.2
 
     def run(self):
         global voiceQueue
@@ -60,7 +61,7 @@ class voiceThread(threading.Thread):
                     UISpeaker.speak(str(item))
                     # speaker.speak(str(item))
             else:
-                time.sleep(1)
+                time.sleep(self.sleepTime)
 
 class ReceiveDataThread(threading.Thread):
     def __init__(self, threadID, threadName):
@@ -343,7 +344,7 @@ class LocationDisplayThread(threading.Thread):
                 print "Total Steps:", locationTracker.getTotalSteps()
                 print "Total Distance:", locationTracker.getTotalDistance()
                 print "Deviation from N:", locationTracker.getHeadingInDeg()
-                print "Deviation from Map N:", locationTracker.getHeadingWRTMapInDeg()
+                print "True deviation from N:", locationTracker.getTrueHeadingInDeg()
                 print locationTracker.getLocation()
                 print "Height:", locationTracker.getHeightInCM()
                 self.count = 0
