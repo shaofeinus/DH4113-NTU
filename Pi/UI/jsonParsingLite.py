@@ -14,7 +14,7 @@ class mapParser (object) :
                 self.mapName = None
                 self.buildingMap = {}
                 self.numElements = 0
-                self.loadedMaps = ["com1L2.json", "com2L2.json", "com2L3.json"
+                self.loadedMaps = ["com1L2.json", "com2L2.json", "com2L3.json",
                                    "1L2.json", "2L2.json", "2L3.json"]
                 
         

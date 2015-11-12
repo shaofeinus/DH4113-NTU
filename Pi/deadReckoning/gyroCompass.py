@@ -19,6 +19,7 @@ class GyroCompass:
         self.YMAWindow = deque(maxlen=self.WINDOW_SIZE)
         self.ZMAWindow = deque(maxlen=self.WINDOW_SIZE)
         self.currDriftOffset = self.INITIAL_DRIFT
+        self.count = 0
 
     def calibrate(self, pitch, roll):
         self.pitch = pitch
@@ -31,12 +32,16 @@ class GyroCompass:
         self.YMAWindow.append(yReading)
         self.ZMAWindow.append(zReading)
 
-        if len(self.XMAWindow) == self.WINDOW_SIZE:
-            xReading = sum(self.XMAWindow) / len(self.XMAWindow)
-            yReading = sum(self.YMAWindow) / len(self.YMAWindow)
-            zReading = sum(self.ZMAWindow) / len(self.ZMAWindow)
-            self.updateHeading(xReading, yReading, zReading)
-        # self.updateHeading(xReading, yReading, zReading)
+        # if self.count == 25:
+        #     self.updateHeading(xReading, yReading, zReading)
+        #     self.count = 0
+
+        # if len(self.XMAWindow) == self.WINDOW_SIZE:
+        #     xReading = sum(self.XMAWindow) / len(self.XMAWindow)
+        #     yReading = sum(self.YMAWindow) / len(self.YMAWindow)
+        #     zReading = sum(self.ZMAWindow) / len(self.ZMAWindow)
+        #     self.updateHeading(xReading, yReading, zReading)
+        self.updateHeading(xReading, yReading, zReading)
 
     # Updates angle dev in range [0, 2 pi]
     def updateHeading(self, xReading, yReading, zReading):

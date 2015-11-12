@@ -58,10 +58,10 @@ class locationSetting(object) :
         return self.locationPoint
 
     def getLocationXCoord(self) :
-        return self.building.getLocationXCoord(self.locationPoint)
+        return self.building.getLocationXCoord(self.locationPoint - 1)
 
     def getLocationYCoord(self) :
-        return self.building.getLocationYCoord(self.locationPoint)
+        return self.building.getLocationYCoord(self.locationPoint - 1)
 
     def getBuildingFromUser(self) :
         # get building name and level number input from user (keypad code)
@@ -285,6 +285,7 @@ class locationSetting(object) :
             if continueLoop:
                 self.possibleNodes = []
                 self.getSearchQueryFromUser()
+            self.locationPoint += 1
 
     def confirmLocationWithUser(self) :
         print "You have selected building " + str(self.buildingName) + ", level " + str(self.levelNumber) + ", at \"" + str(self.building.getLocationName(self.locationPoint)) + "\""

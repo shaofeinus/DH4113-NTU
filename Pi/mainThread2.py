@@ -331,7 +331,7 @@ class LocationDisplayThread(threading.Thread):
         while 1:
             locationTrackerLock.acquire()
             locationTracker.updateLocation()
-            if self.count == 1:
+            if self.count == 0:
                 print "Total Steps:", locationTracker.getTotalSteps()
                 print "Total Distance:", locationTracker.getTotalDistance()
                 print "Deviation from N:", locationTracker.getHeadingInDeg()
@@ -344,7 +344,7 @@ class LocationDisplayThread(threading.Thread):
 
             # locationTracker.gyroCompass.updateOffset()
             locationTrackerLock.release()
-            time.sleep(0.5)
+            time.sleep(1.5)
 
 
 class LocationUpdateThread(threading.Thread):

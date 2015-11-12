@@ -12,7 +12,7 @@ __author__ = 'Shao Fei'
 class LocationTracker:
 
     STEP_DISTANCE = 45.0     # in cm
-    MOVE_ANGLE_TOLERANCE = 2 * math.pi / 36
+    MOVE_ANGLE_TOLERANCE = 2 * math.pi / 36.0
 
     def __init__(self, initX, initY, northAt):
         self.currX = initX      # Points eastwards
@@ -116,13 +116,13 @@ class LocationTracker:
             angleDev = compAngleDev
             mode = 'compass'
 
-        if currSteps != 0 and self.isFirstStep:
-            self.isFirstStep = False
-            self.updateCurrHeading(self.headingWRTNorthInRad - self.prevCompDev + self.prevGyroDev)
-            mode = 'change prev dev'
+        # if currSteps != 0 and self.isFirstStep:
+        #     self.isFirstStep = False
+        #     self.updateCurrHeading(self.headingWRTNorthInRad - self.prevCompDev + self.prevGyroDev)
+        #     mode = 'change prev dev'
 
-        self.prevGyroDev = gyroAngleDev
-        self.prevCompDev = compAngleDev
+        # self.prevGyroDev = gyroAngleDev
+        # self.prevCompDev = gyroAngleDev
 
         self.updateCurrHeading(angleDev + self.headingWRTNorthInRad)
 
@@ -130,8 +130,11 @@ class LocationTracker:
         # self.headingWRTNorthInRad = self.compass.getHeadingInRad()
         # self.headingWRTNorthInDeg = self.compass.Compass.getHeadingInDeg(self.headingWRTNorthInRad)
 
+        # print "heading ", compass.Compass.getHeadingInDeg(self.compass.calculateHeadingInRad())
+
         if currSteps != 0:
-            headingToUse = 0 + round(self.headingWRTNorthInRad / self.MOVE_ANGLE_TOLERANCE) * self.MOVE_ANGLE_TOLERANCE
+            headingToUse = round(self.headingWRTNorthInRad / self.MOVE_ANGLE_TOLERANCE) * self.MOVE_ANGLE_TOLERANCE
+            # headingToUse = self.headingWRTNorthInRad
             # x points to the East
             xCurrDistance = currDistance * math.sin(headingToUse)
             # y points to the North

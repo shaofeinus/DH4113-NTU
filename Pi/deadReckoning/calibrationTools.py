@@ -30,12 +30,12 @@ class CalibrationTools:
     # MAG_Z_OFFSET_RANGE = (MAG_Z_RANGE[0] - MAG_Z_OFFSET, MAG_Z_RANGE[1] - MAG_Z_OFFSET)
 
     MAG_X_SCALE_FACTOR = 1.0
-    MAG_Y_SCALE_FACTOR = 1.0
-    MAG_Z_SCALE_FACTOR = 0.935
+    MAG_Y_SCALE_FACTOR = 0.999064084 # 1.000648985
+    MAG_Z_SCALE_FACTOR = 0.933922909 # 0.932667875
 
-    MAG_X_OFFSET = 350
-    MAG_Y_OFFSET = 130
-    MAG_Z_OFFSET = -440
+    MAG_X_OFFSET = 298.7836281 # 308.4580249
+    MAG_Y_OFFSET = 121.9181556 # 117.8145883
+    MAG_Z_OFFSET = -419.8298189 # -436.2063372
 
     AV_RAW_RANGE = (-28000, 28000)
     AV_ACTUAL_RANGE = (-245.0 / 180.0 * math.pi, 245.0 / 180.0 * math.pi)
@@ -46,7 +46,7 @@ class CalibrationTools:
     GY_Y_SCALE_FACTOR = 1.0
     GY_Z_SCALE_FACTOR = 1.0
     GY_OFFSET_MA_WINDOW_SIZE = 150
-    GY_RECALIBRATE_THRESHOLD = 50
+    GY_RECALIBRATE_THRESHOLD = 10
 
     def __init__(self):
         self.gyXOffsetWindow = deque(maxlen=self.GY_OFFSET_MA_WINDOW_SIZE)
@@ -113,11 +113,14 @@ class CalibrationTools:
 
     def adaptGyroOffset(self, gyX, gyY, gyZ):
         if math.fabs(gyX - self.GY_X_OFFSET) < self.GY_RECALIBRATE_THRESHOLD:
+            # print 'gyro x offset update'
             self.gyXOffsetWindow.append(gyX)
         if math.fabs(gyY - self.GY_Y_OFFSET) < self.GY_RECALIBRATE_THRESHOLD:
             self.gyYOffsetWindow.append(gyY)
+            # print 'gyro y offset update'
         if math.fabs(gyZ - self.GY_Z_OFFSET) < self.GY_RECALIBRATE_THRESHOLD:
             self.gyZOffsetWindow.append(gyZ)
+            # print 'gyro z offset update'
 
         self.GY_X_OFFSET = float(sum(self.gyXOffsetWindow)) / float(len(self.gyXOffsetWindow))
         self.GY_Y_OFFSET = float(sum(self.gyYOffsetWindow)) / float(len(self.gyYOffsetWindow))

@@ -14,6 +14,8 @@ __author__ = 'Shao Fei'
 class Compass:
 
     WINDOW_SIZE = 1
+    REJECT_THRESHOLD = 13000
+    CAL_DEV_PERIOD = 25     # In counts
 
     def __init__(self):
         self.currHeading = 0.0
@@ -27,12 +29,23 @@ class Compass:
         self.firstTimeCount = 0
         self.prevHeadingInRad = 0.0
         self.currDev = 0.0
+        self.count = 0
 
     def queueMagReadings(self, xReading, yReading, zReading):
+
+        if math.fabs(xReading) > self.REJECT_THRESHOLD \
+                or math.fabs(yReading) > self.REJECT_THRESHOLD \
+                or math.fabs(zReading) > self.REJECT_THRESHOLD:
+            return
+
         self.magXWindow.append(xReading)
         self.magYWindow.append(yReading)
         self.magZWindow.append(zReading)
-        self.updateAngleDevInRad()
+
+        self.count += 1
+        if self.count == self.CAL_DEV_PERIOD:
+            self.updateAngleDevInRad()
+            self.count = 0
 
     def updateAngleDevInRad(self):
         # new heading is wrt to map north
@@ -44,27 +57,6 @@ class Compass:
         # Converts to [0, 2 pi]
         self.currDev = self.getHeadingInPRad(self.currDev)
 
-    def queueAccReadings(self, xReading, yReading, zReading):
-        if len(self.accXWindow) == self.WINDOW_SIZE:
-            self.accXWindow.popleft()
-            self.accYWindow.popleft()
-            self.accZWindow.popleft()
-        self.accXWindow.append(xReading)
-        self.accYWindow.append(yReading)
-        self.accZWindow.append(zReading)
-
-    # Public
-    # x points to front
-    # y points to left
-    # z points to up
-    def updateAccReading(self, xReading, yReading, zReading):
-
-        self.queueAccReadings(xReading, yReading, zReading)
-
-        # accX = float(sum(self.accXWindow))/len(self.accXWindow)
-        # accY = float(sum(self.accYWindow))/len(self.accYWindow)
-        # accZ = float(sum(self.accZWindow))/len(self.accZWindow)
-
     # Public
     # x points to front
     # y points to left
@@ -72,43 +64,6 @@ class Compass:
     def updateMagReading(self, xReading, yReading, zReading):
 
         self.queueMagReadings(xReading, yReading, zReading)
-
-        # magX = float(sum(self.magXWindow))/len(self.magXWindow)
-        # magY = float(sum(self.magYWindow))/len(self.magYWindow)
-        # magZ = float(sum(self.magZWindow))/len(self.magZWindow)
-
-        # # North is 90 deg to the left
-        # if magY == 0 and magX < 0:
-        #     heading = 3.0 / 2.0 * math.pi
-        # # North is 90 deg to the right
-        # elif magY == 0 and magX > 0:
-        #     heading = math.pi / 2.0
-        # else:
-        #     theta = math.atan(magX/magY)
-        #     # If deviation in 1st quadrant
-        #     # theta > 0
-        #     if magX > 0 and magY > 0:
-        #         heading = theta
-        #     # If deviation in 2nd quadrant
-        #     # theta < 0
-        #     elif magX > 0 and magY < 0:
-        #         heading = math.pi + theta
-        #     # If deviation in 3rd quadrant
-        #     # theta > 0
-        #     elif magX < 0 and magY < 0:
-        #         heading = math.pi + theta
-        #     # If deviation in 4th quadrant
-        #     # theta < 0
-        #     else:
-        #         heading = 2 * math.pi + theta
-
-        # Heading in [0, 2 * pi]
-        # heading = self.calibrator.calculateDeviceHeading(magX, magY, magZ)
-        #
-        # if self.calibrator.NOffsetAngle > heading:
-        #     self.currHeading = 2 * math.pi - (self.calibrator.NOffsetAngle - heading)
-        # else:
-        #     self.currHeading = heading - self.calibrator.NOffsetAngle
 
     # Returns in [0, 2pi]
     def calculateHeadingInRad(self):
@@ -129,6 +84,40 @@ class Compass:
             return currHeading
         else:
             return 0.0
+
+    # Public
+    # New function
+    def getAngleDevInRad(self):
+
+        ans = self.currDev
+        self.currDev = 0
+
+        return ans
+
+    # Public
+    # Parameter is [0, 2 pi]
+    # Reading is in degrees of [-180, 180] clockwise from North
+    @staticmethod
+    def getHeadingInDeg(rad):
+        if rad < math.pi:
+            return rad / (2 * math.pi) * 360
+        else:
+            return -1 * (2 * math.pi - rad) / (2 * math.pi) * 360
+
+    @staticmethod
+    def getHeadingInPMRad(rad):
+        if rad < math.pi:
+            return rad
+        else:
+            return -(2 * math.pi - rad)
+
+    @staticmethod
+    def getHeadingInPRad(rad):
+        rad %= 2 * math.pi
+        if rad < 0:
+            return 2 * math.pi + rad
+        else:
+            return rad
 
     # Public
     # Get absolute heading
@@ -162,46 +151,3 @@ class Compass:
 
         self.gyroCompass.updateOffset()
         return self.currHeading
-
-    # Public
-    # New function
-    def getAngleDevInRad(self):
-
-        # # new heading is wrt to map north
-        # newHeading = self.calculateHeadingInRad()
-        #
-        # currDev = newHeading - self.prevHeadingInRad
-        # self.prevHeadingInRad = newHeading
-        #
-        # # Converts to [0, 2 pi]
-        # currDev = self.getHeadingInPRad(currDev)
-
-        ans = self.currDev
-        self.currDev = 0
-
-        return ans
-
-    # Public
-    # Parameter is [0, 2 pi]
-    # Reading is in degrees of [-180, 180] clockwise from North
-    @staticmethod
-    def getHeadingInDeg(rad):
-        if rad < math.pi:
-            return rad / (2 * math.pi) * 360
-        else:
-            return -1 * (2 * math.pi - rad) / (2 * math.pi) * 360
-
-    @staticmethod
-    def getHeadingInPMRad(rad):
-        if rad < math.pi:
-            return rad
-        else:
-            return -(2 * math.pi - rad)
-
-    @staticmethod
-    def getHeadingInPRad(rad):
-        rad %= 2 * math.pi
-        if rad < 0:
-            return 2 * math.pi + rad
-        else:
-            return rad

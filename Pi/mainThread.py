@@ -85,22 +85,22 @@ class ProcessDataThread(threading.Thread):
         while True:
             dataFeeder.process_data(data, dataInSema)
 
-            print "imu",
-            print data[1],
-            print data[2],
-            print data[3],
-            print "baro"
-            print data[4],
-            print "ir ",
-            print data[6],
-            print data[7],
-            print data[8],
-            print data[9],
-            print data[10],
-            print "sonar ",
-            print data[11],
-            print data[12]
-            print data[13],
+            # print "imu",
+            # print data[1],
+            # print data[2],
+            # print data[3],
+            # print "baro"
+            # print data[4],
+            # print "ir ",
+            # print data[6],
+            # print data[7],
+            # print data[8],
+            # print data[9],
+            # print data[10],
+            # print "sonar ",
+            # print data[11],
+            # print data[12]
+            # print data[13],
 
 
 class CalibrationThread(threading.Thread):
@@ -226,6 +226,8 @@ class CalibrationThread(threading.Thread):
         while not self.isDone['nOffset']:
             self.calibrateNOffset()
 
+        locationTracker.compass.prevHeadingInRad = self.calibrator.NOffsetAngle
+
         userInputLock.acquire()
         temp = 'Your are ' + str(int(self.calibrator.getNOffsetAngle() / (2 * math.pi) * 360)) + ' from N. To continue, press start'
         print temp
@@ -317,22 +319,6 @@ class CalibrationThread(threading.Thread):
             self.totalGyroData = 0
 
 
-class GyroDriftTrackingThread(threading.Thread):
-
-    RATE_OF_DRIFT = -2.0E-6     # In % change
-
-    def __init__(self, threadID, threadName):
-        threading.Thread.__init__(self)
-        self.threadID = threadID
-        self.threadName = threadName
-        self.gyroCompass = locationTracker.compass.gyroCompass
-
-    def run(self):
-        while True:
-            self.gyroCompass.driftAngleOffset += self.RATE_OF_DRIFT
-            time.sleep(0.1)
-
-
 class LocationDisplayThread(threading.Thread):
     def __init__(self, threadID, threadName):
         threading.Thread.__init__(self)
@@ -350,7 +336,7 @@ class LocationDisplayThread(threading.Thread):
 
             locationTrackerLock.acquire()
 
-            if self.count == 10:
+            if self.count == 0:
                 locationTracker.updateLocation()
                 print "Total Steps:", locationTracker.getTotalSteps()
                 print "Total Distance:", locationTracker.getTotalDistance()
@@ -362,9 +348,8 @@ class LocationDisplayThread(threading.Thread):
             else:
                 self.count += 1
 
-            locationTracker.gyroCompass.updateOffset()
             locationTrackerLock.release()
-            time.sleep(0.1)
+            time.sleep(1.5)
 
 
 class LocationUpdateThread(threading.Thread):
@@ -520,7 +505,6 @@ class LocationUpdateThread(threading.Thread):
             self.updateBaroData()
             self.updateGyroData()
             locationTrackerLock.release()
-            pass
 
 
 class NavigationThread(threading.Thread):
@@ -559,9 +543,8 @@ class NavigationThread(threading.Thread):
 ##            obstacle.setCurrentLocation(curX, curY)
             # every second, check navigation
 ##            if (naviCount%10 == 0) :
-##                navi.updateCurLocation(curX, curY, heading)
-##                if obstacleDetected == 1 or checkSideObstacle == 1:
-##                    navi.ignoreNodeObstacle()
+#                if obstacleDetected == 1 or checkSideObstacle == 1:
+#                    navi.ignoreNodeObstacle()
 ##                    time.sleep(0.1)
 ##                    continue
 ##                if isFirstCleared == 1 :
@@ -569,10 +552,9 @@ class NavigationThread(threading.Thread):
 ##                    isFirstCleared = 0
 ##                else :
 ##                    navi.updateCurrentSteps(locationTracker.getTotalSteps())
-                    
+            navi.updateCurLocation(curX, curY, heading)
             isNavigationDone = navi.fullNavigate()
-            if 1 or isNavigationDone is True :
-                time.sleep(5)
+            if isNavigationDone is True :
                 print ("\n\n\n\n\n\nLE SWITCHEROO\n\n\n\n\n\n")
                 if navi.hasNextPath() is True :
                     isNextPathNeeded = True
@@ -856,11 +838,11 @@ for thread in dataThreads:
 initThreads = []
 initThreads.append(CalibrationThread(-1, "calibrating pedometer and compass"))
 
-# for thread in initThreads:
-#     thread.start()
-#
-# for thread in initThreads:
-#     thread.join()
+for thread in initThreads:
+    thread.start()
+
+for thread in initThreads:
+    thread.join()
 
 # voice threads
 voiceThreads = []
@@ -913,13 +895,13 @@ if skip_init:
     mainThreads.append(LocationUpdateThread(3, "location update"))
     mainThreads.append(LocationDisplayThread(4, "location display"))
     mainThreads.append(NavigationThread(5, "navigation"))
-    # mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
+    mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
     # mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
 else:
     mainThreads.append(LocationUpdateThread(3, "location update"))
     mainThreads.append(LocationDisplayThread(4, "location display"))
     mainThreads.append(NavigationThread(5, "navigation"))
-    # mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
+    mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
 ##    mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
 ##    mainThreads.append(collectIRThread(9, "collect ir data"))
 

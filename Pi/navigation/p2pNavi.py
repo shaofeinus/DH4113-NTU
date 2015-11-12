@@ -135,12 +135,12 @@ class navigation (object) :
             if (math.fabs(turnAngle) < self.angleTolerance):
                 self.sentence += "Go."
                 print self.sentence
-##                if time.time() - self.prev_message_time_turn > self.message_delay:
-##                    if self.prev_message != self.sentence:
-##                        if self.voiceQueue.append(self.sentence, time.time()):
-##                            self.voiceSema.release()
-##                        self.prev_message_time_turn = time.time()
-##                        self.prev_message = self.sentence
+                if time.time() - self.prev_message_time_turn > self.message_delay:
+                   if self.prev_message != self.sentence:
+                       if self.voiceQueue.append(self.sentence, time.time()):
+                           self.voiceSema.release()
+                       self.prev_message_time_turn = time.time()
+                       self.prev_message = self.sentence
                 return 0
         
             if (turnAngle > 0) :
@@ -149,35 +149,35 @@ class navigation (object) :
                     return 0
                 self.sentence += "Right %.0f" %(turnAngle)
                 print self.sentence
-##                if time.time() - self.prev_message_time_turn > self.message_delay:
-##                    if self.prev_message != self.sentence:
-##                        if self.voiceQueue.append(self.sentence, time.time()):
-##                            self.voiceSema.release()
-##                        self.prev_message_time_turn = time.time()
-##                        self.prev_message = self.sentence
+                if time.time() - self.prev_message_time_turn > self.message_delay:
+                   if self.prev_message != self.sentence:
+                       if self.voiceQueue.append(self.sentence, time.time()):
+                           self.voiceSema.release()
+                       self.prev_message_time_turn = time.time()
+                       self.prev_message = self.sentence
             elif (turnAngle < 0) :
                 if ((self.canTurn is False) and (turnAngle < -90)) :
                     turnAngle = -90
                     return 0
                 self.sentence += "Left %.0f" %(math.fabs(turnAngle))
                 print self.sentence
-##                if time.time() - self.prev_message_time_turn > self.message_delay:
-##                    if self.prev_message != self.sentence:
-##                        if self.voiceQueue.append(self.sentence, time.time()):
-##                            self.voiceSema.release()
-##                        self.prev_message_time_turn = time.time()
-##                        self.prev_message = self.sentence
+                if time.time() - self.prev_message_time_turn > self.message_delay:
+                   if self.prev_message != self.sentence:
+                       if self.voiceQueue.append(self.sentence, time.time()):
+                           self.voiceSema.release()
+                       self.prev_message_time_turn = time.time()
+                       self.prev_message = self.sentence
             else :
                 self.sentence += "Go."
                 print self.sentence
-##                if time.time() - self.prev_message_time_str > self.message_delay:
-##                    if self.prev_message != self.sentence:
-##                        if self.voiceQueue.append(sentence, time.time()):
-##                            self.voiceSema.release()
-##                        self.prev_message_time_turn = time.time()
-##                        self.prev_message = self.sentence
-    ##                self.voiceQueue.append(self.sentence)
-    ##                self.voiceSema.release()
+                if time.time() - self.prev_message_time_str > self.message_delay:
+                   if self.prev_message != self.sentence:
+                       if self.voiceQueue.append(self.sentence, time.time()):
+                           self.voiceSema.release()
+                       self.prev_message_time_turn = time.time()
+                       self.prev_message = self.sentence
+                   self.voiceQueue.append(self.sentence)
+                   self.voiceSema.release()
 
             return 0
         else :

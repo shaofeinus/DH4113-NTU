@@ -7,8 +7,8 @@ __author__ = 'Shao Fei'
 # y points to left
 # z points to up
 class CompassCalibrator:
-    WINDOW_SIZE = 300
-    MIN_DATA_NUM = 200
+    WINDOW_SIZE = 150
+    MIN_DATA_NUM = 100
     ACC_TOLERANCE = 0.5         # In G
     MAG_TOLERANCE = 1000.0         # In fraction of max
     GYRO_TOLERANCE = 1000.0     # In raw
@@ -192,6 +192,10 @@ class CompassCalibrator:
 
         # magXComp = magX*math.cos(self.pitch) - (magZ*math.cos(self.roll) + magY*math.sin(self.roll))*math.sin(self.pitch)
 
+        # f = open('compassNoCompensate.csv', 'a')
+        # f.write(str(magX) + ',' + str(magY) + '\n')
+        # f.close()
+
         if self.pitch > 0:
             magXComp = magX*math.cos(self.pitch) - magZ*math.sin(self.pitch)
         else:
@@ -220,6 +224,10 @@ class CompassCalibrator:
 
         # magYComp = float(magY)
         # magXComp = float(magX)
+
+        # f = open('compassCompensate.csv', 'a')
+        # f.write(str(magXComp) + ',' + str(magYComp) + '\n')
+        # f.close()
 
         heading = math.atan2(magYComp, magXComp)
 
