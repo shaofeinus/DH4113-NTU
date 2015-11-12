@@ -49,14 +49,16 @@ class voiceThread(threading.Thread):
     def run(self):
         global voiceQueue
         global voiceSema
-        global speaker
+        global UIspeaker
 
         while True:
             voiceSema.acquire()
             if not voiceQueue.empty():
                 item = voiceQueue.popleft()
                 if item is not None:
-                    speaker.speak(str(item))
+                    # speaker.speak(str(item))
+                    UISpeaker.wait()
+                    UISpeaker.speak(str(item))
             else:
                 time.sleep(1)
 
