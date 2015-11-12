@@ -519,11 +519,6 @@ class NavigationThread(threading.Thread):
     def run(self):
         global navi
         global skip_init
-        global naviCount
-        global obstacleDetected
-        global checkSideObstacle
-        global isFirstCleared
-
         global isNextPathNeeded
         global nextPathSema
         while 1:
@@ -531,39 +526,20 @@ class NavigationThread(threading.Thread):
                 print self.threadName, "blocking"
                 nextPathSema.acquire()
 
-            print "I GOT AWAY"
-            # feedback steps walked
-##            navi.feedbackWalking(locationTracker.getTotalSteps())
-            
-##            naviCount += 1
             locationTrackerLock.acquire()
             curX = locationTracker.getXCoord()
             curY = locationTracker.getYCoord()
             heading = locationTracker.getHeadingInDeg()
             locationTrackerLock.release()
-            # update location and next node direction for obstacle avoidance
-##            obstacle.setNextNodeDirection(navi.getGeneralTurnDirection())
-##            obstacle.setCurrentLocation(curX, curY)
-            # every second, check navigation
-##            if (naviCount%10 == 0) :
-#                if obstacleDetected == 1 or checkSideObstacle == 1:
-#                    navi.ignoreNodeObstacle()
-##                    time.sleep(0.1)
-##                    continue
-##                if isFirstCleared == 1 :
-##                    navi.updateClearSteps(locationTracker.getTotalSteps())
-##                    isFirstCleared = 0
-##                else :
-##                    navi.updateCurrentSteps(locationTracker.getTotalSteps())
             navi.updateCurLocation(curX, curY, heading)
             isNavigationDone = navi.fullNavigate()
             if isNavigationDone is True :
-                print ("\n\n\n\n\n\nLE SWITCHEROO\n\n\n\n\n\n")
+                print ("\n\n\n\n\nLE SWITCHEROO\n\n\n\n")
                 if navi.hasNextPath() is True :
                     isNextPathNeeded = True
                     navi.switchToNextPathList()
 
-                    # update location tracker initial info
+                    # update location tracker initial heading/coordinates
                     locationTrackerLock.acquire()
                     locationTracker.updateMapNorth(navi.getNorthDifference())
                     (initX, initY) = navi.getFirstCoordinates()
@@ -590,9 +566,6 @@ class ObstacleAvoidanceThread(threading.Thread):
 
     def run(self):
         global obstacleDetected
-        global checkSideObstacle
-        global isFirstCleared
-
         global isNextPathNeeded
         global nextPathSema
         while 1:
@@ -628,73 +601,9 @@ class ObstacleAvoidanceThread(threading.Thread):
                 obstacle.turnOffMotors()
 
             # up/down step detection
-            obstacle.detectStep()
-            
-##            if obstacle.isNewObstacleDetected(obstacleStatus) is True:
-##                obstacleStatusLock.acquire()
-##                obstacleDetected = 1
-##                checkSideObstacle = 0
-##                isFirstCleared = 0
-##                obstacleStatusLock.release()
-##                obstacle.vibrateMotors()
-##            # existing obstacle
-##            obstacleStatusLock.acquire()
-##            obstacleStatus = obstacleDetected
-##            obstacleStatusLock.release()
-##            if obstacleStatus == 1:
-##                obstacleLock.acquire()
-##                obstacle.updateFrontSensorData(irLarge, sonarFC, irFC, irFL, irFR)
-##                obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
-##                obstacleLock.release()
-##                if obstacle.isFrontObstacleDetected(obstacleStatus) is True:
-##                    obstacle.turnFromObstacle()
-##                else:
-##                    obstacle.turnOffMotors()
-##                    obstacleStatusLock.acquire()
-##                    obstacleDetected = 0
-##                    checkSideObstacle = 1
-##                    obstacleStatusLock.release()
+            obstacle.detectStep()          
             time.sleep(0.1)
-
-
-##class ObstacleClearedThread(threading.Thread):
-##    def __init__(self, threadID, threadName):
-##        threading.Thread.__init__(self)
-##        self.threadID = threadID
-##        self.threadName = threadName
-##
-##    def run(self):
-##        global checkSideObstacle
-##        global isFirstCleared
-##        while 1:
-##            irFC = data[6]
-##            irLS = data[7]
-##            irRS = data[8]
-##            irFL = data[9]
-##            irFR = data[10]
-##            sonarFC = data[11]
-##            sonarLS = data[12]
-##            sonarRS = data[13]
-##            irLarge = data[15]
-##
-##            obstacleStatusLock.acquire()
-##            toMonitorObstacle = checkSideObstacle
-##            obstacleStatusLock.release()
-##            if toMonitorObstacle == 1:
-##                obstacleLock.acquire()
-##                obstacle.updateFrontSensorData(irLarge, sonarFC, irFC, irFL, irFR)
-##                obstacle.updateSideSensorData(sonarLS, sonarRS, irLS, irRS)
-##                obstacleLock.release()
-##                # re-route if necessary
-##                if obstacle.isRerouteNeeded() is True :
-##                    navi.reroutePath()
-##                if obstacle.checkObstacleCleared() == 1:
-##                    obstacleStatusLock.acquire()
-##                    checkSideObstacle = 0
-##                    isFirstCleared = 1
-##                    print "obstacle cleared"
-##                    obstacleStatusLock.release()
-##            time.sleep(0.5)
+            
 
 class UIThread(threading.Thread):
     def __init__(self, threadID, threadName):
@@ -796,11 +705,8 @@ data.extend(data_single)
 
 # Obstacle avoidance initialization
 obstacle = obstacleAvoidance.obstacleAvoidance()
-# 1 if an obstacle avoidance is taking place, else 0
+# 1 if an obstacle detected, else 0
 obstacleDetected = 0
-checkSideObstacle = 0
-# 1 if just cleared, 0 if cleared a while ago
-isFirstCleared = 0
 
 # Location tracker initialisation
 # TODO: Set initial position
@@ -899,14 +805,12 @@ if skip_init:
     mainThreads.append(LocationDisplayThread(4, "location display"))
     mainThreads.append(NavigationThread(5, "navigation"))
     mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
-    # mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
     # mainThreads.append(CollectIRThread(9, "collect ir data"))
 else:
     mainThreads.append(LocationUpdateThread(3, "location update"))
     mainThreads.append(LocationDisplayThread(4, "location display"))
     mainThreads.append(NavigationThread(5, "navigation"))
     mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
-##    mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
     # mainThreads.append(CollectIRThread(9, "collect ir data"))
 
 for thread in mainThreads:
