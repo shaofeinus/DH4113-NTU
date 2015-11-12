@@ -26,6 +26,8 @@ proceed = raw_input("Enter any key to proceed: ")
 if navi.hasNextPath() is True :
 ##    navi.switchToPathList2()
     navi.switchToNextPathList()
+    print navi.getNorthDifference()
+    print navi.getFirstCoordinates()
 
 while(navi.fullNavigate() is False) :
     x = int(raw_input("Enter x: "))
@@ -40,6 +42,8 @@ proceed = raw_input("Enter any key to proceed: ")
 if navi.hasNextPath() is True :
 ##        navi.switchToPathList3()
     navi.switchToNextPathList()
+    print navi.getNorthDifference()
+    print navi.getFirstCoordinates()
 
 while(navi.fullNavigate() is False) :
     x = int(raw_input("Enter x: "))
