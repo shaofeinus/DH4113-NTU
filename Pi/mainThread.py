@@ -49,14 +49,16 @@ class voiceThread(threading.Thread):
     def run(self):
         global voiceQueue
         global voiceSema
-        global speaker
+        global UISpeaker
 
         while True:
             voiceSema.acquire()
             if not voiceQueue.empty():
                 item = voiceQueue.popleft()
                 if item is not None:
-                    speaker.speak(str(item))
+                    UISpeaker.wait()
+                    UISpeaker.speak(str(item))
+                    # speaker.speak(str(item))
             else:
                 time.sleep(1)
 
@@ -616,7 +618,6 @@ class ObstacleAvoidanceThread(threading.Thread):
             obstacleStatusLock.acquire()
             obstacleStatus = obstacleDetected
             obstacleStatusLock.release()
-
             if obstacle.isFrontObstacleDetected(obstacleStatus) is True :
                 obstacleStatusLock.acquire()
                 obstacleDetected = 1
@@ -625,11 +626,8 @@ class ObstacleAvoidanceThread(threading.Thread):
             else:
                 obstacle.turnOffMotors()
 
-            
-            # up/down step
-##            stepType = obstacle.hasStep()
-##            if ((stepType == 1) or (stepType == 2)) :
-##                obstacle.stepVibrateMotor(stepType)
+            # up/down step detection
+            obstacle.detectStep()
             
 ##            if obstacle.isNewObstacleDetected(obstacleStatus) is True:
 ##                obstacleStatusLock.acquire()
@@ -735,35 +733,33 @@ class UIThread(threading.Thread):
 
         userInputLock.release()
 
-    class CollectIRThread(threading.Thread):
-        def __init__(self, threadID, threadName):
-           threading.Thread.__init__(self)
-           self.threadID = threadID
-           self.threadName = threadName
-
-        def run(self):
-           global irCount
-           global irSum
-           while 1:
-               if irCount == 0 :
-                   print "Starting!"
-                   time.sleep(2)
-               irCount += 1
-               irSum += data[15]
-               if irCount == 15 :
-                   irSum /= 15
-                   with open("Output.txt", "a") as text_file:
-                       text_file.write("\n")
-                       text_file.write(str(irSum))
-                       print irSum
-                   irCount = 0
-                   irSum = 0
-                   print "NEXT VALUE PLEASE"
-                   time.sleep(2)
-               time.sleep(0.1)
-
-    irCount = 0
-    irSum = 0
+# class CollectIRThread(threading.Thread):
+#     def __init__(self, threadID, threadName):
+#        threading.Thread.__init__(self)
+#        self.threadID = threadID
+#        self.threadName = threadName
+#
+#     def run(self):
+#         global irCount
+#         global irSum
+#         while 1:
+#             if irCount == 0 :
+#                 print "Starting!"
+#                 time.sleep(2)
+#             irCount += 1
+#             irSum += data[15]
+#             if irCount == 15 :
+#                 irSum /= 15
+#                 with open("Output.txt", "a") as text_file:
+#                     text_file.write("\n")
+#                     text_file.write(str(irSum))
+#                 print "current ir value: " + str(irSum)
+#                 irCount = 0
+#                 irSum = 0
+#             time.sleep(0.1)
+#
+# irCount = 0
+# irSum = 0
 
 # --------------------- START OF MAIN ----------------------- #
 
@@ -903,13 +899,14 @@ if skip_init:
     mainThreads.append(NavigationThread(5, "navigation"))
     mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
     # mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
+    # mainThreads.append(CollectIRThread(9, "collect ir data"))
 else:
     mainThreads.append(LocationUpdateThread(3, "location update"))
     mainThreads.append(LocationDisplayThread(4, "location display"))
     mainThreads.append(NavigationThread(5, "navigation"))
     mainThreads.append(ObstacleAvoidanceThread(6, "avoid obstacles"))
 ##    mainThreads.append(ObstacleClearedThread(7, "ensure obstacles cleared"))
-    mainThreads.append(collectIRThread(9, "collect ir data"))
+    # mainThreads.append(CollectIRThread(9, "collect ir data"))
 
 for thread in mainThreads:
     thread.start()

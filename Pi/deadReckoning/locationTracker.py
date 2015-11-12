@@ -12,7 +12,7 @@ __author__ = 'Shao Fei'
 class LocationTracker:
 
     STEP_DISTANCE = 45.0     # in cm
-    MOVE_ANGLE_TOLERANCE = 15.0 / 180.0 * math.pi
+    MOVE_ANGLE_TOLERANCE = 10.0 / 180.0 * math.pi
 
     def __init__(self, initX, initY, northAt):
         self.currX = initX      # Points eastwards
@@ -25,10 +25,16 @@ class LocationTracker:
         self.totalDistance = 0
         self.northAt = northAt / 180 * math.pi      # In rad
         self.firstUpdate = True
+
         self.headingWRTMapInRad = 0
+
+        self.trueHeadingWRTNorthInDeg = 0
         self.headingWRTMapInDeg = 0
+        self.trueHeadingWRTNorthInRad = 0
         self.headingWRTNorthInRad = 0
+
         self.isFirstStep = True
+        self.isLastStep = False
         self.prevGyroDev = 0
         self.prevCompDev = 0
         self.calibrationTools = calibrationTools.CalibrationTools()
@@ -60,10 +66,6 @@ class LocationTracker:
     # Public
     def getHeadingInDeg(self):
         return self.headingWRTNorthInDeg
-
-    # Public
-    def getHeadingWRTMapInDeg(self):
-        return self.headingWRTMapInDeg
 
     # Public
     def getHeightInCM(self):
@@ -111,18 +113,24 @@ class LocationTracker:
         if currSteps != 0:
             angleDev = gyroAngleDev
             mode = 'gyro'
+            self.isLastStep = True
         else:
             self.isFirstStep = True
             angleDev = compAngleDev
             mode = 'compass'
 
-        # if currSteps != 0 and self.isFirstStep:
-        #     self.isFirstStep = False
-        #     self.updateCurrHeading(self.headingWRTNorthInRad - self.prevCompDev + self.prevGyroDev)
-        #     mode = 'change prev dev'
+        if currSteps != 0 and self.isFirstStep:
+            self.isFirstStep = False
+            self.updateCurrHeading(self.headingWRTNorthInRad - self.prevCompDev + self.prevGyroDev)
+            mode = 'change prev dev'
 
-        # self.prevGyroDev = gyroAngleDev
-        # self.prevCompDev = gyroAngleDev
+        self.prevGyroDev = gyroAngleDev
+        self.prevCompDev = gyroAngleDev
+
+        if currSteps == 0 and self.isLastStep:
+            self.isLastStep = False
+            angleDev = gyroAngleDev
+            mode = 'change next dev'
 
         self.updateCurrHeading(angleDev + self.headingWRTNorthInRad)
 
@@ -133,8 +141,8 @@ class LocationTracker:
         # print "heading ", compass.Compass.getHeadingInDeg(self.compass.calculateHeadingInRad())
 
         if currSteps != 0:
-            headingToUse = round(self.headingWRTNorthInRad / self.MOVE_ANGLE_TOLERANCE) * self.MOVE_ANGLE_TOLERANCE
-            # headingToUse = self.headingWRTNorthInRad
+            # headingToUse = round(self.headingWRTNorthInRad / self.MOVE_ANGLE_TOLERANCE) * self.MOVE_ANGLE_TOLERANCE
+            headingToUse = self.headingWRTNorthInRad
             # x points to the East
             xCurrDistance = currDistance * math.sin(headingToUse)
             # y points to the North
@@ -146,10 +154,11 @@ class LocationTracker:
 
         f = open('locationdata.csv', 'a')
         if self.firstUpdate:
-            f.write('distance covered,angle,gyro dev, comp dev, mode,steps,currX,currY\n')
+            f.write('distance covered,true angle, est angle,gyro dev, comp dev, mode,steps,currX,currY\n')
             self.firstUpdate = False
 
         f.write(str(currDistance) + ',' +
+                str(self.trueHeadingWRTNorthInDeg) + ',' +
                 str(self.headingWRTNorthInDeg) + ',' +
                 str(self.compass.getHeadingInDeg(gyroAngleDev)) + ',' +
                 str(self.compass.getHeadingInDeg(compAngleDev)) + ',' +
@@ -165,8 +174,12 @@ class LocationTracker:
         if angleInRad < 0:
             angleInRad += 2 * math.pi
 
-        self.headingWRTNorthInRad = angleInRad
+        self.trueHeadingWRTNorthInRad = angleInRad
+
+    def updateEstHeading(self):
+        estHeadingInRad = self.trueHeadingWRTNorthInRad / self.MOVE_ANGLE_TOLERANCE * self.MOVE_ANGLE_TOLERANCE
         self.headingWRTNorthInDeg = compass.Compass.getHeadingInDeg(self.headingWRTNorthInRad)
+        self.trueHeadingWRTNorthInDeg = compass.Compass.getHeadingInDeg(angleInRad)
 
     # Called by Navigation
     # Offset parameter in Deg

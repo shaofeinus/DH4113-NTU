@@ -7,19 +7,21 @@ import RPi.GPIO as GPIO
 # setNextNodeDirection(direction)
 # setCurrentLocation(x, y)
 # avoidObstacle()
-# hasStep()
+# detectStep()
 # stepVibrateMotor()
 
 class obstacleAvoidance (object) :
     def __init__(self) :       
         self.FRONT_OBSTACLE_DISTANCE = 90
-        self.FRONT_OBSTACLE_BUFFER = 100
-        self.BOTTOM_OBSTACLE_DISTANCE = 70
-        self.BOTTOM_OBSTACLE_BUFFER = 75
+        self.FRONT_OBSTACLE_BUFFER = 90
+        self.BOTTOM_OBSTACLE_DISTANCE = 60
+        self.BOTTOM_OBSTACLE_BUFFER = 60
         self.SIDE_OBSTACLE_IR = 75
         self.SIDE_OBSTACLE_SONAR = 70
-        self.UPSTEP_THRESHHOLD = 500
-        self.DOWNSTEP_THRESHHOLD = 430
+        self.UPSTEP_MAX = 500
+        self.UPSTEP_THRESHHOLD = 465
+        self.DOWNSTEP_THRESHHOLD = 435
+        self.DOWNSTEP_MIN = 400
         self.VIBRATE_DURATION = 1
         self.OBSTACLE_RADIUS = 70
         self.LARGE_VALUE = 150
@@ -50,7 +52,7 @@ class obstacleAvoidance (object) :
         self.CLEARED_MAX_COUNT = 3
 
         self.irLIndex = -1
-        self.irLHistory = 15
+        self.irLHistory = 5
         # step detection IR
         self.irLarge = []
         for i in xrange(self.irLHistory) :
@@ -151,7 +153,7 @@ class obstacleAvoidance (object) :
 
     def updateFrontSensorData(self, irLarge, sonarFC, irFC, irFL, irFR) :
         self.irLIndex = (self.irLIndex + 1) % self.irLHistory
-        self.irLarge[self.irLIndex] = self.irLarge
+        self.irLarge[self.irLIndex] = irLarge
         
         self.fHistoryIndex = (self.fHistoryIndex + 1) % self.frontNumHistory
         self.sonarFC[self.fHistoryIndex] = self.convertSonarToCm(sonarFC)
@@ -463,44 +465,23 @@ class obstacleAvoidance (object) :
         GPIO.output(self.leftPin, False)
         GPIO.output(self.rightPin, False)
 
-    # returns 0 if no step, 1 if up, 2 if down
-    def hasStep(self) :
-        irAverage = 0
-        for i in self.irLarge :
-            irAverage += i
-        irAverage /= self.irLHistory
-
-        if irAverage > self.UPSTEP_THRESHHOLD :
-            if self.isFrontObstacleDetected() is False:
-                return 1
-            else :
-                return 0
-        elif irAverage < self.DOWNSTEP_THRESHHOLD :
-            return 2
+    # if up step, vibrate right side
+    # if down step,  vibrate left side
+    def detectStep(self) :
+        longIRAverage = 0
+        longIRAverage = sum(self.irLarge) / len(self.irLarge)
+        if ((longIRAverage > self.UPSTEP_THRESHHOLD) and (longIRAverage < self.UPSTEP_MAX)) :
+            print "\n\n*********************UPSTEP******************\n\n" + str(longIRAverage)
+            GPIO.output(self.leftPin, False)
+            GPIO.output(self.rightPin, True)
+        elif ((longIRAverage < self.DOWNSTEP_THRESHHOLD)  and (longIRAverage > self.DOWNSTEP_MIN)):
+            print "\n\n*********************DOWNSTEP******************\n\n" + str(longIRAverage)
+            GPIO.output(self.leftPin, True)
+            GPIO.output(self.rightPin, False)
         else :
-            return 0   
+            GPIO.output(self.leftPin, False)
+            GPIO.output(self.rightPin, False)
 
-
-    # if up step (1), vibrate right-left-right
-    # if down step (2),  vibrate left-right-left
-    def stepVibrateMotor(self, stepType) :
-        if stepType == 1 :
-            hasUp = True
-        else :
-            hasUp = False
-        
-        print "STEP ENCOUNTERED!"
-##        GPIO.output(self.leftPin, not hasUp)
-##        GPIO.output(self.rightPin, hasUp)
-##        time.sleep(0.2)
-##        GPIO.output(self.leftPin, hasUp)
-##        GPIO.output(self.rightPin, not hasUp)
-##        time.sleep(0.2)
-##        GPIO.output(self.leftPin, not hasUp)
-##        GPIO.output(self.rightPin, hasUp)
-##        time.sleep(0.2)
-##        GPIO.output(self.leftPin, False)
-##        GPIO.output(self.rightPin, False)
 
     # increment count if same obstacle is detected
     def updateObstacleCount(self) :    
