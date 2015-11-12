@@ -12,7 +12,7 @@ __author__ = 'Shao Fei'
 class LocationTracker:
 
     STEP_DISTANCE = 45.0     # in cm
-    MOVE_ANGLE_TOLERANCE = 2 * math.pi / 36.0
+    MOVE_ANGLE_TOLERANCE = 15.0 / 180.0 * math.pi
 
     def __init__(self, initX, initY, northAt):
         self.currX = initX      # Points eastwards
