@@ -63,7 +63,6 @@ class voiceThread(threading.Thread):
             else:
                 time.sleep(self.sleepTime)
 
-
 class ReceiveDataThread(threading.Thread):
     def __init__(self, threadID, threadName):
         threading.Thread.__init__(self)
@@ -529,6 +528,7 @@ class NavigationThread(threading.Thread):
         global isNextPathNeeded
         global nextPathSema
         global data
+        global newLevelReached
         while 1:
 ##            if isNextPathNeeded:
 ##                print self.threadName, "blocking"
@@ -562,7 +562,8 @@ class NavigationThread(threading.Thread):
                     locationTrackerLock.acquire()
                     locationTracker.updateMapNorth(navi.getNorthDifference())
                     (initX, initY) = navi.getFirstCoordinates()
-                    locationTracker.setLocation(initX, initY)                    
+                    locationTracker.setLocation(initX, initY)
+                    newLevelReached = navi.isDifferentLevel()
                     locationTrackerLock.release()
 
                     # turn on location tracker and receive data threads
