@@ -497,8 +497,15 @@ class LocationUpdateThread(threading.Thread):
     def run(self):
         global isNextPathNeeded
         global nextPathSema
+        global newLevelReached
 
         while 1:
+            if newLevelReached:
+                while not self.isDone['nOffset']:
+                    break
+
+                locationTracker.compass.prevHeadingInRad = self.calibrator.NOffsetAngle
+
             if isNextPathNeeded:
                 print self.threadName, "blocking"
                 nextPathSema.acquire()
@@ -509,7 +516,6 @@ class LocationUpdateThread(threading.Thread):
             self.updateBaroData()
             self.updateGyroData()
             locationTrackerLock.release()
-
 
 class NavigationThread(threading.Thread):
     def __init__(self, threadID, threadName):
@@ -522,10 +528,11 @@ class NavigationThread(threading.Thread):
         global skip_init
         global isNextPathNeeded
         global nextPathSema
+        global data
         while 1:
-            if isNextPathNeeded:
-                print self.threadName, "blocking"
-                nextPathSema.acquire()
+##            if isNextPathNeeded:
+##                print self.threadName, "blocking"
+##                nextPathSema.acquire()
 
             locationTrackerLock.acquire()
             curX = locationTracker.getXCoord()
@@ -538,6 +545,17 @@ class NavigationThread(threading.Thread):
                 print ("\n\n\n\n\nLE SWITCHEROO\n\n\n\n")
                 if navi.hasNextPath() is True :
                     isNextPathNeeded = True
+                    userInputLock.acquire()
+                    
+                    print "press start to continue"
+                    UISpeaker.speak("Now entering new map. Press start to continue.")
+                    while keypad.get_binary_response():
+                        pass
+                    
+                    data = [deque() for x in range(NUM_QUEUED_ID)]
+                    data_single = [0 for x in range(NUM_SINGLE_ID)]
+                    data.extend(data_single)
+
                     navi.switchToNextPathList()
 
                     # update location tracker initial heading/coordinates
@@ -547,13 +565,13 @@ class NavigationThread(threading.Thread):
                     locationTracker.setLocation(initX, initY)                    
                     locationTrackerLock.release()
 
-                    print "press start to continue"
-                    UISpeaker.speak("Now entering new map. Press start to continue.")
-                    while keypad.get_binary_response():
-                        pass
+                    # turn on location tracker and receive data threads
+                    userInputLock.release()
+                    
                     isNextPathNeeded = False
                     for thread in mainThreads:
-                        nextPathSema.release()
+                        if thread.threadID != 6 and thread.threadID != 5:
+                            nextPathSema.release()
                 else :
                     return
             time.sleep(3)
@@ -568,11 +586,11 @@ class ObstacleAvoidanceThread(threading.Thread):
     def run(self):
         global obstacleDetected
         global isNextPathNeeded
-        global nextPathSema
+##        global nextPathSema
         while 1:
-            if isNextPathNeeded:
-                print self.threadName, "blocking"
-                nextPathSema.acquire()
+##            if isNextPathNeeded:
+##                print self.threadName, "blocking"
+##                nextPathSema.acquire()
 
             irFC = data[6]
             irLS = data[7]
@@ -695,6 +713,8 @@ NUM_SINGLE_ID = 11
 # 13 - sonar (right side) (25 trig  2 echo)
 # 15 - IR (large)
 
+# For inter level transition
+newLevelReached = False
 
 # Queue for sound
 voiceQueue = my_deque()

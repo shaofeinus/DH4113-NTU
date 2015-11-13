@@ -72,6 +72,13 @@ class navigation (object) :
         self.nexXCoord = nexXCoord
         self.nexYCoord = nexYCoord
 
+    def stringNumbers(self, numInput) :
+        temp = int(numInput)
+        outputString = ""
+        while temp > 0 :
+            outputString = str(temp%10) + " " + outputString
+            temp/=10
+        return outputString
 
     # calculates the deviation from x-coordinate the person
     # is supposed to be, based on his current y-coordinate
@@ -110,12 +117,12 @@ class navigation (object) :
 
     def alertNearingNode(self, distanceTo) :
         if ((distanceTo <= self.nearingCount) and (distanceTo > self.maxTolerance)) :
-            self.sentence = "%s in %.1f metres, " %(self.nextNodeName, distanceTo/100.0)
-            self.voiceQueue.append_high(self.sentence, time.time())
+            sentence = "%s in %.1f metres, " %(self.nextNodeName, distanceTo/100.0)
+            self.voiceQueue.append_high(sentence, time.time())
             while (self.nearingCount >= distanceTo) :
                 self.nearingCount -= 100
         else :
-            self.sentence = ""
+            sentence = ""
 
 
     # navigation algorithm:
@@ -133,10 +140,10 @@ class navigation (object) :
             # if angle is within tolerance, continue in current direction
             # or if not allowed to turn because already turned 90degrees
             if (math.fabs(turnAngle) < self.angleTolerance):
-                self.sentence += "Go."
-                print self.sentence
+                sentence = "Go"
+                print sentence
                 if time.time() - self.prev_message_time_turn > self.message_delay:
-                   if self.voiceQueue.append(self.sentence, time.time()):
+                   if self.voiceQueue.append(sentence, time.time()):
                        self.voiceSema.release()
                    self.prev_message_time_turn = time.time()
                 return 0
@@ -145,27 +152,27 @@ class navigation (object) :
                 if ((self.canTurn is False) and (turnAngle > 90)) :
                     turnAngle = 90
                     return 0
-                self.sentence += "Right %.0f" %(turnAngle)
-                print self.sentence
+                sentence = "Right " + self.stringNumbers(turnAngle)
+                print sentence
                 if time.time() - self.prev_message_time_turn > self.message_delay:
-                   if self.voiceQueue.append(self.sentence, time.time()):
+                   if self.voiceQueue.append(sentence, time.time()):
                        self.voiceSema.release()
                    self.prev_message_time_turn = time.time()
             elif (turnAngle < 0) :
                 if ((self.canTurn is False) and (turnAngle < -90)) :
                     turnAngle = -90
                     return 0
-                self.sentence += "Left %.0f" %(math.fabs(turnAngle))
-                print self.sentence
+                sentence = "Left " + self.stringNumbers(math.fabs(turnAngle))
+                print sentence
                 if time.time() - self.prev_message_time_turn > self.message_delay:
-                   if self.voiceQueue.append(self.sentence, time.time()):
+                   if self.voiceQueue.append(sentence, time.time()):
                        self.voiceSema.release()
                    self.prev_message_time_turn = time.time()
             else :
-                self.sentence += "Go."
-                print self.sentence
+                sentence = "Go"
+                print sentence
                 if time.time() - self.prev_message_time_str > self.message_delay:
-                   if self.voiceQueue.append(self.sentence, time.time()):
+                   if self.voiceQueue.append(sentence, time.time()):
                        self.voiceSema.release()
                    self.prev_message_time_turn = time.time()
 
