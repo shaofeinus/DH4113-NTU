@@ -1,13 +1,15 @@
 from collections import deque
+import time
 __author__ = 'Pap'
 
 class my_deque(object):
     def __init__(self):
-        self.queue = deque()
+        self.queue = deque(maxlen=1)
         self.queue_high = deque()
         self.flush_queue = False
         self.curr_time = 0
         self.curr_speak_time = 0
+        self.tolerance = 0.3
 
     def clear(self):
         self.queue.clear()
@@ -26,6 +28,11 @@ class my_deque(object):
             item = self.queue_high.popleft()
             self.curr_speak_time = item[1]
         else:
+            # while len(self.queue) > 0:
+            #     item = self.queue.popleft()
+            #     if time.time() - item[1] > self.tolerance:
+            #         print "None"
+            #         return None
             item = self.queue.popleft()
             if self.curr_speak_time > 0 and item[1] < self.curr_speak_time:
                 print "None"
@@ -51,9 +58,10 @@ class my_deque(object):
         return True
 
     def append_high(self, item, timeStamp):
-        if self.flush_queue:
-            self.queue.clear()
-            self.flush_queue = False
+        #if self.flush_queue:
+        self.queue.clear()
+        self.flush_queue = False
+
         item = [item, timeStamp]
         self.queue_high.append(item)
         return True
