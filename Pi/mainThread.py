@@ -56,8 +56,10 @@ class voiceThread(threading.Thread):
             voiceSema.acquire()
             if not voiceQueue.empty():
                 item = voiceQueue.popleft()
-                if item is not None:
+                if item[0] is not None:
                     UISpeaker.wait()
+                    if item[1]:
+                        voiceQueue.clear()
                     UISpeaker.speak(str(item))
                     # speaker.speak(str(item))
             else:

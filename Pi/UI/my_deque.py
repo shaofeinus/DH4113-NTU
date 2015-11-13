@@ -27,6 +27,7 @@ class my_deque(object):
         if len(self.queue_high) > 0:
             item = self.queue_high.popleft()
             self.curr_speak_time = item[1]
+            item = [item[0], True]
         else:
             # while len(self.queue) > 0:
             #     item = self.queue.popleft()
@@ -36,13 +37,13 @@ class my_deque(object):
             item = self.queue.popleft()
             if self.curr_speak_time > 0 and item[1] < self.curr_speak_time:
                 print "None"
-                return None
+                return [None, False]
             self.curr_speak_time = item[1]
 
         if self.flush_queue:
             self.queue.clear()
             self.flush_queue = False
-        return item[0]
+        return [item[0], False]
 
     def append(self, item, timeStamp):
         if timeStamp < self.curr_time:
