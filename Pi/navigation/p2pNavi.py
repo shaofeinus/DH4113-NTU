@@ -73,6 +73,13 @@ class navigation (object) :
         self.nexXCoord = nexXCoord
         self.nexYCoord = nexYCoord
 
+    def stringNumbers(self, numInput) :
+        temp = int(numInput)
+        outputString = ""
+        while temp > 0 :
+            outputString = str(temp%10) + " " + outputString
+            temp/=10
+        return outputString
 
     # calculates the deviation from x-coordinate the person
     # is supposed to be, based on his current y-coordinate
@@ -133,7 +140,7 @@ class navigation (object) :
             # if angle is within tolerance, continue in current direction
             # or if not allowed to turn because already turned 90degrees
             if (math.fabs(turnAngle) < self.angleTolerance):
-                self.sentence += "Go."
+                self.sentence += "Go"
                 print self.sentence
                 if time.time() - self.prev_message_time_turn > self.message_delay:
                    if self.prev_message != self.sentence:
@@ -147,7 +154,7 @@ class navigation (object) :
                 if ((self.canTurn is False) and (turnAngle > 90)) :
                     turnAngle = 90
                     return 0
-                self.sentence += "Right %.0f" %(turnAngle)
+                self.sentence += "Right " + stringNumbers(turnAngle)
                 print self.sentence
                 if time.time() - self.prev_message_time_turn > self.message_delay:
                    if self.prev_message != self.sentence:
@@ -159,7 +166,7 @@ class navigation (object) :
                 if ((self.canTurn is False) and (turnAngle < -90)) :
                     turnAngle = -90
                     return 0
-                self.sentence += "Left %.0f" %(math.fabs(turnAngle))
+                self.sentence += "Left " + stringNumbers(math.fabs(turnAngle))
                 print self.sentence
                 if time.time() - self.prev_message_time_turn > self.message_delay:
                    if self.prev_message != self.sentence:
@@ -168,7 +175,7 @@ class navigation (object) :
                        self.prev_message_time_turn = time.time()
                        self.prev_message = self.sentence
             else :
-                self.sentence += "Go."
+                self.sentence += "Go"
                 print self.sentence
                 if time.time() - self.prev_message_time_str > self.message_delay:
                    if self.prev_message != self.sentence:

@@ -35,10 +35,10 @@ class mapParser (object) :
                 self.loadedMaps = ["com1L2.json", "com2L2.json", "com2L3.json",
                                    "1L2.json", "2L2.json", "2L3.json"]
                 # list of coordinates where the map merges with another map
-                # (startMap, endMap, x, y)
+                # (startMap, endMap, x, y, differentLevel)
                 # 0 = com1L2, 1 = com2L2, 2 = com2L3
-                self.conList = [(0, 1, 11815, 406), (1, 0, 61, 4024),
-                                (1, 2, 4329, 2317), (2, 1, 4207, 2134)]
+                self.conList = [(0, 1, 11815, 406, 0), (1, 0, 61, 4024, 0),
+                                (1, 2, 4329, 2317, 1), (2, 1, 4207, 2134, 1)]
 
         def clear(self) :
                 self.buildingMap = {}
@@ -139,7 +139,7 @@ class mapParser (object) :
                 else :
                        return self.matrix[point2][point1]
                 
-        # returns a list of tuples(startMap, endMap, id) of a building connection
+        # returns a list of tuples(startMap, endMap, id, hasStairs) of a building connection
         def getNodeID(self) :
                 connectionList = []              
                 for i in xrange(len(self.conList)) :
@@ -151,7 +151,7 @@ class mapParser (object) :
                                 nodeY = int(self.buildingMap['map'][j]['y'])
                                 if ((nodeX == tempX) and (nodeY == tempY)) :
                                         connectionList.append(
-                                                (self.conList[i][0], self.conList[i][1], j))
+                                                (self.conList[i][0], self.conList[i][1], j, self.conList[i][4]))
                 return connectionList
                                 
                 

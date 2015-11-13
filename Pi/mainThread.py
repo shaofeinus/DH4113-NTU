@@ -520,10 +520,11 @@ class NavigationThread(threading.Thread):
         global skip_init
         global isNextPathNeeded
         global nextPathSema
+        global data
         while 1:
-            if isNextPathNeeded:
-                print self.threadName, "blocking"
-                nextPathSema.acquire()
+##            if isNextPathNeeded:
+##                print self.threadName, "blocking"
+##                nextPathSema.acquire()
 
             locationTrackerLock.acquire()
             curX = locationTracker.getXCoord()
@@ -536,6 +537,17 @@ class NavigationThread(threading.Thread):
                 print ("\n\n\n\n\nLE SWITCHEROO\n\n\n\n")
                 if navi.hasNextPath() is True :
                     isNextPathNeeded = True
+                    userInputLock.acquire()
+                    
+                    print "press start to continue"
+                    UISpeaker.speak("Now entering new map. Press start to continue.")
+                    while keypad.get_binary_response():
+                        pass
+                    
+                    data = [deque() for x in range(NUM_QUEUED_ID)]
+                    data_single = [0 for x in range(NUM_SINGLE_ID)]
+                    data.extend(data_single)
+
                     navi.switchToNextPathList()
 
                     # update location tracker initial heading/coordinates
@@ -545,13 +557,13 @@ class NavigationThread(threading.Thread):
                     locationTracker.setLocation(initX, initY)                    
                     locationTrackerLock.release()
 
-                    print "press start to continue"
-                    UISpeaker.speak("Now entering new map. Press start to continue.")
-                    while keypad.get_binary_response():
-                        pass
+                    # turn on location tracker and receive data threads
+                    userInputLock.release()
+                    
                     isNextPathNeeded = False
                     for thread in mainThreads:
-                        nextPathSema.release()
+                        if thread.threadID != 6 and thread.threadID != 5:
+                            nextPathSema.release()
                 else :
                     return
             time.sleep(1.5)
@@ -566,11 +578,11 @@ class ObstacleAvoidanceThread(threading.Thread):
     def run(self):
         global obstacleDetected
         global isNextPathNeeded
-        global nextPathSema
+##        global nextPathSema
         while 1:
-            if isNextPathNeeded:
-                print self.threadName, "blocking"
-                nextPathSema.acquire()
+##            if isNextPathNeeded:
+##                print self.threadName, "blocking"
+##                nextPathSema.acquire()
 
             irFC = data[6]
             irLS = data[7]
