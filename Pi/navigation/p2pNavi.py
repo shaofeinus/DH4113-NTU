@@ -4,13 +4,11 @@ import math
 
 # API:
 # setNorthAt(northAt)
-# setPrevObstacleHeading(angle)
 # setPrevCoordinates(x, y)
 # setNexCoordinates(x, y)
 # updateCurCoord(x, y)
 # updateHeading(heading)
 # setNextNodeName(nodeName)
-# resetNearingCount()
 # navigate()
 # TODO: Change the maxTolerance, maxDeviation, angleTolerance values
 
@@ -41,13 +39,7 @@ class navigation (object) :
         self.angleTolerance = 0     # degrees
         # if already notified that nearing node
         self.alreadyAlerted = False
-
         self.NEARING_DISTANCE = 400
-        # boolean whether allowed to turn
-        self.canTurn = True
-
-    def setCanTurn(self, canTurn) :
-        self.canTurn = canTurn
 
     def updateCurCoord(self, x, y) :
         self.curXCoord = x
@@ -117,7 +109,8 @@ class navigation (object) :
         if ((distanceTo <= self.NEARING_DISTANCE) and (distanceTo > self.maxTolerance)) :
             if self.alreadyAlerted is False:
                 self.alreadyAlerted = True
-                sentence = "%s in %.0f metres, " %(self.nextNodeName, distanceTo/100.0)
+                sentence = "%s in %d m" %(self.nextNodeName, int(distanceTo/100))
+                print sentence
                 self.voiceQueue.append_high(sentence, time.time())
 
 
@@ -145,9 +138,6 @@ class navigation (object) :
                 return 0
         
             if (turnAngle > 0) :
-                if ((self.canTurn is False) and (turnAngle > 90)) :
-                    turnAngle = 90
-                    return 0
                 sentence = "Right " + self.stringNumbers(turnAngle)
                 print sentence
                 if time.time() - self.prev_message_time_turn > self.message_delay:
@@ -155,9 +145,6 @@ class navigation (object) :
                        self.voiceSema.release()
                    self.prev_message_time_turn = time.time()
             elif (turnAngle < 0) :
-                if ((self.canTurn is False) and (turnAngle < -90)) :
-                    turnAngle = -90
-                    return 0
                 sentence = "Left " + self.stringNumbers(math.fabs(turnAngle))
                 print sentence
                 if time.time() - self.prev_message_time_turn > self.message_delay:
