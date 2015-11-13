@@ -46,6 +46,7 @@ class voiceThread(threading.Thread):
         self.threadID = threadID
         self.threadName = threadName
         self.sleepTime = 0.2
+
     def run(self):
         global voiceQueue
         global voiceSema
@@ -61,6 +62,7 @@ class voiceThread(threading.Thread):
                     UISpeaker.speak(str(item))
             else:
                 time.sleep(self.sleepTime)
+
 
 class ReceiveDataThread(threading.Thread):
     def __init__(self, threadID, threadName):
