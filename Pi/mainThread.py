@@ -46,7 +46,7 @@ class voiceThread(threading.Thread):
         self.threadID = threadID
         self.threadName = threadName
         self.sleepTime = 0
-
+        self.prevHigh = False
     def run(self):
         global voiceQueue
         global voiceSema
@@ -57,10 +57,12 @@ class voiceThread(threading.Thread):
             if not voiceQueue.empty():
                 item = voiceQueue.popleft()
                 if item[0] is not None:
-                    UISpeaker.wait()
-                    if item[1]:
+                    if self.prevHigh:
                         voiceQueue.clear()
+
+                    UISpeaker.wait()
                     UISpeaker.speak(str(item))
+                    self.prevHigh = item[1]
                     # speaker.speak(str(item))
             else:
                 time.sleep(self.sleepTime)
