@@ -204,3 +204,9 @@ class LocationTracker:
     def setLocation(self, xCoordinate, yCoordinate):
         self.currX = xCoordinate
         self.currY = yCoordinate
+
+    def resetHeading(self):
+        self.trueHeadingWRTNorthInDeg = 0
+        self.headingWRTNorthInDeg = 0
+        self.trueHeadingWRTNorthInRad = 0
+        self.headingWRTNorthInRad = 0

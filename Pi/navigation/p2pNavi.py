@@ -37,8 +37,9 @@ class navigation (object) :
         self.maxTolerance = 200       # cm
         # angle tolerance
         self.angleTolerance = 0     # degrees
-        # distance from node for updates
-        self.nearingCount = 500
+        # if already notified that nearing node
+        self.alreadyAlerted = False
+        self.NEARING_DISTANCE = 400
 
     def updateCurCoord(self, x, y) :
         self.curXCoord = x
@@ -52,9 +53,6 @@ class navigation (object) :
 
     def setNextNodeName(self, nodeName) :
         self.nextNodeName = nodeName
-
-    def resetNearingCount(self) :
-        self.nearingCount = 500
     
     def setPrevCoordinates(self, prevXCoord, prevYCoord) :
         self.prevXCoord = prevXCoord
@@ -106,15 +104,14 @@ class navigation (object) :
             turnAngle += 360
         return turnAngle
     
-
+    # alert the user once when he is less than 4m from the node
     def alertNearingNode(self, distanceTo) :
-        if ((distanceTo <= self.nearingCount) and (distanceTo > self.maxTolerance)) :
-            sentence = "%s in %.1f metres, " %(self.nextNodeName, distanceTo/100.0)
-            self.voiceQueue.append_high(sentence, time.time())
-            while (self.nearingCount >= distanceTo) :
-                self.nearingCount -= 100
-        else :
-            sentence = ""
+        if ((distanceTo <= self.NEARING_DISTANCE) and (distanceTo > self.maxTolerance)) :
+            if self.alreadyAlerted is False:
+                self.alreadyAlerted = True
+                sentence = "%s in %d m" %(self.nextNodeName, int(distanceTo/100))
+                print sentence
+                self.voiceQueue.append_high(sentence, time.time())
 
 
     # navigation algorithm:
@@ -141,9 +138,6 @@ class navigation (object) :
                 return 0
         
             if (turnAngle > 0) :
-                if ((self.canTurn is False) and (turnAngle > 90)) :
-                    turnAngle = 90
-                    return 0
                 sentence = "Right " + self.stringNumbers(turnAngle)
                 print sentence
                 if time.time() - self.prev_message_time_turn > self.message_delay:
@@ -151,9 +145,6 @@ class navigation (object) :
                        self.voiceSema.release()
                    self.prev_message_time_turn = time.time()
             elif (turnAngle < 0) :
-                if ((self.canTurn is False) and (turnAngle < -90)) :
-                    turnAngle = -90
-                    return 0
                 sentence = "Left " + self.stringNumbers(math.fabs(turnAngle))
                 print sentence
                 if time.time() - self.prev_message_time_turn > self.message_delay:
@@ -170,4 +161,5 @@ class navigation (object) :
 
             return 0
         else :
+            self.alreadyAlerted = False
             return 1

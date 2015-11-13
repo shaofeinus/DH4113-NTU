@@ -18,8 +18,8 @@ class obstacleAvoidance (object) :
         self.SIDE_OBSTACLE_IR = 65
         self.SIDE_OBSTACLE_BUFFER = 65
         self.UPSTEP_MAX = 500
-        self.UPSTEP_THRESHHOLD = 465
-        self.DOWNSTEP_THRESHHOLD = 435
+        self.UPSTEP_THRESHHOLD = 460
+        self.DOWNSTEP_THRESHHOLD = 430
         self.DOWNSTEP_MIN = 400
         self.VIBRATE_DURATION = 1
         self.LARGE_VALUE = 150
@@ -319,6 +319,7 @@ class obstacleAvoidance (object) :
             GPIO.output(self.leftPin, True)
             GPIO.output(self.rightPin, False)
         else :
+##            print "\n\n*********************NO STEP******************\n\n" + str(longIRAverage)
             GPIO.output(self.leftPin, False)
             GPIO.output(self.rightPin, False)
 

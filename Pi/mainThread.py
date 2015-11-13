@@ -333,6 +333,7 @@ class LocationDisplayThread(threading.Thread):
         global isNextPathNeeded
         global nextPathSema
         while 1:
+
             if isNextPathNeeded:
                 print self.threadName, "blocking"
                 nextPathSema.acquire()
@@ -356,6 +357,7 @@ class LocationDisplayThread(threading.Thread):
 
 
 class LocationUpdateThread(threading.Thread):
+
     def __init__(self, threadID, threadName):
         threading.Thread.__init__(self)
         self.threadID = threadID
@@ -380,6 +382,9 @@ class LocationUpdateThread(threading.Thread):
         self.timeInMillisGyro = 0
         self.calibrationTools = locationTracker.calibrationTools
         self.count = 0
+
+        self.calibrator = locationTracker.compass.calibrator
+        self.isDone = {'nOffset': False}
 
     def updateAccData(self):
         if len(data[1]) == 0:
@@ -493,27 +498,85 @@ class LocationUpdateThread(threading.Thread):
             locationTracker.updateBarometerData(self.baroReading)
             self.totalBaroData = 0
 
+    def calibrateTilt(self):
+        if len(data[1]) == 0:
+            return
+        elif self.totalAccData == 0:
+            data[1].popleft()
+            self.totalAccData += 1
+        elif self.totalAccData == 1:
+            self.accX = data[1].popleft()
+            self.totalAccData += 1
+        elif self.totalAccData == 2:
+            self.accY = data[1].popleft()
+            self.totalAccData += 1
+        elif self.totalAccData == 3:
+            self.accZ = data[1].popleft()
+            self.totalAccData += 1
+
+        if self.totalAccData == 4:
+            # x points to front
+            # y points to left
+            # z points to up
+            # Calibrated data is supplied as actual tilt is calibrated
+            self.accX, self.accY, self.accZ = self.calibrationTools.transformACC(self.accX, self.accY, self.accZ)
+            self.calibrator.calibrateTilt(-self.accZ, self.accY, self.accX, self.isDone)
+            self.totalAccData = 0
+
+    def calibrateNOffset(self):
+
+        if len(data[2]) == 0:
+            return
+        elif self.totalMagData == 0:
+            data[2].popleft()
+            self.totalMagData += 1
+        elif self.totalMagData == 1:
+            self.magX = data[2].popleft()
+            self.totalMagData += 1
+        elif self.totalMagData == 2:
+            self.magY = data[2].popleft()
+            self.totalMagData += 1
+        elif self.totalMagData == 3:
+            self.magZ = data[2].popleft()
+            self.totalMagData += 1
+
+        if self.totalMagData == 4:
+            # x points to front
+            # y points to left
+            # z points to up
+            # Calibrated data is supplied as actual angle is calibrated
+            self.magX, self.magY, self.magZ = self.calibrationTools.transformMag(self.magX, self.magY, self.magZ)
+            self.calibrator.calibrateNOffset(-self.magZ, self.magY, self.magX, self.isDone)
+            self.totalMagData = 0
+
     def run(self):
         global isNextPathNeeded
         global nextPathSema
         global newLevelReached
 
         while 1:
-            if newLevelReached:
-                while not self.isDone['nOffset']:
-                    break
-
-                locationTracker.compass.prevHeadingInRad = self.calibrator.NOffsetAngle
 
             if isNextPathNeeded:
                 print self.threadName, "blocking"
                 nextPathSema.acquire()
 
             locationTrackerLock.acquire()
+
+            if newLevelReached:
+                print "\n\n NEW LEVEL for location tracker!!!!! \n\n"
+                while not self.isDone['nOffset']:
+                    self.calibrateNOffset()
+
+                locationTracker.compass.prevHeadingInRad = self.calibrator.NOffsetAngle
+                locationTracker.resetHeading()
+
+                newLevelReached = False
+
             self.updateAccData()
             self.updateMagData()
             self.updateBaroData()
             self.updateGyroData()
+
             locationTrackerLock.release()
 
 class NavigationThread(threading.Thread):
@@ -545,7 +608,7 @@ class NavigationThread(threading.Thread):
                 print ("\n\n\n\n\nLE SWITCHEROO\n\n\n\n")
                 if navi.hasNextPath() is True :
                     isNextPathNeeded = True
-                    userInputLock.acquire()
+                    # userInputLock.acquire()
                     
                     print "press start to continue"
                     UISpeaker.speak("Now entering new map. Press start to continue.")
@@ -556,18 +619,19 @@ class NavigationThread(threading.Thread):
                     data_single = [0 for x in range(NUM_SINGLE_ID)]
                     data.extend(data_single)
 
+                    dataFeeder.serialPort.flushInput()
+                    dataFeeder.serialPort.flushOutput()
+
                     navi.switchToNextPathList()
 
                     # update location tracker initial heading/coordinates
-                    locationTrackerLock.acquire()
                     locationTracker.updateMapNorth(navi.getNorthDifference())
                     (initX, initY) = navi.getFirstCoordinates()
                     locationTracker.setLocation(initX, initY)
                     newLevelReached = navi.isDifferentLevel()
-                    locationTrackerLock.release()
 
                     # turn on location tracker and receive data threads
-                    userInputLock.release()
+                    # userInputLock.release()
                     
                     isNextPathNeeded = False
                     for thread in mainThreads:
@@ -800,7 +864,7 @@ if not skip_init:
 if not skip_init:
     locationTracker.setLocation(startLocation.getLocationXCoord(), startLocation.getLocationYCoord())
 else:
-    locationTracker.setLocation(4085, 732)
+    locationTracker.setLocation(11571, 691)
 
 # Navigation initialization
 naviCount = 0
@@ -809,7 +873,7 @@ navi = fullNavi.fullNavi(voiceQueue, voiceSema)
 # navi.generateFullPath("com1", 2, 1, "com1", 2, 10)
 
 if skip_init:
-    navi.generateFullPath("com2", 2, 8, "com2", 2, 10)
+    navi.generateFullPath("com1", 2, 29, "com2", 2, 4)
 else:
     navi.generateFullPath(startLocation.getBuildingName(),
         startLocation.getLevelNumber(),
