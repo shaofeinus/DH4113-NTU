@@ -4,13 +4,11 @@ import math
 
 # API:
 # setNorthAt(northAt)
-# setPrevObstacleHeading(angle)
 # setPrevCoordinates(x, y)
 # setNexCoordinates(x, y)
 # updateCurCoord(x, y)
 # updateHeading(heading)
 # setNextNodeName(nodeName)
-# resetNearingCount()
 # navigate()
 # TODO: Change the maxTolerance, maxDeviation, angleTolerance values
 
@@ -41,12 +39,6 @@ class navigation (object) :
         self.angleTolerance = 0     # degrees
         # distance from node for updates
         self.nearingCount = 500
-
-        # boolean whether allowed to turn
-        self.canTurn = True
-
-    def setCanTurn(self, canTurn) :
-        self.canTurn = canTurn
 
     def updateCurCoord(self, x, y) :
         self.curXCoord = x
