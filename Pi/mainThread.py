@@ -14,7 +14,7 @@ from UI import keypad_polling
 from UI import pyespeak
 from UI.my_deque import my_deque
 from UI.UISpeaker import UI_Speaker
-
+import os
 
 #to print sound just call voiceQueue.append(sentence)
 
@@ -45,6 +45,7 @@ class voiceThread(threading.Thread):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.threadName = threadName
+        self.sleepTime = 0
 
     def run(self):
         global voiceQueue
@@ -60,7 +61,7 @@ class voiceThread(threading.Thread):
                     UISpeaker.speak(str(item))
                     # speaker.speak(str(item))
             else:
-                time.sleep(1)
+                time.sleep(self.sleepTime)
 
 class ReceiveDataThread(threading.Thread):
     def __init__(self, threadID, threadName):
@@ -343,7 +344,7 @@ class LocationDisplayThread(threading.Thread):
                 print "Total Steps:", locationTracker.getTotalSteps()
                 print "Total Distance:", locationTracker.getTotalDistance()
                 print "Deviation from N:", locationTracker.getHeadingInDeg()
-                print "Deviation from Map N:", locationTracker.getHeadingWRTMapInDeg()
+                print "True deviation from N:", locationTracker.getTrueHeadingInDeg()
                 print locationTracker.getLocation()
                 print "Height:", locationTracker.getHeightInCM()
                 self.count = 0
@@ -495,8 +496,15 @@ class LocationUpdateThread(threading.Thread):
     def run(self):
         global isNextPathNeeded
         global nextPathSema
+        global newLevelReached
 
         while 1:
+            if newLevelReached:
+                while not self.isDone['nOffset']:
+                    break
+
+                locationTracker.compass.prevHeadingInRad = self.calibrator.NOffsetAngle
+
             if isNextPathNeeded:
                 print self.threadName, "blocking"
                 nextPathSema.acquire()
@@ -507,7 +515,6 @@ class LocationUpdateThread(threading.Thread):
             self.updateBaroData()
             self.updateGyroData()
             locationTrackerLock.release()
-
 
 class NavigationThread(threading.Thread):
     def __init__(self, threadID, threadName):
@@ -566,7 +573,7 @@ class NavigationThread(threading.Thread):
                             nextPathSema.release()
                 else :
                     return
-            time.sleep(1.5)
+            time.sleep(3)
 
            
 class ObstacleAvoidanceThread(threading.Thread):
@@ -705,6 +712,8 @@ NUM_SINGLE_ID = 11
 # 13 - sonar (right side) (25 trig  2 echo)
 # 15 - IR (large)
 
+# For inter level transition
+newLevelReached = False
 
 # Queue for sound
 voiceQueue = my_deque()
@@ -789,7 +798,7 @@ if not skip_init:
 if not skip_init:
     locationTracker.setLocation(startLocation.getLocationXCoord(), startLocation.getLocationYCoord())
 else:
-    locationTracker.setLocation(0,0)
+    locationTracker.setLocation(4085, 732)
 
 # Navigation initialization
 naviCount = 0
@@ -798,7 +807,7 @@ navi = fullNavi.fullNavi(voiceQueue, voiceSema)
 # navi.generateFullPath("com1", 2, 1, "com1", 2, 10)
 
 if skip_init:
-    navi.generateFullPath("com1", 2, 1, "com2", 3, 10)
+    navi.generateFullPath("com2", 2, 8, "com2", 2, 10)
 else:
     navi.generateFullPath(startLocation.getBuildingName(),
         startLocation.getLevelNumber(),

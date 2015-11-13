@@ -60,9 +60,9 @@ class GyroCompass:
         # print self.getAngleDevInDeg()
 
     def resolveGyro(self, xReading, yReading, zReading):
-        ans = zReading * math.cos(self.pitch) * math.cos(self.roll) + \
-               xReading * math.sin(self.pitch) + \
-               yReading * math.sin(self.roll)
+        # ans = zReading * math.cos(self.pitch) * math.cos(self.roll) + \
+        #        xReading * math.sin(self.pitch) + \
+        #        yReading * math.sin(self.roll)
 
         # rollComp = zReading * math.cos(self.pitch) * math.cos(self.roll) + \
         #            yReading * math.sin(self.roll)
@@ -71,6 +71,8 @@ class GyroCompass:
         # f.write(str(xReading) + ',' + str(yReading) + ',' + str(zReading) + '\n')
         # f.close()
         # ans = zReading
+        ans = zReading
+
         return ans
 
     def getAngleDevInDeg(self):

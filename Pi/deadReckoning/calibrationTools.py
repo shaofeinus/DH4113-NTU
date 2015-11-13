@@ -45,7 +45,7 @@ class CalibrationTools:
     GY_X_SCALE_FACTOR = 1.0
     GY_Y_SCALE_FACTOR = 1.0
     GY_Z_SCALE_FACTOR = 1.0
-    GY_OFFSET_MA_WINDOW_SIZE = 150
+    GY_OFFSET_MA_WINDOW_SIZE = 500
     GY_RECALIBRATE_THRESHOLD = 10
 
     def __init__(self):

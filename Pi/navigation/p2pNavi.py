@@ -19,8 +19,7 @@ class navigation (object) :
         self.prev_message_time_dist = 0
         self.prev_message_time_turn = 0
         self.prev_message_time_str = 0
-        self.prev_message = ""
-        self.message_delay = 6
+        self.message_delay = 0
         self.sentence = ""
         self.voiceQueue = voiceQueue
         self.voiceSema = voiceSema
@@ -119,6 +118,7 @@ class navigation (object) :
     def alertNearingNode(self, distanceTo) :
         if ((distanceTo <= self.nearingCount) and (distanceTo > self.maxTolerance)) :
             self.sentence = "%s in %.1f metres, " %(self.nextNodeName, distanceTo/100.0)
+            self.voiceQueue.append_high(self.sentence, time.time())
             while (self.nearingCount >= distanceTo) :
                 self.nearingCount -= 100
         else :
@@ -143,11 +143,9 @@ class navigation (object) :
                 self.sentence += "Go"
                 print self.sentence
                 if time.time() - self.prev_message_time_turn > self.message_delay:
-                   if self.prev_message != self.sentence:
-                       if self.voiceQueue.append(self.sentence, time.time()):
-                           self.voiceSema.release()
-                       self.prev_message_time_turn = time.time()
-                       self.prev_message = self.sentence
+                   if self.voiceQueue.append(self.sentence, time.time()):
+                       self.voiceSema.release()
+                   self.prev_message_time_turn = time.time()
                 return 0
         
             if (turnAngle > 0) :
@@ -157,11 +155,9 @@ class navigation (object) :
                 self.sentence += "Right " + stringNumbers(turnAngle)
                 print self.sentence
                 if time.time() - self.prev_message_time_turn > self.message_delay:
-                   if self.prev_message != self.sentence:
-                       if self.voiceQueue.append(self.sentence, time.time()):
-                           self.voiceSema.release()
-                       self.prev_message_time_turn = time.time()
-                       self.prev_message = self.sentence
+                   if self.voiceQueue.append(self.sentence, time.time()):
+                       self.voiceSema.release()
+                   self.prev_message_time_turn = time.time()
             elif (turnAngle < 0) :
                 if ((self.canTurn is False) and (turnAngle < -90)) :
                     turnAngle = -90
@@ -169,22 +165,16 @@ class navigation (object) :
                 self.sentence += "Left " + stringNumbers(math.fabs(turnAngle))
                 print self.sentence
                 if time.time() - self.prev_message_time_turn > self.message_delay:
-                   if self.prev_message != self.sentence:
-                       if self.voiceQueue.append(self.sentence, time.time()):
-                           self.voiceSema.release()
-                       self.prev_message_time_turn = time.time()
-                       self.prev_message = self.sentence
+                   if self.voiceQueue.append(self.sentence, time.time()):
+                       self.voiceSema.release()
+                   self.prev_message_time_turn = time.time()
             else :
                 self.sentence += "Go"
                 print self.sentence
                 if time.time() - self.prev_message_time_str > self.message_delay:
-                   if self.prev_message != self.sentence:
-                       if self.voiceQueue.append(self.sentence, time.time()):
-                           self.voiceSema.release()
-                       self.prev_message_time_turn = time.time()
-                       self.prev_message = self.sentence
-                   self.voiceQueue.append(self.sentence)
-                   self.voiceSema.release()
+                   if self.voiceQueue.append(self.sentence, time.time()):
+                       self.voiceSema.release()
+                   self.prev_message_time_turn = time.time()
 
             return 0
         else :

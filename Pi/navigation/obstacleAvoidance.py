@@ -15,8 +15,8 @@ class obstacleAvoidance (object) :
         self.FRONT_OBSTACLE_BUFFER = 90
         self.BOTTOM_OBSTACLE_DISTANCE = 60
         self.BOTTOM_OBSTACLE_BUFFER = 60
-        self.SIDE_OBSTACLE_IR = 75
-        self.SIDE_OBSTACLE_SONAR = 70
+        self.SIDE_OBSTACLE_IR = 65
+        self.SIDE_OBSTACLE_BUFFER = 65
         self.UPSTEP_MAX = 500
         self.UPSTEP_THRESHHOLD = 465
         self.DOWNSTEP_THRESHHOLD = 435
@@ -172,14 +172,14 @@ class obstacleAvoidance (object) :
     def hasFLIrObstacle(self, isAlreadyDetected) :
         irAverage = sum(self.irFL) / len(self.irFL)
         if isAlreadyDetected == 0 :
-            if (irAverage < self.FRONT_OBSTACLE_DISTANCE) :
+            if (irAverage < self.SIDE_OBSTACLE_IR) :
                 print "front ir left: " + str(irAverage)
                 print self.irFL
                 return True
             else :
                 return False
         else :
-            if (irAverage < self.FRONT_OBSTACLE_BUFFER) :
+            if (irAverage < self.SIDE_OBSTACLE_BUFFER) :
                 print "front ir left: " + str(irAverage)
                 print self.irFL
                 return True
@@ -189,14 +189,14 @@ class obstacleAvoidance (object) :
     def hasFRIrObstacle(self, isAlreadyDetected) :
         irAverage = sum(self.irFR) / len(self.irFR)
         if isAlreadyDetected == 0 :
-            if (irAverage < self.FRONT_OBSTACLE_DISTANCE) :
+            if (irAverage < self.SIDE_OBSTACLE_IR) :
                 print "front ir right: " + str(irAverage)
                 print self.irFR
                 return True
             else :
                 return False
         else :
-            if (irAverage < self.FRONT_OBSTACLE_BUFFER) :
+            if (irAverage < self.SIDE_OBSTACLE_BUFFER) :
                 print "front ir right: " + str(irAverage)
                 print self.irFR
                 return True
