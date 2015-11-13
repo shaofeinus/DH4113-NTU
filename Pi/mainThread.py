@@ -64,6 +64,8 @@ class voiceThread(threading.Thread):
                     speaker.speak(str(item[0]))
                     self.prevHigh = item[1]
                     # speaker.speak(str(item))
+                else:
+                    self.prevHigh = False
             else:
                 time.sleep(self.sleepTime)
 
@@ -111,6 +113,9 @@ class ProcessDataThread(threading.Thread):
 
 
 class CalibrationThread(threading.Thread):
+
+    ABNORMAL_NORTH_OFFSET = - 45.0 / 180.0 * math.pi
+
     def __init__(self, threadID, threadName):
         threading.Thread.__init__(self)
         self.threadID = threadID
@@ -132,6 +137,8 @@ class CalibrationThread(threading.Thread):
         self.gyroY = 0
         self.gyroZ = 0
         self.totalGyroData = 0
+
+        self.normalCalib = True
 
     def run(self):
         # magXrange = (-4328, 5605)
@@ -192,6 +199,11 @@ class CalibrationThread(threading.Thread):
             UISpeaker.speak(str("To begin compass calibration, press start. To skip calibration, press back."))
             userInput = keypad.get_binary_response()
             print userInput
+
+            # Determine if normal calibration
+            UISpeaker.speak(str("Is this normal calibration."))
+            self.normalCalib = not keypad.get_binary_response()
+
             if not userInput:
                 validInput = True
             else:
@@ -234,6 +246,9 @@ class CalibrationThread(threading.Thread):
             self.calibrateNOffset()
 
         locationTracker.compass.prevHeadingInRad = self.calibrator.NOffsetAngle
+
+        if not self.normalCalib:
+            locationTracker.updateCurrHeading(0.0 - self.ABNORMAL_NORTH_OFFSET)
 
         userInputLock.acquire()
         temp = 'Your are ' + str(int(self.calibrator.getNOffsetAngle() / (2 * math.pi) * 360)) + ' from N. To continue, press start'
@@ -338,14 +353,14 @@ class LocationDisplayThread(threading.Thread):
         global nextPathSema
         while 1:
 
-            if isNextPathNeeded:
-                print self.threadName, "blocking"
-                nextPathSema.acquire()
+            # if isNextPathNeeded:
+            #     print self.threadName, "blocking"
+            #     nextPathSema.acquire()
 
             locationTrackerLock.acquire()
 
             if self.count == 0:
-                locationTracker.updateLocation()
+                locationTracker.updateLocation(stop=isNextPathNeeded, recalibrating=newLevelReached)
                 print "Total Steps:", locationTracker.getTotalSteps()
                 print "Total Distance:", locationTracker.getTotalDistance()
                 print "Deviation from N:", locationTracker.getHeadingInDeg()
@@ -502,31 +517,6 @@ class LocationUpdateThread(threading.Thread):
             locationTracker.updateBarometerData(self.baroReading)
             self.totalBaroData = 0
 
-    def calibrateTilt(self):
-        if len(data[1]) == 0:
-            return
-        elif self.totalAccData == 0:
-            data[1].popleft()
-            self.totalAccData += 1
-        elif self.totalAccData == 1:
-            self.accX = data[1].popleft()
-            self.totalAccData += 1
-        elif self.totalAccData == 2:
-            self.accY = data[1].popleft()
-            self.totalAccData += 1
-        elif self.totalAccData == 3:
-            self.accZ = data[1].popleft()
-            self.totalAccData += 1
-
-        if self.totalAccData == 4:
-            # x points to front
-            # y points to left
-            # z points to up
-            # Calibrated data is supplied as actual tilt is calibrated
-            self.accX, self.accY, self.accZ = self.calibrationTools.transformACC(self.accX, self.accY, self.accZ)
-            self.calibrator.calibrateTilt(-self.accZ, self.accY, self.accX, self.isDone)
-            self.totalAccData = 0
-
     def calibrateNOffset(self):
 
         if len(data[2]) == 0:
@@ -560,26 +550,30 @@ class LocationUpdateThread(threading.Thread):
 
         while 1:
 
-            if isNextPathNeeded:
-                print self.threadName, "blocking"
-                nextPathSema.acquire()
+            # if isNextPathNeeded:
+            #     print self.threadName, "blocking"
+            #     nextPathSema.acquire()
 
             locationTrackerLock.acquire()
 
-            if newLevelReached:
-                print "\n\n NEW LEVEL for location tracker!!!!! \n\n"
-                while not self.isDone['nOffset']:
-                    self.calibrateNOffset()
+            if newLevelReached and not self.isDone['nOffset']:
+                print "Recalibrating compass!!!"
+                self.calibrateNOffset()
+                self.updateBaroData()
+                self.updateGyroData()
+                self.updateAccData()
 
+            elif newLevelReached and self.isDone['nOffset']:
+                print "\n\n Compass recalibrated!! \n\n"
                 locationTracker.compass.prevHeadingInRad = self.calibrator.NOffsetAngle
-                locationTracker.resetHeading()
-
+                locationTracker.updateCurrHeading(45.0 / 180.0 * math.pi)
                 newLevelReached = False
 
-            self.updateAccData()
-            self.updateMagData()
-            self.updateBaroData()
-            self.updateGyroData()
+            else:
+                self.updateAccData()
+                self.updateMagData()
+                self.updateBaroData()
+                self.updateGyroData()
 
             locationTrackerLock.release()
 
@@ -618,13 +612,17 @@ class NavigationThread(threading.Thread):
                     UISpeaker.speak("Now entering new map. Press start to continue.")
                     while keypad.get_binary_response():
                         pass
-                    
-                    data = [deque() for x in range(NUM_QUEUED_ID)]
-                    data_single = [0 for x in range(NUM_SINGLE_ID)]
-                    data.extend(data_single)
 
-                    dataFeeder.serialPort.flushInput()
-                    dataFeeder.serialPort.flushOutput()
+                    # print "data in serial / data before flush:", dataFeeder.serialPort.inWaiting(), len(data[2]), len(data[3])
+
+                    # data = [deque() for x in range(NUM_QUEUED_ID)]
+                    # data_single = [0 for x in range(NUM_SINGLE_ID)]
+                    # data.extend(data_single)
+
+                    # dataFeeder.serialPort.flushInput()
+                    # dataFeeder.serialPort.flushOutput()
+
+                    # print "data in serial / data after flush:", dataFeeder.serialPort.inWaiting(), len(data[2]), len(data[3])
 
                     navi.switchToNextPathList()
 
@@ -634,13 +632,14 @@ class NavigationThread(threading.Thread):
                     locationTracker.setLocation(initX, initY)
                     newLevelReached = navi.isDifferentLevel()
 
+                    isNextPathNeeded = False
+
                     # turn on location tracker and receive data threads
                     # userInputLock.release()
-                    
-                    isNextPathNeeded = False
-                    for thread in mainThreads:
-                        if thread.threadID != 6 and thread.threadID != 5:
-                            nextPathSema.release()
+
+                    # for thread in mainThreads:
+                    #     if thread.threadID != 6 and thread.threadID != 5:
+                    #         nextPathSema.release()
                 else :
                     return
             time.sleep(3)
@@ -782,9 +781,6 @@ NUM_SINGLE_ID = 11
 # 13 - sonar (right side) (25 trig  2 echo)
 # 15 - IR (large)
 
-# For inter level transition
-newLevelReached = False
-
 # Queue for sound
 voiceQueue = my_deque()
 
@@ -852,6 +848,7 @@ for thread in voiceThreads:
 
 # Path Reset Condition
 isNextPathNeeded = False
+newLevelReached = False
 
 UIThreads = []
 
@@ -868,7 +865,7 @@ if not skip_init:
 if not skip_init:
     locationTracker.setLocation(startLocation.getLocationXCoord(), startLocation.getLocationYCoord())
 else:
-    locationTracker.setLocation(11571, 691)
+    locationTracker.setLocation(7065, 1787)
 
 # Navigation initialization
 naviCount = 0
@@ -877,7 +874,7 @@ navi = fullNavi.fullNavi(voiceQueue, voiceSema)
 # navi.generateFullPath("com1", 2, 1, "com1", 2, 10)
 
 if skip_init:
-    navi.generateFullPath("com1", 2, 29, "com2", 2, 4)
+    navi.generateFullPath("com1", 2, 14, "com2", 3, 7)
 else:
     navi.generateFullPath(startLocation.getBuildingName(),
         startLocation.getLevelNumber(),

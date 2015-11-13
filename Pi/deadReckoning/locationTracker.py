@@ -102,7 +102,7 @@ class LocationTracker:
         self.barometer.updateReading(reading)
 
     # Public
-    def updateLocation(self):
+    def updateLocation(self, stop, recalibrating):
 
         currSteps = self.pedometer.getStepCount()
         self.totalSteps += currSteps
@@ -113,50 +113,60 @@ class LocationTracker:
         compAngleDev = self.compass.getAngleDevInRad()
         gyroAngleDev = self.gyroCompass.getAngleDevInRad()
 
-        if currSteps != 0:
-            angleDev = gyroAngleDev
-            mode = 'gyro'
-            self.isLastStep = True
-        else:
-            self.isFirstStep = True
-            angleDev = compAngleDev
-            mode = 'compass'
+        if not stop and not recalibrating:
+            if currSteps != 0:
+                angleDev = gyroAngleDev
+                mode = 'gyro'
+                self.isLastStep = True
+            else:
+                self.isFirstStep = True
+                angleDev = compAngleDev
+                mode = 'compass'
 
-        if currSteps != 0 and self.isFirstStep:
-            self.isFirstStep = False
-            self.updateCurrHeading(self.headingWRTNorthInRad - self.prevCompDev + self.prevGyroDev)
-            mode = 'change prev dev'
+            if currSteps != 0 and self.isFirstStep:
+                self.isFirstStep = False
+                self.updateCurrHeading(self.headingWRTNorthInRad - self.prevCompDev + self.prevGyroDev)
+                mode = 'change prev dev'
 
-        self.prevGyroDev = gyroAngleDev
-        self.prevCompDev = compAngleDev
+            self.prevGyroDev = gyroAngleDev
+            self.prevCompDev = compAngleDev
 
-        if currSteps == 0 and self.isLastStep:
-            self.isLastStep = False
-            angleDev = gyroAngleDev
-            mode = 'change next dev'
+            if currSteps == 0 and self.isLastStep:
+                self.isLastStep = False
+                angleDev = gyroAngleDev
+                mode = 'change next dev'
 
-        # angleDev = gyroAngleDev
-        # mode = 'gyro'
+                # angleDev = gyroAngleDev
+                # mode = 'gyro'
 
-        self.updateCurrHeading(angleDev + self.trueHeadingWRTNorthInRad)
+            self.updateCurrHeading(angleDev + self.trueHeadingWRTNorthInRad)
 
-        # Heading wrt to North
-        # self.headingWRTNorthInRad = self.compass.getHeadingInRad()
-        # self.headingWRTNorthInDeg = self.compass.Compass.getHeadingInDeg(self.headingWRTNorthInRad)
+            # Heading wrt to North
+            # self.headingWRTNorthInRad = self.compass.getHeadingInRad()
+            # self.headingWRTNorthInDeg = self.compass.Compass.getHeadingInDeg(self.headingWRTNorthInRad)
 
-        # print "heading ", compass.Compass.getHeadingInDeg(self.compass.calculateHeadingInRad())
+            # print "heading ", compass.Compass.getHeadingInDeg(self.compass.calculateHeadingInRad())
 
-        if currSteps != 0:
-            # headingToUse = round(self.headingWRTNorthInRad / self.MOVE_ANGLE_TOLERANCE) * self.MOVE_ANGLE_TOLERANCE
-            headingToUse = self.headingWRTNorthInRad
-            # x points to the East
-            xCurrDistance = currDistance * math.sin(headingToUse)
-            # y points to the North
-            yCurrDistance = currDistance * math.cos(headingToUse)
+            if currSteps != 0:
+                # headingToUse = round(self.headingWRTNorthInRad / self.MOVE_ANGLE_TOLERANCE) * self.MOVE_ANGLE_TOLERANCE
+                headingToUse = self.headingWRTNorthInRad
+                # x points to the East
+                xCurrDistance = currDistance * math.sin(headingToUse)
+                # y points to the North
+                yCurrDistance = currDistance * math.cos(headingToUse)
 
-            self.currX += xCurrDistance
-            self.currY += yCurrDistance
-            self.totalDistance += currDistance
+                self.currX += xCurrDistance
+                self.currY += yCurrDistance
+                self.totalDistance += currDistance
+        elif stop:
+            mode = 'stop'
+            gyroAngleDev = 0
+            compAngleDev = 0
+
+        elif recalibrating:
+            mode = 'recalibrating'
+            gyroAngleDev = 0
+            compAngleDev = 0
 
         f = open('locationdata.csv', 'a')
         if self.firstUpdate:
@@ -197,7 +207,7 @@ class LocationTracker:
         else:
             radOffset = degOffset / 180.0 * math.pi
 
-        self.updateCurrHeading(radOffset + self.headingWRTNorthInRad)
+        self.updateCurrHeading(self.headingWRTNorthInRad - radOffset)
 
     # Called by Navigation
     # Coordinate parameters in com
