@@ -496,8 +496,15 @@ class LocationUpdateThread(threading.Thread):
     def run(self):
         global isNextPathNeeded
         global nextPathSema
+        global newLevelReached
 
         while 1:
+            if newLevelReached:
+                while not self.isDone['nOffset']:
+                    break
+
+                locationTracker.compass.prevHeadingInRad = self.calibrator.NOffsetAngle
+
             if isNextPathNeeded:
                 print self.threadName, "blocking"
                 nextPathSema.acquire()
@@ -508,7 +515,6 @@ class LocationUpdateThread(threading.Thread):
             self.updateBaroData()
             self.updateGyroData()
             locationTrackerLock.release()
-
 
 class NavigationThread(threading.Thread):
     def __init__(self, threadID, threadName):
@@ -694,6 +700,8 @@ NUM_SINGLE_ID = 11
 # 13 - sonar (right side) (25 trig  2 echo)
 # 15 - IR (large)
 
+# For inter level transition
+newLevelReached = False
 
 # Queue for sound
 voiceQueue = my_deque()

@@ -17,16 +17,17 @@ class LocationTracker:
     def __init__(self, initX, initY, northAt):
         self.currX = initX      # Points eastwards
         self.currY = initY      # Points northwards
+
         self.pedometer = pedometer2.Pedometer2()
         self.compass = compass.Compass()
         self.gyroCompass = gyroCompass.GyroCompass()
         self.barometer = barometer.Barometer()
+        self.calibrationTools = calibrationTools.CalibrationTools()
+
         self.totalSteps = 0
         self.totalDistance = 0
         self.northAt = northAt / 180 * math.pi      # In rad
         self.firstUpdate = True
-
-        self.headingWRTMapInRad = 0
 
         self.trueHeadingWRTNorthInDeg = 0
         self.headingWRTNorthInDeg = 0
@@ -37,7 +38,6 @@ class LocationTracker:
         self.isLastStep = False
         self.prevGyroDev = 0
         self.prevCompDev = 0
-        self.calibrationTools = calibrationTools.CalibrationTools()
 
     # Public
     def getLocation(self):
