@@ -87,7 +87,6 @@ class locationSetting(object) :
                         break
 
             while True: #set level
-                print self.LEVEL_PROMPT
                 self.levelNumber = self.keypad.get_input_ext_num(self.LEVEL_PROMPT)
                 print "Level number is " + str(self.levelNumber) + ". Press start to confirm. Back to cancel"
                 self.speaker.wait()

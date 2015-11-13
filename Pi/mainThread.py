@@ -14,7 +14,7 @@ from UI import keypad_polling
 from UI import pyespeak
 from UI.my_deque import my_deque
 from UI.UISpeaker import UI_Speaker
-
+import os
 
 #to print sound just call voiceQueue.append(sentence)
 
@@ -45,7 +45,7 @@ class voiceThread(threading.Thread):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.threadName = threadName
-        self.sleepTime = 0.2
+        self.sleepTime = 0
 
     def run(self):
         global voiceQueue
@@ -555,7 +555,7 @@ class NavigationThread(threading.Thread):
                         nextPathSema.release()
                 else :
                     return
-            time.sleep(1.5)
+            time.sleep(3)
 
            
 class ObstacleAvoidanceThread(threading.Thread):
@@ -778,7 +778,7 @@ if not skip_init:
 if not skip_init:
     locationTracker.setLocation(startLocation.getLocationXCoord(), startLocation.getLocationYCoord())
 else:
-    locationTracker.setLocation(0,0)
+    locationTracker.setLocation(4085, 732)
 
 # Navigation initialization
 naviCount = 0
@@ -787,7 +787,7 @@ navi = fullNavi.fullNavi(voiceQueue, voiceSema)
 # navi.generateFullPath("com1", 2, 1, "com1", 2, 10)
 
 if skip_init:
-    navi.generateFullPath("com1", 2, 1, "com2", 3, 10)
+    navi.generateFullPath("com2", 2, 8, "com2", 2, 10)
 else:
     navi.generateFullPath(startLocation.getBuildingName(),
         startLocation.getLevelNumber(),

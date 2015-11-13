@@ -19,11 +19,17 @@ class UI_Speaker(object):
 
         # write to console as input
         try:
-            self.sub_proc.stdin.write("\""+str(sentence).strip() + "\"\n")
+            if str(sentence) == '.':
+                self.sub_proc.stdin.write("\"dot\"\n")
+            else:
+                self.sub_proc.stdin.write("\""+str(sentence).strip() + "\"\n")
             self.sub_proc.stdin.flush()
         except:
             self.sub_proc = subprocess.Popen(self.args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            self.sub_proc.stdin.write("\""+str(sentence).strip() + "\"\n")
+            if str(sentence) == '.':
+                self.sub_proc.stdin.write("\"dot\"\n")
+            else:
+                self.sub_proc.stdin.write("\""+str(sentence).strip() + "\"\n")
             self.sub_proc.stdin.flush()
     def stop(self):
         # stops speech by immediately terminating the process

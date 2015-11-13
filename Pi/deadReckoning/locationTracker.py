@@ -12,7 +12,7 @@ __author__ = 'Shao Fei'
 class LocationTracker:
 
     STEP_DISTANCE = 45.0     # in cm
-    MOVE_ANGLE_TOLERANCE = 10.0 / 180.0 * math.pi
+    MOVE_ANGLE_TOLERANCE = 5.0 / 180.0 * math.pi
 
     def __init__(self, initX, initY, northAt):
         self.currX = initX      # Points eastwards
@@ -134,6 +134,9 @@ class LocationTracker:
             self.isLastStep = False
             angleDev = gyroAngleDev
             mode = 'change next dev'
+
+        # angleDev = gyroAngleDev
+        # mode = 'gyro'
 
         self.updateCurrHeading(angleDev + self.trueHeadingWRTNorthInRad)
 
