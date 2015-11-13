@@ -50,7 +50,7 @@ class voiceThread(threading.Thread):
     def run(self):
         global voiceQueue
         global voiceSema
-        global UISpeaker
+        global speaker
 
         while True:
             voiceSema.acquire()
@@ -60,8 +60,8 @@ class voiceThread(threading.Thread):
                     if self.prevHigh:
                         voiceQueue.clear()
 
-                    UISpeaker.wait()
-                    UISpeaker.speak(str(item))
+                    speaker.wait()
+                    speaker.speak(str(item[0]))
                     self.prevHigh = item[1]
                     # speaker.speak(str(item))
             else:
@@ -805,7 +805,7 @@ locationTracker = locationTracker.LocationTracker(0, 0, 0.0)
 dataFeeder = dataFeeder.DataFeeder()
 
 # Speaker object
-speaker = pyespeak.Speaker()
+speaker = UI_Speaker()
 UISpeaker = UI_Speaker()
 
 # Locks for various variables
