@@ -223,13 +223,13 @@ class fullNavi(object) :
           
 
     # returns the index of the connection node, 9999 if not found
-    def getBuildingConnection(self, list1, list2, hasStairs) :
+    def getBuildingConnection(self, list1, list2) :
         for i in xrange(len(list1)) :
             for j in xrange(len(list2)) :
                 if ((list1[i][0] == list2[j][1]) and
                     (list1[i][1] == list2[j][0])) :
-                    return ((list1[i][2], list2[j][2]))
-        return (9999, 9999)
+                    return ((list1[i][2], list2[j][2], list1[i][3]))
+        return (9999, 9999, 0)
 
     # returns nearest node, excluding the past and current nodes
     def getNearestNextNode(self) :

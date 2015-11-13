@@ -20,7 +20,7 @@ import os
 # getLocationYCoord(index)
 # getAngle(point1, point2)
 # getDistance(point1, point2)
-# getNodeID(self)
+# getNodeID()
 # printMatrix()
 # printJSONNodeData()
 # index is in the range {0 to n-1}
