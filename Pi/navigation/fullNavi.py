@@ -269,7 +269,6 @@ class fullNavi(object) :
         self.nexX = int(self.comMap[self.mapNumber].getLocationXCoord(nexNode))
         self.nexY = int(self.comMap[self.mapNumber].getLocationYCoord(nexNode))
         self.nodeNavi.setNorthAt(self.northAt)
-        self.nodeNavi.resetNearingCount()
         self.nodeNavi.setNextNodeName(nexNodeName)
         self.nodeNavi.setPrevCoordinates(self.prevX, self.prevY)
         self.nodeNavi.setNexCoordinates(self.nexX, self.nexY)

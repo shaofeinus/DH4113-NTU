@@ -39,9 +39,10 @@ class navigation (object) :
         self.maxTolerance = 200       # cm
         # angle tolerance
         self.angleTolerance = 0     # degrees
-        # distance from node for updates
-        self.nearingCount = 500
+        # if already notified that nearing node
+        self.alreadyAlerted = False
 
+        self.NEARING_DISTANCE = 400
         # boolean whether allowed to turn
         self.canTurn = True
 
@@ -60,9 +61,6 @@ class navigation (object) :
 
     def setNextNodeName(self, nodeName) :
         self.nextNodeName = nodeName
-
-    def resetNearingCount(self) :
-        self.nearingCount = 500
     
     def setPrevCoordinates(self, prevXCoord, prevYCoord) :
         self.prevXCoord = prevXCoord
@@ -114,15 +112,13 @@ class navigation (object) :
             turnAngle += 360
         return turnAngle
     
-
+    # alert the user once when he is less than 4m from the node
     def alertNearingNode(self, distanceTo) :
-        if ((distanceTo <= self.nearingCount) and (distanceTo > self.maxTolerance)) :
-            sentence = "%s in %.1f metres, " %(self.nextNodeName, distanceTo/100.0)
-            self.voiceQueue.append_high(sentence, time.time())
-            while (self.nearingCount >= distanceTo) :
-                self.nearingCount -= 100
-        else :
-            sentence = ""
+        if ((distanceTo <= self.NEARING_DISTANCE) and (distanceTo > self.maxTolerance)) :
+            if self.alreadyAlerted is False:
+                self.alreadyAlerted = True
+                sentence = "%s in %.0f metres, " %(self.nextNodeName, distanceTo/100.0)
+                self.voiceQueue.append_high(sentence, time.time())
 
 
     # navigation algorithm:
@@ -178,4 +174,5 @@ class navigation (object) :
 
             return 0
         else :
+            self.alreadyAlerted = False
             return 1

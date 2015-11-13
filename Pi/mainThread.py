@@ -333,6 +333,7 @@ class LocationDisplayThread(threading.Thread):
         global isNextPathNeeded
         global nextPathSema
         while 1:
+
             if isNextPathNeeded:
                 print self.threadName, "blocking"
                 nextPathSema.acquire()
@@ -554,7 +555,15 @@ class LocationUpdateThread(threading.Thread):
         global newLevelReached
 
         while 1:
+
+            if isNextPathNeeded:
+                print self.threadName, "blocking"
+                nextPathSema.acquire()
+
+            locationTrackerLock.acquire()
+
             if newLevelReached:
+                print "\n\n NEW LEVEL for location tracker!!!!! \n\n"
                 while not self.isDone['nOffset']:
                     self.calibrateNOffset()
 
@@ -563,15 +572,11 @@ class LocationUpdateThread(threading.Thread):
 
                 newLevelReached = False
 
-            if isNextPathNeeded:
-                print self.threadName, "blocking"
-                nextPathSema.acquire()
-
-            locationTrackerLock.acquire()
             self.updateAccData()
             self.updateMagData()
             self.updateBaroData()
             self.updateGyroData()
+
             locationTrackerLock.release()
 
 class NavigationThread(threading.Thread):
@@ -603,7 +608,7 @@ class NavigationThread(threading.Thread):
                 print ("\n\n\n\n\nLE SWITCHEROO\n\n\n\n")
                 if navi.hasNextPath() is True :
                     isNextPathNeeded = True
-                    userInputLock.acquire()
+                    # userInputLock.acquire()
                     
                     print "press start to continue"
                     UISpeaker.speak("Now entering new map. Press start to continue.")
@@ -614,18 +619,19 @@ class NavigationThread(threading.Thread):
                     data_single = [0 for x in range(NUM_SINGLE_ID)]
                     data.extend(data_single)
 
+                    dataFeeder.serialPort.flushInput()
+                    dataFeeder.serialPort.flushOutput()
+
                     navi.switchToNextPathList()
 
                     # update location tracker initial heading/coordinates
-                    locationTrackerLock.acquire()
                     locationTracker.updateMapNorth(navi.getNorthDifference())
                     (initX, initY) = navi.getFirstCoordinates()
                     locationTracker.setLocation(initX, initY)
                     newLevelReached = navi.isDifferentLevel()
-                    locationTrackerLock.release()
 
                     # turn on location tracker and receive data threads
-                    userInputLock.release()
+                    # userInputLock.release()
                     
                     isNextPathNeeded = False
                     for thread in mainThreads:
@@ -858,7 +864,7 @@ if not skip_init:
 if not skip_init:
     locationTracker.setLocation(startLocation.getLocationXCoord(), startLocation.getLocationYCoord())
 else:
-    locationTracker.setLocation(4085, 732)
+    locationTracker.setLocation(11571, 691)
 
 # Navigation initialization
 naviCount = 0
@@ -867,7 +873,7 @@ navi = fullNavi.fullNavi(voiceQueue, voiceSema)
 # navi.generateFullPath("com1", 2, 1, "com1", 2, 10)
 
 if skip_init:
-    navi.generateFullPath("com2", 2, 8, "com2", 2, 10)
+    navi.generateFullPath("com1", 2, 29, "com2", 2, 4)
 else:
     navi.generateFullPath(startLocation.getBuildingName(),
         startLocation.getLevelNumber(),
