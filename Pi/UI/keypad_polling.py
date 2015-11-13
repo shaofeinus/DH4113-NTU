@@ -48,6 +48,7 @@ class keypad(object):
 
         #OTHER CONSTANTS
         self.VOID_PRESS = -3
+        self.instrDelay = 0.3
 
         #GPIO SETUP
         self.GPIO = GPIO
@@ -59,7 +60,16 @@ class keypad(object):
     def toggle_sound(self):
         self.en_snd = not self.en_snd
 
+    def delay(self, delayTime):
+        startTime = time.time()
+        while True:
+            if time.time() - startTime >= delayTime:
+                return
+
+
     def get_input_str(self, prompt):
+        self.delay(self.instrDelay)
+
         while True:
             print prompt
             self.speaker.speak(prompt)
@@ -80,6 +90,8 @@ class keypad(object):
                 return self.str_input
 
     def get_input_ext_num(self, prompt):
+        self.delay(self.instrDelay)
+
         while True:
             print prompt
             self.speaker.speak(prompt)
@@ -103,6 +115,8 @@ class keypad(object):
                 return self.ext_num_input
 
     def get_binary_response(self):
+        self.delay(self.instrDelay)
+
         self.en_snd = False
         first_press = True
         while True:
@@ -120,6 +134,8 @@ class keypad(object):
 
 
     def get_confirmation_binary(self, prompt):
+        self.delay(self.instrDelay)
+
         print str(prompt)
         self.speaker.speak(str(prompt))
 
@@ -143,23 +159,6 @@ class keypad(object):
                     return True
                 GPIO.output(self.hori[1], GPIO.LOW)
                 return False
-
-
-            # self.GPIO.output(self.hori[x], self.GPIO.HIGH) # test for closed switch by taking turns setting each hori
-            # num_pressed = -3 # reset num_pressed
-            # for y in range(len(self.vert)): #check input at each vert
-            #     if self.GPIO.input(self.vert[y]) == self.GPIO.HIGH: # closed switch detected
-            #
-            #         hold_timer_start = time.time()
-            #         while GPIO.input(self.vert[y]) == GPIO.HIGH and self.num_map[y][x] == 10:
-            #             if time.time() - hold_timer_start >= self.HOLD_DELAY: #checks if button is help sufficiently long
-            #                 return True
-            #
-            # self.GPIO.output(self.hori[x], self.GPIO.LOW)
-            # x = (x + 1) % len(self.hori)
-            # if time.time() - timer_start > 5:
-            #     return False
-            # time.sleep(self.SLEEP_DELAY)
 
 # ===============================NUM POLL==========================================
     def poll_for_num(self):

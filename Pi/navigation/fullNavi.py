@@ -19,6 +19,7 @@ import time
 # switchToNextPathList()
 # getNorthDifference()
 # getFirstCoordinates()
+# isDifferentLevel()
 # feedbackWalking(currentSteps)
 
 
@@ -63,9 +64,14 @@ class fullNavi(object) :
         self.pathList3 = []
         # north of cuurent map
         self.curMapNorth = 0
-        self.northDifference = 0
 
-        # coordinates of first node on current map
+        # if connection between the building has stairs
+        self.hasStairs1 = 0
+        self.hasStairs2 = 0
+        
+        # parameters to set when switching to new map
+        self.hasStairs = 0
+        self.northDifference = 0
         self.xFirst = None
         self.yFirst = None
 
@@ -116,6 +122,10 @@ class fullNavi(object) :
 
     def getFirstCoordinates(self) :
         return (self.xFirst, self.yFirst)
+
+    # returns 1 or 0
+    def isDifferentLevel(self) :
+        return self.hasStairs
 
     def generateFullPath(self, startBuilding, startLevel, start,
                          endBuilding, endLevel, end) :
@@ -181,7 +191,7 @@ class fullNavi(object) :
         self.comMap[self.mapNumber + 1].setMap(self.endBuilding, self.endLevel)
         conList2 = self.comMap[self.mapNumber + 1].getNodeID()
         
-        midEnd, midStart = self.getBuildingConnection(conList1, conList2)
+        midEnd, midStart, self.hasStairs1 = self.getBuildingConnection(conList1, conList2)
         if (midEnd != 9999 and midStart != 9999) :
             self.pathList = self.pathFind.getPath(self.startLocation, midEnd)
             self.pathFind.setMap(self.endBuilding, self.endLevel)
@@ -202,8 +212,8 @@ class fullNavi(object) :
         self.comMap[self.mapNumber + 2].setMap(self.endBuilding, self.endLevel)
         conList3 = self.comMap[self.mapNumber + 2].getNodeID()
         
-        midEnd1, midStart1 = self.getBuildingConnection(conList1, conList2)
-        midEnd2, midStart2 = self.getBuildingConnection(conList2, conList3)
+        midEnd1, midStart1, self.hasStairs1 = self.getBuildingConnection(conList1, conList2)
+        midEnd2, midStart2, self.hasStairs2 = self.getBuildingConnection(conList2, conList3)
         if (midEnd1 != 9999 and midStart1 != 9999) :
             self.pathList = self.pathFind.getPath(self.startLocation, midEnd1)
             self.pathFind.setMap(self.midBuilding, self.midLevel)
@@ -218,8 +228,8 @@ class fullNavi(object) :
             for j in xrange(len(list2)) :
                 if ((list1[i][0] == list2[j][1]) and
                     (list1[i][1] == list2[j][0])) :
-                    return ((list1[i][2], list2[j][2]))
-        return (9999, 9999)
+                    return ((list1[i][2], list2[j][2], list1[i][3]))
+        return (9999, 9999, 0)
 
     # returns nearest node, excluding the past and current nodes
     def getNearestNextNode(self) :
@@ -343,9 +353,10 @@ class fullNavi(object) :
         self.northDifference = nexMapNorth - self.curMapNorth
         self.curMapNorth = nexMapNorth
         self.northAt = 0
+        self.hasStairs = self.hasStairs1
         curNode =  self.pathList[self.pathListIndex]
         curNodeName = self.comMap[self.mapNumber].getLocationName(curNode)
-        sentence = "At " + str(curNode+1) + ", " + curNodeName + "."
+        sentence = "At " + curNodeName + "."
         print sentence
         if self.voiceQueue.append_high(sentence, time.time()):
            self.voiceSema.release()
@@ -376,6 +387,7 @@ class fullNavi(object) :
         self.northDifference = nexMapNorth - self.curMapNorth
         self.curMapNorth = nexMapNorth
         self.northAt = 0
+        self.hasStairs = self.hasStairs2
         curNode =  self.pathList[self.pathListIndex]
         curNodeName = self.comMap[self.mapNumber].getLocationName(curNode)
         sentence = "At " + str(curNode+1) + ", " + curNodeName + "."
