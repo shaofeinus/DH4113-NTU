@@ -97,6 +97,9 @@ class ProcessDataThread(threading.Thread):
 ##            print data[13]
 
 class CalibrationThread(threading.Thread):
+
+    ABNORMAL_NORTH_OFFSET = - 45.0 / 180.0 * math.pi
+
     def __init__(self, threadID, threadName):
         threading.Thread.__init__(self)
         self.threadID = threadID
@@ -118,6 +121,8 @@ class CalibrationThread(threading.Thread):
         self.gyroY = 0
         self.gyroZ = 0
         self.totalGyroData = 0
+
+        self.normalCalib = True
 
     def run(self):
         # magXrange = (-4328, 5605)
@@ -173,6 +178,14 @@ class CalibrationThread(threading.Thread):
             # userInput = raw_input("Press enter to calibrate? y/n ")
 
             userInput = raw_input("To begin compass calibration, press y")
+
+            response = raw_input("Is this normal calibration. Press y")
+
+            if response == 'y':
+                self.normalCalib = True
+            else:
+                self.normalCalib = False
+
             if userInput == 'y':
                 validInput = True
             elif userInput == 'n':
@@ -215,6 +228,9 @@ class CalibrationThread(threading.Thread):
             self.calibrateNOffset()
 
         locationTracker.compass.prevHeadingInRad = self.calibrator.NOffsetAngle
+
+        if not self.normalCalib:
+            locationTracker.updateCurrHeading(0.0 - self.ABNORMAL_NORTH_OFFSET)
 
         userInputLock.acquire()
         temp = 'Your are ' + str(int(self.calibrator.getNOffsetAngle() / (2 * math.pi) * 360)) + ' from N. To continue, press start'
@@ -330,7 +346,7 @@ class LocationDisplayThread(threading.Thread):
     def run(self):
         while 1:
             locationTrackerLock.acquire()
-            locationTracker.updateLocation()
+            locationTracker.updateLocation(False, False)
             if self.count == 0:
                 print "Total Steps:", locationTracker.getTotalSteps()
                 print "Total Distance:", locationTracker.getTotalDistance()
