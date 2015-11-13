@@ -59,11 +59,12 @@ class voiceThread(threading.Thread):
                 if item[0] is not None:
                     if self.prevHigh:
                         voiceQueue.clear()
-
+                    UISpeaker.speak(str(item[0]))
                     UISpeaker.wait()
-                    UISpeaker.speak(str(item))
                     self.prevHigh = item[1]
                     # speaker.speak(str(item))
+                else:
+                    self.prevHigh = False
             else:
                 time.sleep(self.sleepTime)
 
@@ -485,9 +486,9 @@ class LocationUpdateThread(threading.Thread):
         if self.totalGyroData == 4:
 
             if self.count == 9:
-                f = open('gyro.csv', 'a')
-                f.write(str(self.timeInMillisGyro) + ',' + str(self.gyroX) + ',' + str(self.gyroY) + ',' + str(self.gyroZ) + '\n')
-                f.close()
+                # f = open('gyro.csv', 'a')
+                # f.write(str(self.timeInMillisGyro) + ',' + str(self.gyroX) + ',' + str(self.gyroY) + ',' + str(self.gyroZ) + '\n')
+                # f.close()
                 self.count = 0
             else:
                 self.count += 1
@@ -863,7 +864,7 @@ if not skip_init:
 if not skip_init:
     locationTracker.setLocation(startLocation.getLocationXCoord(), startLocation.getLocationYCoord())
 else:
-    locationTracker.setLocation(3353, 732)
+    locationTracker.setLocation(7065, 1787)
 
 # Navigation initialization
 naviCount = 0
@@ -872,7 +873,7 @@ navi = fullNavi.fullNavi(voiceQueue, voiceSema)
 # navi.generateFullPath("com1", 2, 1, "com1", 2, 10)
 
 if skip_init:
-    navi.generateFullPath("com2", 2, 7, "com2", 3, 7)
+    navi.generateFullPath("com1", 2, 14, "com2", 3, 7)
 else:
     navi.generateFullPath(startLocation.getBuildingName(),
         startLocation.getLevelNumber(),

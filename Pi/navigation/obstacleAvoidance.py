@@ -13,15 +13,17 @@ class obstacleAvoidance (object) :
     def __init__(self) :       
         self.FRONT_OBSTACLE_DISTANCE = 90
         self.FRONT_OBSTACLE_BUFFER = 90
-        self.BOTTOM_OBSTACLE_DISTANCE = 60
-        self.BOTTOM_OBSTACLE_BUFFER = 60
-        self.SIDE_OBSTACLE_IR = 65
-        self.SIDE_OBSTACLE_BUFFER = 65
+        self.FRONT_OBSTACLE_SONAR = 80
+        self.FRONT_SONAR_BUFFER = 80
+        self.BOTTOM_OBSTACLE_DISTANCE = 50
+        self.BOTTOM_OBSTACLE_BUFFER = 50
+        self.SIDE_OBSTACLE_IR = 60
+        self.SIDE_OBSTACLE_BUFFER = 60
         self.UPSTEP_MAX = 500
         self.UPSTEP_THRESHHOLD = 460
         self.DOWNSTEP_THRESHHOLD = 430
         self.DOWNSTEP_MIN = 400
-        self.VIBRATE_DURATION = 1
+        self.VIBRATE_DURATION = 0.1
         self.LARGE_VALUE = 150
         self.SONAR_LARGE_VALUE = 350
 
@@ -37,7 +39,7 @@ class obstacleAvoidance (object) :
             self.irLarge.append(self.LARGE_VALUE)
             
         self.fHistoryIndex = -1
-        self.frontNumHistory = 4
+        self.frontNumHistory = 5
         
         # front center Sonar
         self.sonarFC = []
@@ -136,14 +138,14 @@ class obstacleAvoidance (object) :
     def hasFCSonarObstacle(self, isAlreadyDetected) :
         sonarAverage = sum(self.sonarFC) / len(self.sonarFC)
         if isAlreadyDetected == 0 :
-            if (sonarAverage < self.FRONT_OBSTACLE_DISTANCE) :
+            if (sonarAverage < self.FRONT_OBSTACLE_SONAR) :
                 print self.sonarFC
                 print "front sonar:" + str(sonarAverage)
                 return True
             else :
                 return False
         else :
-            if (sonarAverage < self.FRONT_OBSTACLE_BUFFER) :
+            if (sonarAverage < self.FRONT_SONAR_BUFFER) :
                 print self.sonarFC
                 print "front sonar:" + str(sonarAverage)
                 return True

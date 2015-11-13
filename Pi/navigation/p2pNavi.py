@@ -34,7 +34,7 @@ class navigation (object) :
         # deviation tolerance
         self.maxDeviation = 80       # cm
         # vicinity tolerance
-        self.maxTolerance = 200       # cm
+        self.maxTolerance = 150       # cm
         # angle tolerance
         self.angleTolerance = 0     # degrees
         # if already notified that nearing node
@@ -109,7 +109,7 @@ class navigation (object) :
         if ((distanceTo <= self.NEARING_DISTANCE) and (distanceTo > self.maxTolerance)) :
             if self.alreadyAlerted is False:
                 self.alreadyAlerted = True
-                sentence = "%s in %d m" %(self.nextNodeName, int(distanceTo/100))
+                sentence = "%d m" % int(distanceTo/100)
                 print sentence
                 self.voiceQueue.append_high(sentence, time.time())
 

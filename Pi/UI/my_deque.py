@@ -9,7 +9,7 @@ class my_deque(object):
         self.flush_queue = False
         self.curr_time = 0
         self.curr_speak_time = 0
-        self.tolerance = 0.3
+        self.tolerance = 0.5
 
     def clear(self):
         self.queue.clear()
@@ -29,21 +29,24 @@ class my_deque(object):
             self.curr_speak_time = item[1]
             item = [item[0], True]
         else:
-            # while len(self.queue) > 0:
-            #     item = self.queue.popleft()
-            #     if time.time() - item[1] > self.tolerance:
-            #         print "None"
-            #         return None
-            item = self.queue.popleft()
-            if self.curr_speak_time > 0 and item[1] < self.curr_speak_time:
-                print "None"
+            isFound = False
+            while len(self.queue) > 0:
+                item = self.queue.popleft()
+                if time.time() - item[1] <= self.tolerance:
+                    item = [item[0], False]
+                    isFound = True
+            if not isFound:
                 return [None, False]
-            self.curr_speak_time = item[1]
+        # item = self.queue.popleft()
+        # if self.curr_speak_time > 0 and item[1] < self.curr_speak_time:
+        #     print "None"
+        #     return [None, False]
+        # self.curr_speak_time = item[1]
 
         if self.flush_queue:
             self.queue.clear()
             self.flush_queue = False
-        return [item[0], False]
+        return item
 
     def append(self, item, timeStamp):
         if timeStamp < self.curr_time:
