@@ -356,6 +356,7 @@ class LocationDisplayThread(threading.Thread):
 
 
 class LocationUpdateThread(threading.Thread):
+
     def __init__(self, threadID, threadName):
         threading.Thread.__init__(self)
         self.threadID = threadID
@@ -380,6 +381,9 @@ class LocationUpdateThread(threading.Thread):
         self.timeInMillisGyro = 0
         self.calibrationTools = locationTracker.calibrationTools
         self.count = 0
+
+        self.calibrator = locationTracker.compass.calibrator
+        self.isDone = {'nOffset': False}
 
     def updateAccData(self):
         if len(data[1]) == 0:
@@ -493,6 +497,57 @@ class LocationUpdateThread(threading.Thread):
             locationTracker.updateBarometerData(self.baroReading)
             self.totalBaroData = 0
 
+    def calibrateTilt(self):
+        if len(data[1]) == 0:
+            return
+        elif self.totalAccData == 0:
+            data[1].popleft()
+            self.totalAccData += 1
+        elif self.totalAccData == 1:
+            self.accX = data[1].popleft()
+            self.totalAccData += 1
+        elif self.totalAccData == 2:
+            self.accY = data[1].popleft()
+            self.totalAccData += 1
+        elif self.totalAccData == 3:
+            self.accZ = data[1].popleft()
+            self.totalAccData += 1
+
+        if self.totalAccData == 4:
+            # x points to front
+            # y points to left
+            # z points to up
+            # Calibrated data is supplied as actual tilt is calibrated
+            self.accX, self.accY, self.accZ = self.calibrationTools.transformACC(self.accX, self.accY, self.accZ)
+            self.calibrator.calibrateTilt(-self.accZ, self.accY, self.accX, self.isDone)
+            self.totalAccData = 0
+
+    def calibrateNOffset(self):
+
+        if len(data[2]) == 0:
+            return
+        elif self.totalMagData == 0:
+            data[2].popleft()
+            self.totalMagData += 1
+        elif self.totalMagData == 1:
+            self.magX = data[2].popleft()
+            self.totalMagData += 1
+        elif self.totalMagData == 2:
+            self.magY = data[2].popleft()
+            self.totalMagData += 1
+        elif self.totalMagData == 3:
+            self.magZ = data[2].popleft()
+            self.totalMagData += 1
+
+        if self.totalMagData == 4:
+            # x points to front
+            # y points to left
+            # z points to up
+            # Calibrated data is supplied as actual angle is calibrated
+            self.magX, self.magY, self.magZ = self.calibrationTools.transformMag(self.magX, self.magY, self.magZ)
+            self.calibrator.calibrateNOffset(-self.magZ, self.magY, self.magX, self.isDone)
+            self.totalMagData = 0
+
     def run(self):
         global isNextPathNeeded
         global nextPathSema
@@ -501,9 +556,12 @@ class LocationUpdateThread(threading.Thread):
         while 1:
             if newLevelReached:
                 while not self.isDone['nOffset']:
-                    break
+                    self.calibrateNOffset()
 
                 locationTracker.compass.prevHeadingInRad = self.calibrator.NOffsetAngle
+                locationTracker.resetHeading()
+
+                newLevelReached = False
 
             if isNextPathNeeded:
                 print self.threadName, "blocking"
