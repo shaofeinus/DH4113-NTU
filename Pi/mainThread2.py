@@ -335,7 +335,7 @@ class LocationDisplayThread(threading.Thread):
                 print "Total Steps:", locationTracker.getTotalSteps()
                 print "Total Distance:", locationTracker.getTotalDistance()
                 print "Deviation from N:", locationTracker.getHeadingInDeg()
-                print "Deviation from Map N:", locationTracker.getHeadingWRTMapInDeg()
+                print "True deviation from N:", locationTracker.getTrueHeadingInDeg()
                 print locationTracker.getLocation()
                 print "Height:", locationTracker.getHeightInCM()
                 self.count = 0
