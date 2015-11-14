@@ -590,6 +590,8 @@ class NavigationThread(threading.Thread):
         global nextPathSema
         global data
         global newLevelReached
+
+        initialResponseIsLow = True
         while 1:
 ##            if isNextPathNeeded:
 ##                print self.threadName, "blocking"
@@ -602,6 +604,14 @@ class NavigationThread(threading.Thread):
             locationTrackerLock.release()
             navi.updateCurLocation(curX, curY, heading)
             isNavigationDone = navi.fullNavigate()
+
+            # push button for switching to next node
+
+            response = keypad.get_binary_response_timed(initialResponseIsLow, 0.1)
+            initialResponseIsLow = response[1]
+            if response[0]:
+                navi.reroutePath()
+
             if isNavigationDone is True :
                 print ("\n\n\n\n\nLE SWITCHEROO\n\n\n\n")
                 if navi.hasNextPath() is True :
@@ -865,7 +875,7 @@ if not skip_init:
 if not skip_init:
     locationTracker.setLocation(startLocation.getLocationXCoord(), startLocation.getLocationYCoord())
 else:
-    locationTracker.setLocation(7065, 1787)
+    locationTracker.setLocation(11815, 406)
 
 # Navigation initialization
 naviCount = 0
@@ -874,7 +884,7 @@ navi = fullNavi.fullNavi(voiceQueue, voiceSema)
 # navi.generateFullPath("com1", 2, 1, "com1", 2, 10)
 
 if skip_init:
-    navi.generateFullPath("com1", 2, 14, "com2", 3, 7)
+    navi.generateFullPath("com1", 2, 31, "com2", 2, 17)
 else:
     navi.generateFullPath(startLocation.getBuildingName(),
         startLocation.getLevelNumber(),

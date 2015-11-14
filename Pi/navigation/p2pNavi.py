@@ -31,10 +31,8 @@ class navigation (object) :
         self.curAngle = 0           # -180 to 180 degrees
         self.nextNodeName = None
 
-        # deviation tolerance
-        self.maxDeviation = 80       # cm
         # vicinity tolerance
-        self.maxTolerance = 150       # cm
+        self.maxTolerance = 170       # cm
         # angle tolerance
         self.angleTolerance = 0     # degrees
         # if already notified that nearing node

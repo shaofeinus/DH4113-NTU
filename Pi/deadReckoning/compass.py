@@ -51,7 +51,7 @@ class Compass:
         # new heading is wrt to map north
         newHeading = self.calculateHeadingInRad()
 
-        print "new heading is", self.getHeadingInDeg(newHeading)
+        # print "new heading is", self.getHeadingInDeg(newHeading)
 
         self.currDev += newHeading - self.prevHeadingInRad
         self.prevHeadingInRad = newHeading

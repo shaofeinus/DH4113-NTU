@@ -38,6 +38,7 @@ class LocationTracker:
         self.isLastStep = False
         self.prevGyroDev = 0
         self.prevCompDev = 0
+        self.prevMode = ''
 
     # Public
     def getLocation(self):
@@ -125,7 +126,8 @@ class LocationTracker:
 
             if currSteps != 0 and self.isFirstStep:
                 self.isFirstStep = False
-                self.updateCurrHeading(self.headingWRTNorthInRad - self.prevCompDev + self.prevGyroDev)
+                if not self.prevMode == 'change next dev':
+                    self.updateCurrHeading(self.headingWRTNorthInRad - self.prevCompDev + self.prevGyroDev)
                 mode = 'change prev dev'
 
             self.prevGyroDev = gyroAngleDev
@@ -138,6 +140,8 @@ class LocationTracker:
 
                 # angleDev = gyroAngleDev
                 # mode = 'gyro'
+
+            self.prevMode = mode
 
             self.updateCurrHeading(angleDev + self.trueHeadingWRTNorthInRad)
 
