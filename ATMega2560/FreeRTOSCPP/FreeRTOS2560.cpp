@@ -462,9 +462,17 @@ int main()
 	us2_updated = xSemaphoreCreateBinary();	
 	us3_updated = xSemaphoreCreateBinary();	
 	
+	// pin 49 PL 0
+	// 5v to turn off accelerometer
+	// gnd to turn on accelerometer
+	DDRL &= ~(1<<PL0);
+	
 	//	Create tasks 
 	xTaskCreate(usart_process, "usart", STACK_DEPTH, NULL, 1, &t1);
-	xTaskCreate(twowire_process, "twowire", STACK_DEPTH, NULL, 3, &t2);
+	if (!(PINL&(1<<PL0))) 
+	{
+		xTaskCreate(twowire_process, "twowire", STACK_DEPTH, NULL, 3, &t2);
+	}
 	xTaskCreate(distir_process, "distir", STACK_DEPTH, NULL, 2, &t3);
 	xTaskCreate(distultrasound_process, "distus", STACK_DEPTH, NULL, 2, &t4);
 	
